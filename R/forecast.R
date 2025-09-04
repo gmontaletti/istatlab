@@ -73,16 +73,19 @@ forecast_series <- function(data, value_col = "valore", time_col = "tempo",
 
 #' Perform Forecast
 #'
-#' Internal function to perform the actual forecasting.
+#' Internal function to perform the actual forecasting using the specified method.
+#' Supports auto.arima, ETS, naive (random walk), and linear trend forecasting.
 #'
-#' @param data A data.table subset for forecasting
-#' @param value_col Character string specifying the value column
-#' @param time_col Character string specifying the time column
-#' @param periods Integer number of periods to forecast
-#' @param method Character string specifying forecasting method
-#' @param confidence_levels Numeric vector of confidence levels
+#' @param data A data.table subset containing time series data for forecasting
+#' @param value_col Character string specifying the value column name
+#' @param time_col Character string specifying the time column name
+#' @param periods Integer number of periods to forecast ahead
+#' @param method Character string specifying forecasting method 
+#'   ("auto.arima", "ets", "naive", "linear")
+#' @param confidence_levels Numeric vector of confidence levels for prediction intervals
 #'
-#' @return A list with forecast results
+#' @return A list with comprehensive forecast results including point forecasts,
+#'   confidence intervals, fitted values, residuals, forecast dates, and model information
 #' @keywords internal
 perform_forecast <- function(data, value_col, time_col, periods, method, confidence_levels) {
   

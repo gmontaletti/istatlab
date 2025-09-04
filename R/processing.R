@@ -125,11 +125,14 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL) {
 
 #' Process Time Dimension
 #'
-#' Processes the time dimension in ISTAT data, converting to appropriate date formats.
+#' Processes the time dimension in ISTAT data, converting SDMX time codes to 
+#' appropriate R Date objects. Handles monthly (M), quarterly (Q), and annual (A) 
+#' frequency data with proper date formatting.
 #'
-#' @param data A data.table with time dimension
+#' @param data A data.table with ObsDimension column containing SDMX time codes
+#'   and FREQ column indicating frequency
 #'
-#' @return The data.table with processed time dimension
+#' @return The data.table with processed tempo_label column containing Date objects
 #' @keywords internal
 process_time_dimension <- function(data) {
   
@@ -156,11 +159,14 @@ process_time_dimension <- function(data) {
 
 #' Process Editions
 #'
-#' Handles multiple editions in the data by keeping only the latest edition.
+#' Handles multiple editions in ISTAT data by keeping only the latest edition.
+#' This ensures data consistency when ISTAT has published multiple versions 
+#' of the same dataset with different publication dates.
 #'
-#' @param data A data.table with EDITION column
+#' @param data A data.table with EDITION column containing edition dates
+#'   in ISTAT format (e.g., "G_2023_03" for March 2023)
 #'
-#' @return The data.table with only the latest edition
+#' @return The data.table filtered to contain only observations from the latest edition
 #' @keywords internal
 process_editions <- function(data) {
   
@@ -178,11 +184,14 @@ process_editions <- function(data) {
 
 #' Process Data Types
 #'
-#' Handles data types with different base years by keeping only the latest base.
+#' Handles data types with different base years by keeping only the latest base year.
+#' This is important for index series where ISTAT may provide data with multiple
+#' base years (e.g., 2015=100, 2020=100) to ensure consistency.
 #'
-#' @param data A data.table with DATA_TYPE column
+#' @param data A data.table with DATA_TYPE column containing base year information
+#'   (e.g., "base2020=100")
 #'
-#' @return The data.table with latest base year data
+#' @return The data.table filtered to contain only data from the latest base year
 #' @keywords internal
 process_data_types <- function(data) {
   

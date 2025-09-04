@@ -12,6 +12,27 @@
 #' @importFrom data.table setnames
 #' @importFrom data.table setorderv
 #' @importFrom data.table tstrsplit
+#' @importFrom data.table copy
+#' @importFrom zoo as.yearqtr
+#' @importFrom parallel mclapply
+#' @importFrom parallel detectCores
+#' @importFrom scales comma_format
+#' @importFrom stats lm
+#' @importFrom stats coef
+#' @importFrom stats fitted
+#' @importFrom stats residuals
+#' @importFrom stats AIC
+#' @importFrom stats BIC
+#' @importFrom stats ts
+#' @importFrom stats loess
+#' @importFrom stats stl
+#' @importFrom stats predict
+#' @importFrom stats sd
+#' @importFrom stats median
+#' @importFrom stats quantile
+#' @importFrom stats qnorm
+#' @importFrom stats qt
+#' @importFrom utils globalVariables
 ## usethis namespace: end
 
 # Suppress R CMD check notes for data.table syntax

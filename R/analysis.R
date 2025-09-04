@@ -65,14 +65,16 @@ analyze_trends <- function(data, value_col = "valore", time_col = "tempo",
 
 #' Perform Trend Analysis
 #'
-#' Internal function to perform the actual trend analysis.
+#' Internal function to perform the actual trend analysis using the specified method.
+#' Supports linear regression, LOESS smoothing, and STL decomposition for trend estimation.
 #'
-#' @param data A data.table subset for analysis
-#' @param value_col Character string specifying the value column
-#' @param time_col Character string specifying the time column
-#' @param method Character string specifying the analysis method
+#' @param data A data.table subset for analysis containing time series data
+#' @param value_col Character string specifying the value column name
+#' @param time_col Character string specifying the time column name  
+#' @param method Character string specifying the analysis method ("linear", "loess", or "stl")
 #'
-#' @return A list with trend analysis results
+#' @return A list with trend analysis results including method used, number of observations,
+#'   date range, and method-specific results (slopes, fitted values, decomposition components)
 #' @keywords internal
 perform_trend_analysis <- function(data, value_col, time_col, method) {
   
@@ -190,13 +192,16 @@ calculate_growth_rates <- function(data, value_col = "valore", time_col = "tempo
 
 #' Calculate Growth by Type
 #'
-#' Internal function to calculate growth rates by type.
+#' Internal function to calculate growth rates by type. Supports period-over-period,
+#' year-over-year (annual), and cumulative growth rate calculations.
 #'
-#' @param data A data.table for calculation
-#' @param value_col Character string specifying the value column
-#' @param type Character string specifying growth rate type
+#' @param data A data.table containing the time series data for calculation
+#' @param value_col Character string specifying the value column name
+#' @param type Character string specifying growth rate type: 
+#'   "period" for period-over-period, "annual" for year-over-year, 
+#'   "cumulative" for growth from first observation
 #'
-#' @return A data.table with growth rates
+#' @return A data.table with original data plus a new growth rate column
 #' @keywords internal
 calculate_growth_by_type <- function(data, value_col, type) {
   
@@ -238,11 +243,13 @@ calculate_growth_by_type <- function(data, value_col, type) {
 
 #' Determine Data Frequency
 #'
-#' Determines the frequency of time series data.
+#' Determines the frequency of time series data based on typical intervals
+#' between observations. This is used internally for time series analysis
+#' and forecasting functions.
 #'
-#' @param dates A vector of dates
+#' @param dates A vector of dates (Date, POSIXct, or coercible to Date)
 #'
-#' @return Numeric frequency value
+#' @return Numeric frequency value: 12 for monthly, 4 for quarterly, 1 for annual/other
 #' @keywords internal
 determine_frequency <- function(dates) {
   

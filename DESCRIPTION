@@ -1,7 +1,7 @@
 Package: istatlab
 Type: Package
 Title: Download and Analyze Italian Labour Market Data from ISTAT
-Version: 0.1.0
+Version: 0.1.1
 Date: 2025-09-04
 Authors@R: 
     person("Giampaolo", "Montaletti", 

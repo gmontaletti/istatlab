@@ -1,3 +1,10 @@
+# istatlab 0.1.1
+
+* Enhanced and improved package documentation
+* Updated roxygen2 comments for better clarity and completeness
+* Improved function examples and parameter descriptions
+* Enhanced vignettes and user guides
+
 # istatlab 0.1.0
 
 * Initial release of istatlab package
