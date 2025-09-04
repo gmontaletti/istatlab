@@ -1,0 +1,220 @@
+---
+title: "Getting Started with istatlab"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with istatlab}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to TRUE when package is fully functional
+)
+```
+
+```{r setup}
+library(istatlab)
+```
+
+# Introduction
+
+The **istatlab** package provides a comprehensive toolkit for working with Italian labour market data from ISTAT (Istituto Nazionale di Statistica). This vignette demonstrates the main functionality of the package.
+
+## Checking API Connectivity
+
+Before starting, it's good practice to check if the ISTAT API is accessible:
+
+```{r}
+# Check if ISTAT API is available
+if (check_istat_api()) {
+  message("ISTAT API is accessible!")
+} else {
+  message("ISTAT API is not accessible. Check your internet connection.")
+}
+```
+
+## Downloading Metadata
+
+The first step is typically to download metadata to understand what datasets are available:
+
+```{r}
+# Download metadata for available datasets
+metadata <- download_metadata()
+
+# View the structure
+head(metadata)
+
+# Look for employment-related datasets
+employment_datasets <- metadata[grepl("employment|lavoro", Name.it, ignore.case = TRUE)]
+print(employment_datasets[, .(id, Name.it)])
+```
+
+## Downloading Data
+
+Once you've identified the datasets you need, you can download the actual data:
+
+```{r}
+# Download data for a specific dataset
+# Using dataset "150_915" as an example (quarterly employment statistics)
+data <- download_istat_data("150_915", start_time = "2020")
+
+# View the raw data structure
+str(data)
+head(data)
+```
+
+## Processing and Labeling Data
+
+Raw ISTAT data contains codes that need to be translated to meaningful labels:
+
+```{r}
+# Apply labels to make data more readable
+processed_data <- apply_labels(data)
+
+# View the processed data
+str(processed_data)
+head(processed_data)
+```
+
+## Basic Analysis
+
+The package provides various analysis functions:
+
+### Summary Statistics
+
+```{r}
+# Calculate summary statistics
+summary_stats <- calculate_summary_stats(processed_data)
+print(summary_stats)
+```
+
+### Growth Rate Analysis
+
+```{r}
+# Calculate growth rates
+data_with_growth <- calculate_growth_rates(processed_data, type = "annual")
+
+# View growth rates
+head(data_with_growth[, .(tempo, valore, growth_annual)])
+```
+
+### Trend Analysis
+
+```{r}
+# Analyze trends
+trend_results <- analyze_trends(processed_data, method = "linear")
+print(trend_results)
+```
+
+## Forecasting
+
+Generate forecasts for future periods:
+
+```{r}
+# Generate 12-period forecast using auto.arima
+forecast_results <- forecast_series(processed_data, 
+                                   periods = 12, 
+                                   method = "auto.arima")
+
+# View forecast summary
+forecast_summary <- create_forecast_summary(forecast_results)
+head(forecast_summary)
+```
+
+## Visualization
+
+Create publication-ready plots:
+
+```{r}
+# Basic time series plot
+ts_plot <- create_time_series_plot(processed_data,
+                                  title = "Italian Labour Market Data",
+                                  subtitle = "Source: ISTAT",
+                                  y_label = "Value")
+
+print(ts_plot)
+```
+
+```{r}
+# Forecast plot
+forecast_plot <- create_forecast_plot(processed_data, forecast_results,
+                                     title = "Labour Market Forecast")
+
+print(forecast_plot)
+```
+
+```{r}
+# Growth rate plot
+growth_plot <- create_growth_plot(data_with_growth, 
+                                 growth_col = "growth_annual",
+                                 title = "Annual Growth Rates")
+
+print(growth_plot)
+```
+
+## Working with Multiple Datasets
+
+You can also download and analyze multiple datasets:
+
+```{r}
+# Download multiple datasets
+dataset_ids <- c("150_915", "151_914")
+multiple_data <- download_multiple_datasets(dataset_ids, start_time = "2020")
+
+# Process each dataset
+processed_multiple <- lapply(multiple_data, apply_labels)
+
+# Combine for comparison (if they have compatible structure)
+# This would depend on the specific datasets and their dimensions
+```
+
+## Advanced Features
+
+### Dashboard Creation
+
+```{r}
+# Create a comprehensive dashboard
+dashboard <- create_dashboard_plot(processed_data,
+                                  panels = c("timeseries", "growth"),
+                                  title = "Labour Market Dashboard")
+
+print(dashboard)
+```
+
+### Structural Break Detection
+
+```{r}
+# Detect structural breaks in the time series
+breaks <- detect_structural_breaks(processed_data)
+print(breaks)
+```
+
+## Best Practices
+
+1. **Always check API connectivity** before attempting downloads
+2. **Cache metadata locally** - the package does this automatically
+3. **Validate data** after processing using `validate_istat_data()`
+4. **Filter data by time** to focus on relevant periods
+5. **Use appropriate forecasting methods** based on your data characteristics
+6. **Create reproducible workflows** by saving dataset IDs and parameters
+
+## Troubleshooting
+
+Common issues and solutions:
+
+- **Connection timeouts**: Increase timeout values or check internet connection
+- **Java dependency issues**: Install Java for RJSDMX functionality (optional)
+- **Memory issues**: Process data in chunks for very large datasets
+- **Missing labels**: Ensure codelists are downloaded and cached
+
+## Next Steps
+
+- Explore the full range of available datasets in ISTAT's catalogue
+- Experiment with different forecasting methods
+- Customize visualizations for your specific needs
+- Contribute to the package development on GitHub
+
+For more information, see the package documentation and examples.

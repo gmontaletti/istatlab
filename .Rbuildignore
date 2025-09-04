@@ -1,0 +1,11 @@
+^renv$
+^renv\.lock$
+^istatlab\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^data-raw$
+^LICENSE\.md$
