@@ -105,3 +105,49 @@ devtools::run_examples()
 - `150_915`: Quarterly employment statistics  
 - `151_914`: Unemployment rates
 - `534_50`: Job vacancies
+
+## Version Management Workflow
+
+### Semantic Versioning
+The istatlab package follows semantic versioning (SemVer) with the format MAJOR.MINOR.PATCH:
+- **MAJOR**: Incompatible API changes
+- **MINOR**: New functionality in a backwards compatible manner
+- **PATCH**: Backwards compatible bug fixes
+
+### Git and renv Integration
+1. **Before making changes**: Always check `renv::status()` and `git status`
+2. **After adding new dependencies**: Run `renv::snapshot()` to update renv.lock
+3. **Before commits**: Ensure all tests pass with `devtools::check()`
+4. **Commit workflow**: 
+   - Use conventional commit format: `type(scope): description`
+   - Common types: feat, fix, docs, style, refactor, test, chore
+   - Always commit renv.lock when dependencies change
+
+### Version Release Process
+1. Update version number in DESCRIPTION file
+2. Update Date field in DESCRIPTION to release date
+3. Add release notes to NEWS.md
+4. Run `devtools::check()` to ensure package integrity
+5. Run `renv::snapshot()` if dependencies changed
+6. Commit changes with message: `chore: release version X.Y.Z`
+7. Create git tag: `git tag -a vX.Y.Z -m "Release version X.Y.Z"`
+8. Push commits and tags to GitHub
+
+### File Management
+- **Never commit**: renv/library/, renv/local/, renv/cellar/, .Rhistory
+- **Always commit**: DESCRIPTION, NEWS.md, renv.lock (when changed), all R/ files
+- **Selectively commit**: Documentation updates in man/ (auto-generated from roxygen2)
+
+### Branch Strategy
+- **main**: Stable releases only
+- **develop**: Integration of new features
+- **feature/***: Individual feature development
+- **hotfix/***: Critical bug fixes for production
+
+### Pre-commit Checklist
+- [ ] Package builds successfully (`devtools::build()`)
+- [ ] All tests pass (`devtools::test()`)
+- [ ] Documentation is current (`devtools::document()`)
+- [ ] renv is synchronized (`renv::status()`)
+- [ ] NEWS.md is updated for user-facing changes
+- [ ] Version number updated if needed
