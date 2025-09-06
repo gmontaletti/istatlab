@@ -164,9 +164,23 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
       codelists <- parallel::mclapply(dataset_ids, download_single_codelist)
       names(codelists) <- paste0("X", dataset_ids)
       
-      # Save codelists
-      saveRDS(codelists, codelist_file)
-      message("Codelists downloaded and cached successfully")
+      # Filter out NULL results and warn user
+      valid_codelists <- codelists[!sapply(codelists, is.null)]
+      failed_count <- length(codelists) - length(valid_codelists)
+      
+      if (failed_count > 0) {
+        warning(failed_count, " dataset(s) failed to download due to connectivity issues.")
+        warning("Successfully downloaded ", length(valid_codelists), " out of ", length(codelists), " datasets.")
+      }
+      
+      if (length(valid_codelists) > 0) {
+        # Save valid codelists
+        saveRDS(valid_codelists, codelist_file)
+        message("Codelists downloaded and cached successfully (", length(valid_codelists), " datasets)")
+      } else {
+        warning("No codelists could be downloaded. Please check your internet connection and try again later.")
+        return(NULL)
+      }
       
     }, error = function(e) {
       stop("Failed to download codelists: ", e$message)
@@ -208,11 +222,39 @@ download_single_codelist <- function(dataset_id) {
   )
   
   tryCatch({
-    result <- readsdmx::read_sdmx(api_url)
-    data.table::setDT(result)
-    return(result)
+    # Test URL connectivity first with timeout
+    test_result <- tryCatch({
+      # Use httr or curl with timeout to test connectivity
+      if (requireNamespace("httr", quietly = TRUE)) {
+        httr::GET(api_url, httr::timeout(30))
+      } else {
+        # Fallback: try direct connection with shorter timeout
+        readsdmx::read_sdmx(api_url)
+      }
+    }, error = function(e) {
+      stop("Cannot connect to ISTAT API. The server may be temporarily unavailable. Please try again later or check your internet connection. Error: ", e$message)
+    })
+    
+    # If httr was used for testing, now use readsdmx
+    if (requireNamespace("httr", quietly = TRUE) && inherits(test_result, "response")) {
+      if (httr::status_code(test_result) == 200) {
+        result <- readsdmx::read_sdmx(api_url)
+        data.table::setDT(result)
+        return(result)
+      } else {
+        stop("ISTAT API returned status code: ", httr::status_code(test_result))
+      }
+    } else {
+      # test_result is already the readsdmx result
+      data.table::setDT(test_result)
+      return(test_result)
+    }
+    
   }, error = function(e) {
-    stop("Failed to download codelist for dataset ", dataset_id, ": ", e$message)
+    warning("Failed to download codelist for dataset ", dataset_id, ": ", e$message)
+    warning("This might be a temporary connectivity issue with ISTAT's servers.")
+    warning("Returning NULL for this dataset. You can try again later.")
+    return(NULL)
   })
 }
 

@@ -151,3 +151,4 @@ The istatlab package follows semantic versioning (SemVer) with the format MAJOR.
 - [ ] renv is synchronized (`renv::status()`)
 - [ ] NEWS.md is updated for user-facing changes
 - [ ] Version number updated if needed
+- always use agents
