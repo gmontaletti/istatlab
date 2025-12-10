@@ -1,3 +1,9 @@
+# istatlab 0.1.3
+
+* Reorganized project structure and cleaned up main directory
+* Moved non-package files to reference directory for better maintainability
+* Maintained all core R package functionality and tests
+
 # istatlab 0.1.1
 
 * Enhanced and improved package documentation
