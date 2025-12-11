@@ -1,3 +1,9 @@
+# istatlab 0.1.4
+
+* Added `expand_dataset_ids()` function for automatic dataset code expansion
+* Added `extract_root_dataset_id()` function for root ID extraction from compound IDs
+* Added fallback codelist lookup using root dataset IDs
+
 # istatlab 0.1.3
 
 * Reorganized project structure and cleaned up main directory
