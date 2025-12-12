@@ -1,3 +1,9 @@
+# istatlab 0.1.5
+
+* Maintenance release with dependency synchronization
+* Updated package documentation and roxygen2 comments
+* Enhanced API connectivity and error handling
+
 # istatlab 0.1.4
 
 * Added `expand_dataset_ids()` function for automatic dataset code expansion
