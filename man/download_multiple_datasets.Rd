@@ -6,31 +6,46 @@
 \usage{
 download_multiple_datasets(
   dataset_ids,
-  filter = "ALL",
+  filter = NULL,
   start_time = "",
-  n_cores = parallel::detectCores() - 1
+  n_cores = parallel::detectCores() - 1,
+  verbose = TRUE,
+  updated_after = NULL
 )
 }
 \arguments{
 \item{dataset_ids}{Character vector of ISTAT dataset IDs}
 
-\item{filter}{Character string specifying data filters. Default is "ALL"}
+\item{filter}{Character string specifying data filters. Default uses config value ("ALL")}
 
 \item{start_time}{Character string specifying the start period}
 
 \item{n_cores}{Integer number of cores to use for parallel processing.
 Default is parallel::detectCores() - 1}
+
+\item{verbose}{Logical indicating whether to print status messages. Default is TRUE}
+
+\item{updated_after}{POSIXct timestamp. If provided, only data updated since this time
+will be retrieved for all datasets. Used for incremental update detection.}
 }
 \value{
 A named list of data.tables, one for each dataset
 }
 \description{
 Downloads multiple datasets from ISTAT SDMX API in parallel.
+Uses centralized configuration for default values.
 }
 \examples{
 \dontrun{
 # Download multiple datasets
 datasets <- c("534_50", "534_51", "534_52")
 data_list <- download_multiple_datasets(datasets, start_time = "2020")
+
+# Access individual datasets
+vacancies_50 <- data_list[["534_50"]]
+
+# Download only updated data
+timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
+updated_list <- download_multiple_datasets(datasets, updated_after = timestamp)
 }
 }

@@ -4,24 +4,37 @@
 \alias{download_istat_data}
 \title{Download Data from ISTAT SDMX API}
 \usage{
-download_istat_data(dataset_id, filter = "ALL", start_time = "", timeout = 240)
+download_istat_data(
+  dataset_id,
+  filter = NULL,
+  start_time = "",
+  timeout = NULL,
+  verbose = TRUE,
+  updated_after = NULL
+)
 }
 \arguments{
 \item{dataset_id}{Character string specifying the ISTAT dataset ID (e.g., "534_50")}
 
-\item{filter}{Character string specifying data filters. Default is "ALL"}
+\item{filter}{Character string specifying data filters. Default uses config value ("ALL")}
 
 \item{start_time}{Character string specifying the start period (e.g., "2019").
 If empty, downloads all available data}
 
-\item{timeout}{Numeric timeout in seconds for the download operation. Default is 240}
+\item{timeout}{Numeric timeout in seconds for the download operation. Default uses config value}
+
+\item{verbose}{Logical indicating whether to print status messages. Default is TRUE}
+
+\item{updated_after}{POSIXct timestamp. If provided, only data updated since this time
+will be retrieved. Used for incremental update detection.}
 }
 \value{
-A data.table containing the downloaded data with an additional 'id' column
+A data.table containing the downloaded data with an additional 'id' column,
+or NULL if the download fails
 }
 \description{
 Downloads statistical data from the ISTAT (Istituto Nazionale di Statistica)
-SDMX API for a specified dataset.
+SDMX API for a specified dataset. Uses centralized configuration for default values.
 }
 \examples{
 \dontrun{
@@ -33,5 +46,9 @@ data <- download_istat_data("534_50", start_time = "2019")
 
 # Download with specific filter
 data <- download_istat_data("534_50", filter = "M..", start_time = "2020")
+
+# Download only data updated since a specific timestamp
+timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
+data <- download_istat_data("534_50", updated_after = timestamp)
 }
 }

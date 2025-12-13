@@ -33,12 +33,25 @@
 #' @importFrom stats qnorm
 #' @importFrom stats qt
 #' @importFrom utils globalVariables
+#' @importFrom utils tail
+#' @importFrom stats setNames
+#' @importFrom stats time
+#' @importFrom stats var
+#' @importFrom data.table %chin%
+#' @importFrom rsdmx SDMXServiceProvider
+#' @importFrom rsdmx SDMXREST21RequestBuilder
+#' @importFrom rsdmx addSDMXServiceProvider
+#' @importFrom rsdmx readSDMX
+#' @importFrom patchwork wrap_plots
+#' @importFrom patchwork plot_annotation
 ## usethis namespace: end
 
 # Suppress R CMD check notes for data.table syntax
 utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue", 
-                         "FREQ", "EDITION", "DATA_TYPE", "id", "base", "tempo_temp",
-                         "tempo_label", "valore_label", "it_description", "id_description"))
+                         "FREQ", "EDITION", "EDITION_new", "DATA_TYPE", "id", "base", "tempo_temp",
+                         "tempo_label", "valore_label", "it_description", "id_description",
+                         "..label_cols", "..group_vars", "..varying_cols", "cl", "var",
+                         "upper", "lower", "time", "forecast"))
 
 #' istatlab: Download and Analyze Italian Labour Market Data from ISTAT
 #'
@@ -84,6 +97,6 @@ utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue",
 #'   \item Create publication-ready visualizations
 #' }
 #'
-#' @docType package
-#' @name istatlab
-NULL
+#' @name istatlab-package
+#' @aliases istatlab
+"_PACKAGE"

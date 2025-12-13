@@ -33,31 +33,20 @@ download_metadata <- function(force_update = FALSE, cache_dir = "meta") {
     Sys.setFileTime(metadata_file, "1980-12-04")
   }
   
-  # Check if update is needed
-  file_age <- Sys.time() - file.info(metadata_file)$mtime
+  # Check if update is needed (file_age in days)
+  file_age <- as.numeric(difftime(Sys.time(), file.info(metadata_file)$mtime, units = "days"))
   needs_update <- force_update || (file_age > 14)
   
   if (needs_update) {
     message("Downloading ISTAT metadata...")
     
-    tryCatch({
-      # Set up ISTAT provider
+    download_result <- tryCatch({
+      # Set up ISTAT provider using centralized configuration
       if (!requireNamespace("rsdmx", quietly = TRUE)) {
         stop("Package 'rsdmx' is required for metadata download")
       }
       
-      istat_provider <- rsdmx::SDMXServiceProvider(
-        agencyId = "ISTAT2",
-        name = "Istituto nazionale di statistica (Italia)",
-        scale = "national",
-        country = "ITA",
-        builder = rsdmx::SDMXREST21RequestBuilder(
-          regUrl = "https://esploradati.istat.it/SDMXWS/rest",
-          repoUrl = "https://esploradati.istat.it/SDMXWS/rest",
-          compliant = TRUE
-        )
-      )
-      
+      istat_provider <- get_istat_provider()
       rsdmx::addSDMXServiceProvider(istat_provider)
       
       # Download dataflows
@@ -67,17 +56,41 @@ download_metadata <- function(force_update = FALSE, cache_dir = "meta") {
       # Save metadata
       saveRDS(istat_flussi, metadata_file)
       message("Metadata downloaded and cached successfully")
+      TRUE  # Success indicator
       
     }, error = function(e) {
-      stop("Failed to download metadata: ", e$message)
+      # Check if it's a timeout or connectivity issue
+      if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+        warning("ISTAT metadata request timed out. The server may be experiencing ", 
+                "high load. Please try again later.")
+      } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
+        warning("Cannot connect to ISTAT API for metadata. Please check your internet ", 
+                "connection or try again later. Error: ", e$message)
+      } else {
+        warning("Failed to download metadata: ", e$message)
+      }
+      FALSE  # Failure indicator
     })
+    
+    # If download failed, try to load existing cached metadata if available
+    if (!download_result) {
+      if (file.exists(metadata_file) && file.size(metadata_file) > 0) {
+        warning("Download failed but using existing cached metadata")
+      } else {
+        stop("Cannot download metadata and no cached version available. Please check your internet connection and try again.")
+      }
+    }
     
   } else {
     message("Using cached metadata (", round(file_age, 1), " days old)")
   }
   
   # Load and return metadata
-  readRDS(metadata_file)
+  if (file.exists(metadata_file) && file.size(metadata_file) > 0) {
+    readRDS(metadata_file)
+  } else {
+    stop("No metadata file available. Please check your internet connection and try download_metadata() again.")
+  }
 }
 
 #' Get Dataset Dimensions
@@ -108,7 +121,19 @@ get_dataset_dimensions <- function(dataset_id) {
       return(NULL)
     }
   }, error = function(e) {
-    stop("Failed to get dataset dimensions: ", e$message)
+    # Check if it's a timeout or connectivity issue  
+    if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+      warning("Request for dataset dimensions timed out. Dataset: ", dataset_id, 
+              ". Please try again later.")
+      return(NULL)
+    } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
+      warning("Cannot connect to ISTAT API for dataset dimensions. Dataset: ", dataset_id, 
+              ". Please check your internet connection. Error: ", e$message)
+      return(NULL)
+    } else {
+      warning("Failed to get dataset dimensions for ", dataset_id, ": ", e$message)
+      return(NULL)
+    }
   })
 }
 
@@ -146,8 +171,8 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
     Sys.setFileTime(codelist_file, "1980-12-04")
   }
   
-  # Check if update is needed
-  file_age <- Sys.time() - file.info(codelist_file)$mtime
+  # Check if update is needed (file_age in days)
+  file_age <- as.numeric(difftime(Sys.time(), file.info(codelist_file)$mtime, units = "days"))
   needs_update <- force_update || (file_age > 14)
   
   if (needs_update) {
@@ -183,7 +208,19 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
       }
       
     }, error = function(e) {
-      stop("Failed to download codelists: ", e$message)
+      # Check if it's a timeout or connectivity issue
+      if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+        warning("ISTAT codelists request timed out. The server may be experiencing ", 
+                "high load. Please try again later.")
+        return(list())
+      } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
+        warning("Cannot connect to ISTAT API for codelists. Please check your internet ", 
+                "connection or try again later. Error: ", e$message)
+        return(list())
+      } else {
+        warning("Failed to download codelists: ", e$message)
+        return(list())
+      }
     })
     
   } else {
@@ -214,12 +251,8 @@ download_single_codelist <- function(dataset_id) {
     stop("Dataset ID not found in metadata: ", dataset_id)
   }
   
-  # Construct API URL for codelist
-  api_url <- paste0(
-    "https://esploradati.istat.it/SDMXWS/rest/datastructure/IT1/",
-    dsd_ref,
-    "/1.0?references=children"
-  )
+  # Construct API URL for codelist using centralized configuration
+  api_url <- build_istat_url("datastructure", dsd_ref = dsd_ref)
   
   tryCatch({
     # Test URL connectivity first with timeout
@@ -232,7 +265,10 @@ download_single_codelist <- function(dataset_id) {
         readsdmx::read_sdmx(api_url)
       }
     }, error = function(e) {
-      stop("Cannot connect to ISTAT API. The server may be temporarily unavailable. Please try again later or check your internet connection. Error: ", e$message)
+      # This already has good error handling, just convert from stop to warning
+      warning("Cannot connect to ISTAT API. The server may be temporarily unavailable. ", 
+              "Please try again later or check your internet connection. Error: ", e$message)
+      return(NULL)
     })
     
     # If httr was used for testing, now use readsdmx
@@ -242,7 +278,9 @@ download_single_codelist <- function(dataset_id) {
         data.table::setDT(result)
         return(result)
       } else {
-        stop("ISTAT API returned status code: ", httr::status_code(test_result))
+        warning("ISTAT API returned status code: ", httr::status_code(test_result), 
+                ". The API may be temporarily unavailable.")
+        return(NULL)
       }
     } else {
       # test_result is already the readsdmx result
@@ -256,6 +294,73 @@ download_single_codelist <- function(dataset_id) {
     warning("Returning NULL for this dataset. You can try again later.")
     return(NULL)
   })
+}
+
+#' Expand Dataset IDs to Include All Matching Variants
+#'
+#' Expands root dataset IDs to include all related datasets from metadata.
+#' For example: "534_49" expands to c("534_49", "534_49_DF_DCSC_GI_ORE_10", ...)
+#'
+#' @param dataset_codes Character vector of dataset codes to expand
+#' @param metadata Optional data.table with metadata (fetched if NULL)
+#' @param expand Logical, if FALSE returns codes unchanged (default TRUE)
+#'
+#' @return Character vector with all matching dataset IDs
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Expand single code
+#' ids <- expand_dataset_ids("534_49")
+#' # Returns: c("534_49", "534_49_DF_DCSC_GI_ORE_10", ...)
+#'
+#' # Expand multiple codes
+#' ids <- expand_dataset_ids(c("534_49", "155_318"))
+#'
+#' # Disable expansion
+#' ids <- expand_dataset_ids("534_49", expand = FALSE)
+#' # Returns: "534_49"
+#' }
+expand_dataset_ids <- function(dataset_codes, metadata = NULL, expand = TRUE) {
+  # Return unchanged if expansion disabled
+  if (!expand) {
+    return(dataset_codes)
+  }
+
+  # Load metadata if not provided
+  if (is.null(metadata)) {
+    metadata <- download_metadata()
+  }
+
+  if (!data.table::is.data.table(metadata)) {
+    data.table::setDT(metadata)
+  }
+
+  all_ids <- metadata$id
+  expanded_ids <- character()
+
+  for (code in dataset_codes) {
+    if (grepl("_DF_", code)) {
+      # Already a full compound ID, add as-is
+      if (code %in% all_ids) {
+        expanded_ids <- c(expanded_ids, code)
+      } else {
+        warning("Dataset not found in metadata: ", code)
+      }
+    } else {
+      # Find all IDs starting with this pattern
+      pattern <- paste0("^", code, "($|_)")
+      matches <- all_ids[grepl(pattern, all_ids)]
+      if (length(matches) > 0) {
+        message("Expanded '", code, "' to ", length(matches), " datasets")
+        expanded_ids <- c(expanded_ids, matches)
+      } else {
+        warning("No datasets found matching pattern: ", code)
+      }
+    }
+  }
+
+  unique(expanded_ids)
 }
 
 #' Cache Dataset Configuration

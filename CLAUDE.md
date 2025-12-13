@@ -152,3 +152,4 @@ The istatlab package follows semantic versioning (SemVer) with the format MAJOR.
 - [ ] NEWS.md is updated for user-facing changes
 - [ ] Version number updated if needed
 - always use agents
+- use agents for tasks

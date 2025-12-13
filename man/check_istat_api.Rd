@@ -4,20 +4,42 @@
 \alias{check_istat_api}
 \title{Check ISTAT API Status}
 \usage{
-check_istat_api(timeout = 10)
+check_istat_api(
+  timeout = NULL,
+  test_dataset = NULL,
+  verbose = TRUE,
+  skip = FALSE
+)
 }
 \arguments{
-\item{timeout}{Numeric timeout in seconds for the check. Default is 10}
+\item{timeout}{Numeric timeout in seconds for the check. Default uses config value}
+
+\item{test_dataset}{Character string specifying a lightweight dataset to test.
+Default uses config value (job vacancies dataset)}
+
+\item{verbose}{Logical indicating whether to print detailed messages.
+Default is TRUE}
+
+\item{skip}{Logical indicating whether to skip the check and return TRUE.
+Useful for offline development or when API status is already known. Default is FALSE}
 }
 \value{
-Logical indicating if the API is accessible
+Logical indicating if the API is accessible (always TRUE if skip = TRUE)
 }
 \description{
-Checks if the ISTAT SDMX API is accessible.
+Checks if the ISTAT SDMX API is accessible by testing an actual data endpoint
+using the same method as the download functions. Uses centralized configuration
+for default values.
 }
 \examples{
 \dontrun{
+# Check API status with default settings
 if (check_istat_api()) {
+  # Proceed with data download
+}
+
+# Quick check with shorter timeout
+if (check_istat_api(timeout = 10, verbose = FALSE)) {
   # Proceed with data download
 }
 }
