@@ -54,21 +54,6 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
     message("Downloading dataset ", dataset_id, "...")
   }
 
-  # Set timeout and download method options
-  # Using libcurl ensures consistent behavior across platforms
-  old_timeout <- getOption("timeout")
-  old_method <- getOption("download.file.method")
-  on.exit({
-    options(timeout = old_timeout)
-    if (!is.null(old_method)) {
-      options(download.file.method = old_method)
-    }
-  })
-  options(timeout = timeout)
-  if (capabilities("libcurl")) {
-    options(download.file.method = "libcurl")
-  }
-
   # Construct API URL using centralized configuration
   api_url <- build_istat_url("data",
                             dataset_id = dataset_id,
@@ -76,34 +61,22 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
                             start_time = start_time,
                             updated_after = updated_after)
 
-  # Download data
-  tryCatch({
-    result <- readsdmx::read_sdmx(api_url)
-    data.table::setDT(result)
-    result[, id := dataset_id]
+  # Download data using CSV format via httr
+  result <- istat_fetch_data_csv(api_url, timeout = timeout, verbose = verbose)
 
-    if (verbose) {
-      message("Downloaded ", nrow(result), " rows for dataset ", dataset_id)
-    }
+  if (is.null(result)) {
+    warning("Failed to download data for dataset: ", dataset_id)
+    return(NULL)
+  }
 
-    return(result)
-  }, error = function(e) {
-    # Check if it's a timeout or connectivity issue
-    if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
-      warning("ISTAT API request timed out after ", timeout, " seconds. ",
-              "The server may be experiencing high load. Please try again later.")
-      return(NULL)
-    } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
-      warning("Cannot connect to ISTAT API. Please check your internet connection ",
-              "or try again later. Error: ", e$message)
-      return(NULL)
-    } else {
-      # For other errors, provide informative message but don't stop execution
-      warning("Failed to download data from ISTAT API: ", e$message,
-              ". Dataset: ", dataset_id)
-      return(NULL)
-    }
-  })
+  # Add dataset identifier column
+  result[, id := dataset_id]
+
+  if (verbose) {
+    message("Downloaded ", nrow(result), " rows for dataset ", dataset_id)
+  }
+
+  return(result)
 }
 
 #' Download Multiple Datasets
@@ -263,54 +236,20 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
                              filter = "ALL",
                              start_time = as.character(test_year))
 
-  api_status <- tryCatch({
-    # Set timeout and download method options
-    # Using libcurl ensures consistent behavior across platforms and avoids
-    # timeout issues with R's default download method on some systems
-    old_timeout <- getOption("timeout")
-    old_method <- getOption("download.file.method")
-    on.exit({
-      options(timeout = old_timeout)
-      if (!is.null(old_method)) {
-        options(download.file.method = old_method)
-      }
-    })
-    options(timeout = timeout)
-    if (capabilities("libcurl")) {
-      options(download.file.method = "libcurl")
-    }
+  # Test using CSV format via httr (same method as actual download functions)
+  result <- istat_fetch_data_csv(test_url, timeout = timeout, verbose = FALSE)
 
-    # Test using the same method as actual download functions
-    result <- readsdmx::read_sdmx(test_url)
-
-    # Check if we got valid data
-    if (is.null(result) || nrow(result) == 0) {
-      if (verbose) {
-        message("ISTAT API responded but returned no data for test dataset: ", test_dataset)
-      }
-      FALSE
-    } else {
-      # API is accessible and returning data
-      if (verbose) {
-        message("ISTAT API is accessible. Test returned ", nrow(result), " rows from dataset ", test_dataset)
-      }
-      TRUE
-    }
-
-  }, error = function(e) {
+  # Check if we got valid data
+  if (is.null(result) || nrow(result) == 0) {
     if (verbose) {
-      # Provide more specific error information
-      error_msg <- e$message
-      if (grepl("timeout|Timeout", error_msg, ignore.case = TRUE)) {
-        message("ISTAT API connectivity check failed: Connection timeout after ", timeout, " seconds")
-      } else if (grepl("resolve|connection", error_msg, ignore.case = TRUE)) {
-        message("ISTAT API connectivity check failed: Cannot connect to server (", error_msg, ")")
-      } else {
-        message("ISTAT API connectivity check failed: ", error_msg)
-      }
+      message("ISTAT API connectivity check failed: No data returned for test dataset ", test_dataset)
     }
-    FALSE
-  })
+    return(FALSE)
+  }
 
-  return(api_status)
+  # API is accessible and returning data
+  if (verbose) {
+    message("ISTAT API is accessible. Test returned ", nrow(result), " rows from dataset ", test_dataset)
+  }
+  return(TRUE)
 }

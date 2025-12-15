@@ -87,6 +87,13 @@ get_istat_config <- function() {
       timestamp_file = "meta/dataset_timestamps.json",
       rate_limit_delay = 12,  # seconds between API requests (5 req/min limit)
       check_timeout = 30      # timeout for update checks (shorter than downloads)
+    ),
+
+    # HTTP request configuration for CSV downloads
+    http = list(
+      accept_csv = "application/vnd.sdmx.data+csv;version=1.0.0",
+      accept_xml = "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+      user_agent = "istatlab R package (https://github.com/gmontaletti/istatlab)"
     )
   )
 }

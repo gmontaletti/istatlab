@@ -280,50 +280,32 @@ check_dataset_updated <- function(dataset_id, timestamp_file = NULL,
                                  start_time = "",
                                  updated_after = last_download)
 
-  # Set timeout
-  old_timeout <- getOption("timeout")
-  on.exit(options(timeout = old_timeout))
-  options(timeout = timeout)
+  # Query API for updates using CSV format via httr
+  result <- istat_fetch_data_csv(updated_url, timeout = timeout, verbose = FALSE)
 
-  # Query API for updates
-  tryCatch({
-    result <- readsdmx::read_sdmx(updated_url)
+  # Empty or NULL response means no updates; non-empty means has updates
+  has_updates <- !is.null(result) && nrow(result) > 0
 
-    # Empty response means no updates; non-empty means has updates
-    has_updates <- !is.null(result) && nrow(result) > 0
+  reason <- if (has_updates) {
+    "data_modified_since_last_download"
+  } else {
+    "no_updates_available"
+  }
 
-    reason <- if (has_updates) {
-      "data_modified_since_last_download"
+  if (verbose) {
+    if (has_updates) {
+      message("Updates available for dataset ", dataset_id)
     } else {
-      "no_updates_available"
+      message("No updates for dataset ", dataset_id)
     }
+  }
 
-    if (verbose) {
-      if (has_updates) {
-        message("Updates available for dataset ", dataset_id)
-      } else {
-        message("No updates for dataset ", dataset_id)
-      }
-    }
-
-    return(list(
-      dataset_id = dataset_id,
-      has_updates = has_updates,
-      last_download = last_download,
-      reason = reason
-    ))
-
-  }, error = function(e) {
-    # Handle API errors
-    warning("Failed to check updates for dataset ", dataset_id, ": ", e$message)
-
-    return(list(
-      dataset_id = dataset_id,
-      has_updates = FALSE,
-      last_download = last_download,
-      reason = paste0("api_error: ", e$message)
-    ))
-  })
+  return(list(
+    dataset_id = dataset_id,
+    has_updates = has_updates,
+    last_download = last_download,
+    reason = reason
+  ))
 }
 
 #' Check Multiple Datasets for Updates
