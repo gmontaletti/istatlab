@@ -54,10 +54,20 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
     message("Downloading dataset ", dataset_id, "...")
   }
 
-  # Set timeout option
+  # Set timeout and download method options
+  # Using libcurl ensures consistent behavior across platforms
   old_timeout <- getOption("timeout")
-  on.exit(options(timeout = old_timeout))
+  old_method <- getOption("download.file.method")
+  on.exit({
+    options(timeout = old_timeout)
+    if (!is.null(old_method)) {
+      options(download.file.method = old_method)
+    }
+  })
   options(timeout = timeout)
+  if (capabilities("libcurl")) {
+    options(download.file.method = "libcurl")
+  }
 
   # Construct API URL using centralized configuration
   api_url <- build_istat_url("data",
@@ -254,10 +264,21 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
                              start_time = as.character(test_year))
 
   api_status <- tryCatch({
-    # Set timeout option
+    # Set timeout and download method options
+    # Using libcurl ensures consistent behavior across platforms and avoids
+    # timeout issues with R's default download method on some systems
     old_timeout <- getOption("timeout")
-    on.exit(options(timeout = old_timeout))
+    old_method <- getOption("download.file.method")
+    on.exit({
+      options(timeout = old_timeout)
+      if (!is.null(old_method)) {
+        options(download.file.method = old_method)
+      }
+    })
     options(timeout = timeout)
+    if (capabilities("libcurl")) {
+      options(download.file.method = "libcurl")
+    }
 
     # Test using the same method as actual download functions
     result <- readsdmx::read_sdmx(test_url)
