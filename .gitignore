@@ -73,3 +73,6 @@ src/*.dll
 
 # Claude Code directory should not be moved during cleanup
 .claude/
+# Super Claude Kit (generated at runtime)
+.claude/**
+CLAUDE.md
