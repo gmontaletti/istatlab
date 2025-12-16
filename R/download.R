@@ -11,9 +11,12 @@
 #' @param verbose Logical indicating whether to print status messages. Default is TRUE
 #' @param updated_after POSIXct timestamp. If provided, only data updated since this time
 #'   will be retrieved. Used for incremental update detection.
+#' @param return_result Logical indicating whether to return full istat_result object
+#'   instead of just the data.table. Default is FALSE for backward compatibility.
 #'
 #' @return A data.table containing the downloaded data with an additional 'id' column,
-#'   or NULL if the download fails
+#'   or NULL if the download fails. If return_result = TRUE, returns an istat_result
+#'   object with additional metadata (exit_code, md5, message, is_timeout).
 #' @export
 #'
 #' @examples
@@ -30,10 +33,16 @@
 #' # Download only data updated since a specific timestamp
 #' timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 #' data <- download_istat_data("534_50", updated_after = timestamp)
+#'
+#' # Get full result with metadata
+#' result <- download_istat_data("534_50", return_result = TRUE)
+#' if (result$success) {
+#'   print(paste("Downloaded", nrow(result$data), "rows, MD5:", result$md5))
+#' }
 #' }
 download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
                                 timeout = NULL, verbose = TRUE,
-                                updated_after = NULL) {
+                                updated_after = NULL, return_result = FALSE) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -50,9 +59,7 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
     stop("dataset_id must be a single character string")
   }
 
-  if (verbose) {
-    message("Downloading dataset ", dataset_id, "...")
-  }
+  istat_log(paste("Downloading dataset", dataset_id), "INFO", verbose)
 
   # Construct API URL using centralized configuration
   api_url <- build_istat_url("data",
@@ -61,22 +68,81 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
                             start_time = start_time,
                             updated_after = updated_after)
 
-  # Download data using CSV format via httr
-  result <- istat_fetch_data_csv(api_url, timeout = timeout, verbose = verbose)
+  # HTTP request using new transport layer
+  http_result <- http_get(api_url, timeout = timeout, verbose = verbose)
 
-  if (is.null(result)) {
-    warning("Failed to download data for dataset: ", dataset_id)
+  # Process response using new processor
+  result <- process_api_response(http_result, verbose)
+
+  # Handle failure
+  if (!result$success) {
+    warning("Failed to download data for dataset: ", dataset_id, " - ", result$message)
+    if (return_result) return(result)
     return(NULL)
   }
 
   # Add dataset identifier column
-  result[, id := dataset_id]
+  result$data[, id := dataset_id]
 
-  if (verbose) {
-    message("Downloaded ", nrow(result), " rows for dataset ", dataset_id)
+  md5_info <- if (!is.na(result$md5)) paste(" (MD5:", substr(result$md5, 1, 8), "...)") else ""
+  istat_log(paste("Downloaded", nrow(result$data), "rows for dataset", dataset_id, md5_info),
+            "INFO", verbose)
+
+  # Return based on preference
+  if (return_result) {
+    return(result)
   }
 
-  return(result)
+  result$data
+}
+
+#' Download Data with Full Result Information
+#'
+#' Downloads data and returns structured result with exit code and checksum.
+#' Useful for automated pipelines and batch processing.
+#'
+#' @inheritParams download_istat_data
+#'
+#' @return An istat_result object with components:
+#'   \itemize{
+#'     \item{success}: Logical indicating if download succeeded
+#'     \item{data}: data.table with downloaded data (or NULL)
+#'     \item{exit_code}: Integer (0=success, 1=error, 2=timeout)
+#'     \item{message}: Character message describing result
+#'     \item{md5}: MD5 checksum of data (or NA if digest not available)
+#'     \item{is_timeout}: Logical indicating timeout failure
+#'     \item{timestamp}: POSIXct timestamp when result was created
+#'   }
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Download with full result information
+#' result <- download_istat_data_full("534_50", start_time = "2024")
+#'
+#' if (result$success) {
+#'   cat("Downloaded", nrow(result$data), "rows\n")
+#'   cat("MD5:", result$md5, "\n")
+#' } else {
+#'   cat("Download failed:", result$message, "\n")
+#'   cat("Exit code:", result$exit_code, "\n")
+#'   if (result$is_timeout) {
+#'     cat("Failure was due to timeout\n")
+#'   }
+#' }
+#' }
+download_istat_data_full <- function(dataset_id, filter = NULL, start_time = "",
+                                     timeout = NULL, verbose = TRUE,
+                                     updated_after = NULL) {
+  download_istat_data(
+    dataset_id = dataset_id,
+    filter = filter,
+    start_time = start_time,
+    timeout = timeout,
+    verbose = verbose,
+    updated_after = updated_after,
+    return_result = TRUE
+  )
 }
 
 #' Download Multiple Datasets
@@ -221,9 +287,7 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
     stop("test_dataset must be a single character string")
   }
 
-  if (verbose) {
-    message("Checking ISTAT API connectivity...")
-  }
+  istat_log("Checking ISTAT API connectivity...", "INFO", verbose)
 
   # Create a lightweight test URL - get only recent data with minimal filter
   # Use a recent year to minimize data transfer
@@ -236,20 +300,23 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
                              filter = "ALL",
                              start_time = as.character(test_year))
 
-  # Test using CSV format via httr (same method as actual download functions)
-  result <- istat_fetch_data_csv(test_url, timeout = timeout, verbose = FALSE)
+  # Test using new HTTP transport layer
+  http_result <- http_get(test_url, timeout = timeout, verbose = FALSE)
+  result <- process_api_response(http_result, verbose = FALSE)
 
   # Check if we got valid data
-  if (is.null(result) || nrow(result) == 0) {
-    if (verbose) {
-      message("ISTAT API connectivity check failed: No data returned for test dataset ", test_dataset)
-    }
+  if (!result$success || is.null(result$data) || nrow(result$data) == 0) {
+    istat_log(
+      paste("ISTAT API connectivity check failed:", result$message),
+      "WARNING", verbose
+    )
     return(FALSE)
   }
 
   # API is accessible and returning data
-  if (verbose) {
-    message("ISTAT API is accessible. Test returned ", nrow(result), " rows from dataset ", test_dataset)
-  }
+  istat_log(
+    paste("ISTAT API is accessible. Test returned", nrow(result$data), "rows from dataset", test_dataset),
+    "INFO", verbose
+  )
   return(TRUE)
 }

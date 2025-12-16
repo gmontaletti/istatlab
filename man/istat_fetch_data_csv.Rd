@@ -17,8 +17,7 @@ istat_fetch_data_csv(url, timeout = 120, verbose = TRUE)
 data.table with normalized column names or NULL on failure
 }
 \description{
-Internal function that fetches data from ISTAT API using CSV format
-and returns a data.table with normalized column names. Uses httr as primary
-method with system curl as fallback for better reliability.
+\strong{Deprecated}: This function is deprecated and will be removed in version 1.0.0.
+Use \code{\link[=http_get]{http_get()}} followed by \code{\link[=process_api_response]{process_api_response()}} instead.
 }
 \keyword{internal}

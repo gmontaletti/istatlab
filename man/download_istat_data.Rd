@@ -10,7 +10,8 @@ download_istat_data(
   start_time = "",
   timeout = NULL,
   verbose = TRUE,
-  updated_after = NULL
+  updated_after = NULL,
+  return_result = FALSE
 )
 }
 \arguments{
@@ -27,10 +28,14 @@ If empty, downloads all available data}
 
 \item{updated_after}{POSIXct timestamp. If provided, only data updated since this time
 will be retrieved. Used for incremental update detection.}
+
+\item{return_result}{Logical indicating whether to return full istat_result object
+instead of just the data.table. Default is FALSE for backward compatibility.}
 }
 \value{
 A data.table containing the downloaded data with an additional 'id' column,
-or NULL if the download fails
+or NULL if the download fails. If return_result = TRUE, returns an istat_result
+object with additional metadata (exit_code, md5, message, is_timeout).
 }
 \description{
 Downloads statistical data from the ISTAT (Istituto Nazionale di Statistica)
@@ -50,5 +55,11 @@ data <- download_istat_data("534_50", filter = "M..", start_time = "2020")
 # Download only data updated since a specific timestamp
 timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 data <- download_istat_data("534_50", updated_after = timestamp)
+
+# Get full result with metadata
+result <- download_istat_data("534_50", return_result = TRUE)
+if (result$success) {
+  print(paste("Downloaded", nrow(result$data), "rows, MD5:", result$md5))
+}
 }
 }

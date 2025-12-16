@@ -19,6 +19,7 @@ istat_http_get(url, timeout = 120, accept = NULL, verbose = TRUE)
 httr response object or NULL on failure
 }
 \description{
-Internal function that performs HTTP GET requests with proper Accept headers.
+\strong{Deprecated}: This function is deprecated and will be removed in version 1.0.0.
+Use \code{\link[=http_get]{http_get()}} from http_transport.R instead.
 }
 \keyword{internal}

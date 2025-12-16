@@ -1,8 +1,8 @@
 Package: istatlab
 Type: Package
 Title: Download and Analyze Italian Labour Market Data from ISTAT
-Version: 0.1.5
-Date: 2025-12-12
+Version: 0.2.0
+Date: 2025-12-16
 Author: Giampaolo Montaletti [aut, cre] (0009-0002-5327-1122)
 Maintainer: Giampaolo Montaletti <giampaolo.montaletti@gmail.com>
 Authors@R: 
@@ -39,6 +39,7 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    RJSDMX
+    RJSDMX,
+    digest
 Config/testthat/edition: 3
 VignetteBuilder: knitr

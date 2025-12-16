@@ -19,6 +19,7 @@ istat_fetch_with_curl(url, timeout = 120, accept, verbose = TRUE)
 Character string with CSV content or NULL on failure
 }
 \description{
-Fallback function using system curl for downloads when httr has issues.
+\strong{Deprecated}: This function is deprecated and will be removed in version 1.0.0.
+Use \code{\link[=http_get_curl]{http_get_curl()}} from http_transport.R instead.
 }
 \keyword{internal}
