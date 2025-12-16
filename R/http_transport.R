@@ -147,19 +147,32 @@ http_get_curl <- function(url, timeout, accept, verbose) {
 
   result <- tryCatch({
     output <- system(cmd, intern = TRUE, ignore.stderr = TRUE)
+    # system() with intern=TRUE stores exit code in status attribute
+    curl_exit <- attr(output, "status")
+    if (is.null(curl_exit)) curl_exit <- 0L
     status_code <- as.integer(output[length(output)])
-    list(exit_status = 0, status_code = status_code)
+    list(exit_status = curl_exit, status_code = status_code)
   }, error = function(e) {
-    list(exit_status = 1, error = e$message)
+    list(exit_status = 1L, error = e$message)
   })
 
-  # Check for system error
- if (result$exit_status != 0) {
+  # Check for curl error (exit status != 0)
+  # Common curl exit codes: 6=DNS error, 7=connection refused, 28=timeout
+  if (!is.null(result$exit_status) && result$exit_status != 0) {
+    error_msg <- switch(as.character(result$exit_status),
+      "6" = "Could not resolve host",
+      "7" = "Connection refused",
+      "28" = "Connection timed out",
+      "35" = "SSL connection error",
+      "52" = "Empty server response",
+      "56" = "Network error during receive",
+      paste("curl error:", result$exit_status)
+    )
     return(list(
       success = FALSE,
       content = NULL,
       status_code = NA_integer_,
-      error = if (!is.null(result$error)) result$error else "curl command failed"
+      error = error_msg
     ))
   }
 

@@ -198,7 +198,7 @@ classify_api_error <- function(error_message) {
     list(
       type = "http",
       exit_code = 1L,
-      message = paste("HTTP error:", error_message)
+      message = error_message  # Don't add prefix, it's already in the message
     )
   } else {
     list(

@@ -1,3 +1,11 @@
+# istatlab 0.2.1
+
+## Maintenance Release
+
+* Enhanced error handling and HTTP transport layer implementation
+* Improved robustness and code quality in download architecture
+* Updated dependencies and internal refactoring for better maintainability
+
 # istatlab 0.2.0
 
 ## New Features
