@@ -18,10 +18,13 @@ download_codelists(
 \item{cache_dir}{Character string specifying the directory for caching codelists}
 }
 \value{
-A named list of codelists
+A named list of codelists keyed by dataset ID (e.g., "X534_50"),
+where each element is a data.table with codelist information
 }
 \description{
-Downloads codelists for ISTAT datasets.
+Downloads codelists for ISTAT datasets using a deduplicated cache structure.
+Codelists are stored by their ID (e.g., CL_FREQ) rather than by dataset,
+reducing redundant storage since many codelists are shared across datasets.
 }
 \examples{
 \dontrun{

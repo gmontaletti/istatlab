@@ -206,7 +206,6 @@ print(breaks)
 Common issues and solutions:
 
 - **Connection timeouts**: Increase timeout values or check internet connection
-- **Java dependency issues**: Install Java for RJSDMX functionality (optional)
 - **Memory issues**: Process data in chunks for very large datasets
 - **Missing labels**: Ensure codelists are downloaded and cached
 

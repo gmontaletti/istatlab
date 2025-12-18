@@ -4,13 +4,13 @@
 \name{istatlab-package}
 \alias{istatlab-package}
 \alias{istatlab}
-\title{istatlab: Download and Analyze Italian Labour Market Data from ISTAT}
+\title{istatlab: Download and Process Italian Labour Market Data from ISTAT}
 \description{
-A comprehensive toolkit for downloading, processing, analyzing, and visualizing Italian labour market data from ISTAT (Istituto Nazionale di Statistica) through their SDMX API. The package provides functions for data retrieval, metadata handling, time series analysis, forecasting, and publication-ready visualizations using ggplot2.
+A toolkit for downloading and processing Italian labour market data from ISTAT (Istituto Nazionale di Statistica) through their SDMX API. The package provides functions for data retrieval, metadata handling, and data processing with automatic label application.
 
-The istatlab package provides a comprehensive toolkit for downloading,
-processing, analyzing, and visualizing Italian labour market data from
-ISTAT (Istituto Nazionale di Statistica) through their SDMX API.
+The istatlab package provides a toolkit for downloading and processing
+Italian labour market data from ISTAT (Istituto Nazionale di Statistica)
+through their SDMX API.
 }
 \section{Main functions}{
 
@@ -27,17 +27,6 @@ ISTAT (Istituto Nazionale di Statistica) through their SDMX API.
 \code{\link{apply_labels}()}, \code{\link{filter_by_time}()},
 \code{\link{validate_istat_data}()}
 }
-\item{Analysis:}{
-\code{\link{analyze_trends}()}, \code{\link{calculate_growth_rates}()},
-\code{\link{calculate_summary_stats}()}, \code{\link{detect_structural_breaks}()}
-}
-\item{Forecasting:}{
-\code{\link{forecast_series}()}, \code{\link{evaluate_forecast_accuracy}()}
-}
-\item{Visualization:}{
-\code{\link{create_time_series_plot}()}, \code{\link{create_forecast_plot}()},
-\code{\link{create_comparison_plot}()}, \code{\link{create_dashboard_plot}()}
-}
 }
 }
 
@@ -48,9 +37,6 @@ A typical workflow with istatlab involves:
 \item Download metadata and identify datasets of interest
 \item Download the actual data using dataset IDs
 \item Process and label the data
-\item Perform analysis (trends, growth rates, structural breaks)
-\item Generate forecasts if needed
-\item Create publication-ready visualizations
 }
 }
 

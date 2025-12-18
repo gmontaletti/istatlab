@@ -149,14 +149,10 @@ The package automatically handles:
 
 Core dependencies:
 - `data.table`: Fast data manipulation
-- `readsdmx`: SDMX data reading
-- `ggplot2`: Visualization
+- `httr`: HTTP requests
+- `jsonlite`: JSON parsing
+- `readsdmx`: SDMX data parsing
 - `zoo`: Time series handling
-
-Optional dependencies:
-- `forecast`: Advanced forecasting methods
-- `RJSDMX`: Additional SDMX functionality (requires Java)
-- `patchwork`: Multi-panel plot layouts
 
 ## Contributing
 

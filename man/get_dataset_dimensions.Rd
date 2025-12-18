@@ -10,14 +10,17 @@ get_dataset_dimensions(dataset_id)
 \item{dataset_id}{Character string specifying the dataset ID}
 }
 \value{
-A list of dimensions for the dataset
+A character vector of dimension/codelist names for the dataset,
+or NULL if the dataset is not found or an error occurs
 }
 \description{
-Retrieves the dimensions for a specific ISTAT dataset.
+Retrieves the dimension names (codelists) for a specific ISTAT dataset
+by querying the datastructure endpoint.
 }
 \examples{
 \dontrun{
 # Get dimensions for a dataset
-dims <- get_dataset_dimensions("150_908")
+dims <- get_dataset_dimensions("534_50")
+# Returns: c("ATECO_2007", "BASE_YEAR", "CORREZ", "FREQ", ...)
 }
 }

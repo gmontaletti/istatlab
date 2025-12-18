@@ -13,10 +13,15 @@
 #'   will be retrieved. Used for incremental update detection.
 #' @param return_result Logical indicating whether to return full istat_result object
 #'   instead of just the data.table. Default is FALSE for backward compatibility.
+#' @param check_update Logical indicating whether to check ISTAT's LAST_UPDATE timestamp
+#'   before downloading. If TRUE and data hasn't changed since last download, returns NULL
+#'   with a message. Default is FALSE for backward compatibility.
+#' @param cache_dir Character string specifying directory for download log cache.
+#'   Default is "meta"
 #'
 #' @return A data.table containing the downloaded data with an additional 'id' column,
-#'   or NULL if the download fails. If return_result = TRUE, returns an istat_result
-#'   object with additional metadata (exit_code, md5, message, is_timeout).
+#'   or NULL if the download fails or data is unchanged. If return_result = TRUE, returns
+#'   an istat_result object with additional metadata (exit_code, md5, message, is_timeout).
 #' @export
 #'
 #' @examples
@@ -39,10 +44,15 @@
 #' if (result$success) {
 #'   print(paste("Downloaded", nrow(result$data), "rows, MD5:", result$md5))
 #' }
+#'
+#' # Check if data has been updated before downloading
+#' data <- download_istat_data("534_50", check_update = TRUE)
+#' # Returns NULL with message if data unchanged since last download
 #' }
 download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
                                 timeout = NULL, verbose = TRUE,
-                                updated_after = NULL, return_result = FALSE) {
+                                updated_after = NULL, return_result = FALSE,
+                                check_update = FALSE, cache_dir = "meta") {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -57,6 +67,27 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   # Input validation
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
+  }
+
+  # Smart update check: compare ISTAT's LAST_UPDATE with our download log
+  if (check_update) {
+    update_check <- check_data_update_needed(dataset_id, cache_dir, verbose)
+    if (!update_check$needs_update) {
+      istat_log(paste("Data unchanged since", update_check$last_download,
+                     "(ISTAT last update:", update_check$istat_last_update, ")"),
+               "INFO", verbose)
+      if (return_result) {
+        return(create_download_result(
+          success = TRUE,
+          data = NULL,
+          exit_code = 0L,
+          message = paste("Data unchanged since", update_check$last_download),
+          md5 = NA_character_,
+          is_timeout = FALSE
+        ))
+      }
+      return(NULL)
+    }
   }
 
   istat_log(paste("Downloading dataset", dataset_id), "INFO", verbose)
@@ -87,6 +118,11 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   md5_info <- if (!is.na(result$md5)) paste(" (MD5:", substr(result$md5, 1, 8), "...)") else ""
   istat_log(paste("Downloaded", nrow(result$data), "rows for dataset", dataset_id, md5_info),
             "INFO", verbose)
+
+  # Update download log with ISTAT's LAST_UPDATE timestamp
+  if (check_update) {
+    update_data_download_log(dataset_id, cache_dir)
+  }
 
   # Return based on preference
   if (return_result) {
@@ -289,18 +325,14 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
 
   istat_log("Checking ISTAT API connectivity...", "INFO", verbose)
 
-  # Create a lightweight test URL - get only recent data with minimal filter
-  # Use a recent year to minimize data transfer
-  current_year <- as.numeric(format(Sys.Date(), "%Y"))
-  test_year <- current_year - 1  # Use previous year to ensure data exists
-
-  # Build test URL using centralized configuration
+  # Build lightweight test URL using lastNObservations=1 to minimize traffic
+  # Only need to verify API responds with valid data, not download full dataset
   test_url <- build_istat_url("data",
                              dataset_id = test_dataset,
                              filter = "ALL",
-                             start_time = as.character(test_year))
+                             lastNObservations = 1)
 
-  # Test using new HTTP transport layer
+  # Test using HTTP transport layer
   http_result <- http_get(test_url, timeout = timeout, verbose = FALSE)
   result <- process_api_response(http_result, verbose = FALSE)
 
@@ -319,4 +351,225 @@ check_istat_api <- function(timeout = NULL, test_dataset = NULL, verbose = TRUE,
     "INFO", verbose
   )
   return(TRUE)
+}
+
+# 1. Smart Update Check Helpers -----
+
+#' Check if Data Update is Needed
+#'
+#' Compares ISTAT's LAST_UPDATE timestamp with our download log to determine
+#' if data needs to be re-downloaded.
+#'
+#' @param dataset_id Character string specifying the dataset ID
+#' @param cache_dir Character string specifying cache directory
+#' @param verbose Logical for status messages
+#'
+#' @return List with needs_update (logical), istat_last_update, last_download timestamps
+#' @keywords internal
+check_data_update_needed <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
+
+  # Get current LAST_UPDATE from ISTAT API
+  istat_last_update <- get_dataset_last_update(dataset_id)
+
+  if (is.null(istat_last_update)) {
+    # Can't determine last update, proceed with download
+    return(list(
+      needs_update = TRUE,
+      istat_last_update = NA,
+      last_download = NA
+    ))
+  }
+
+  # Load download log
+  config <- get_istat_config()
+  log_file <- file.path(cache_dir, config$cache$data_download_log_file)
+
+  if (!file.exists(log_file)) {
+    # No log file, first download
+    return(list(
+      needs_update = TRUE,
+      istat_last_update = istat_last_update,
+      last_download = NA
+    ))
+  }
+
+  download_log <- readRDS(log_file)
+
+  if (!dataset_id %in% names(download_log)) {
+    # Dataset not in log, first download
+    return(list(
+      needs_update = TRUE,
+      istat_last_update = istat_last_update,
+      last_download = NA
+    ))
+  }
+
+  # Compare timestamps
+  logged_istat_update <- download_log[[dataset_id]]$istat_last_update
+  last_download <- download_log[[dataset_id]]$downloaded_at
+
+  if (is.null(logged_istat_update) || is.na(logged_istat_update)) {
+    # No stored ISTAT timestamp, need to download
+    return(list(
+      needs_update = TRUE,
+      istat_last_update = istat_last_update,
+      last_download = last_download
+    ))
+  }
+
+  # Check if ISTAT has updated since our last download
+  needs_update <- istat_last_update > logged_istat_update
+
+  list(
+    needs_update = needs_update,
+    istat_last_update = istat_last_update,
+    last_download = last_download
+  )
+}
+
+#' Update Data Download Log
+#'
+#' Records the download timestamp and ISTAT's LAST_UPDATE for a dataset.
+#'
+#' @param dataset_id Character string specifying the dataset ID
+#' @param cache_dir Character string specifying cache directory
+#'
+#' @return Invisible NULL
+#' @keywords internal
+update_data_download_log <- function(dataset_id, cache_dir = "meta") {
+
+  # Get current LAST_UPDATE from ISTAT
+  istat_last_update <- get_dataset_last_update(dataset_id)
+
+  config <- get_istat_config()
+  log_file <- file.path(cache_dir, config$cache$data_download_log_file)
+
+  # Load existing log or create new
+  download_log <- list()
+  if (file.exists(log_file) && file.size(log_file) > 0) {
+    download_log <- tryCatch(readRDS(log_file), error = function(e) list())
+  }
+
+  # Update entry for this dataset
+  download_log[[dataset_id]] <- list(
+    downloaded_at = Sys.time(),
+    istat_last_update = istat_last_update
+  )
+
+  # Ensure cache directory exists
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE)
+  }
+
+  # Save updated log
+  saveRDS(download_log, log_file)
+
+  invisible(NULL)
+}
+
+#' Download ISTAT Data Split by Frequency
+#'
+#' Downloads data for a dataset, automatically splitting by frequency if
+#' multiple frequencies (A, Q, M) exist. Uses the availableconstraint endpoint
+#' to detect available frequencies, then makes separate downloads for each.
+#'
+#' @inheritParams download_istat_data
+#'
+#' @return Named list of data.tables by frequency (e.g., list(A = dt, Q = dt)).
+#'   Each element contains data for a single frequency. If the dataset has only
+#'   one frequency, returns a list with a single element.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Download with automatic frequency split
+#' data_list <- download_istat_data_by_freq("151_914", start_time = "2020")
+#'
+#' # Access by frequency
+#' annual_data <- data_list$A
+#' quarterly_data <- data_list$Q
+#'
+#' # Single-frequency dataset
+#' job_vacancies <- download_istat_data_by_freq("534_50", start_time = "2024")
+#' monthly_data <- job_vacancies$M
+#' }
+download_istat_data_by_freq <- function(dataset_id, filter = NULL,
+                                         start_time = "", timeout = NULL,
+                                         verbose = TRUE) {
+  # Get default values from centralized configuration
+  config <- get_istat_config()
+
+  if (is.null(timeout)) {
+    timeout <- config$defaults$timeout
+  }
+
+  # Input validation
+  if (!is.character(dataset_id) || length(dataset_id) != 1) {
+    stop("dataset_id must be a single character string")
+  }
+
+  # Get available frequencies
+  istat_log(paste("Checking available frequencies for", dataset_id), "INFO", verbose)
+  freqs <- get_available_frequencies(dataset_id)
+
+  if (is.null(freqs) || length(freqs) == 0) {
+    # Fallback to single download without frequency filter
+    istat_log("Could not determine frequencies, downloading all data", "WARNING", verbose)
+    data <- download_istat_data(dataset_id, filter, start_time, timeout, verbose)
+    return(list(ALL = data))
+  }
+
+  istat_log(paste("Found frequencies:", paste(freqs, collapse = ", ")), "INFO", verbose)
+
+  if (length(freqs) == 1) {
+    # Single frequency - regular download, no need to filter by freq
+    data <- download_istat_data(dataset_id, filter, start_time, timeout, verbose)
+    result <- list()
+    result[[freqs]] <- data
+    return(result)
+  }
+
+  # Get dimension count to build correct filter
+  # Need to construct filter with correct number of dots
+  dims <- get_dataset_dimensions(dataset_id)
+  n_dims <- if (!is.null(dims)) length(dims) else 8  # fallback to common count
+
+  # Multiple frequencies - split downloads
+  result <- list()
+  for (freq in freqs) {
+    # Build filter with frequency prefix
+    # SDMX filter syntax: {FREQ}.{dim2}.{dim3}... (dot-separated, first is FREQ)
+    freq_filter <- if (is.null(filter) || filter == "ALL") {
+      # FREQ followed by n-1 dots for remaining dimensions (all wildcards)
+      paste0(freq, paste(rep(".", n_dims - 1), collapse = ""))
+    } else {
+      # Replace first dimension with freq
+      paste0(freq, ".", sub("^[^.]*\\.?", "", filter))
+    }
+
+    istat_log(paste("Downloading", freq, "data for", dataset_id), "INFO", verbose)
+
+    data <- tryCatch({
+      download_istat_data(dataset_id, filter = freq_filter,
+                          start_time = start_time, timeout = timeout,
+                          verbose = verbose)
+    }, error = function(e) {
+      warning("Failed to download ", freq, " data for ", dataset_id, ": ", e$message)
+      NULL
+    })
+
+    if (!is.null(data) && nrow(data) > 0) {
+      result[[freq]] <- data
+    }
+  }
+
+  if (length(result) == 0) {
+    warning("No data downloaded for any frequency")
+    return(NULL)
+  }
+
+  istat_log(paste("Downloaded", length(result), "frequency dataset(s):",
+                  paste(names(result), collapse = ", ")), "INFO", verbose)
+
+  return(result)
 }

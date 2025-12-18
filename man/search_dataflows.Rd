@@ -6,16 +6,17 @@
 \usage{
 search_dataflows(
   keywords,
-  fields = c("name", "description"),
+  fields = c("Name.it", "Name.en", "id"),
   ignore_case = TRUE
 )
 }
 \arguments{
 \item{keywords}{Character vector of search terms}
 
-\item{fields}{Character vector of fields to search in ("name", "description", "id")}
+\item{fields}{Character vector of fields to search in. Default searches
+Name.it (Italian), Name.en (English), and id}
 
-\item{ignore_case}{Logical indicating case-insensitive search}
+\item{ignore_case}{Logical indicating case-insensitive search. Default TRUE}
 }
 \value{
 A filtered data.table of matching dataflows
@@ -25,10 +26,16 @@ Searches available dataflows using keywords in Italian and English.
 }
 \examples{
 \dontrun{
-# Search for employment-related datasets
+# Search for employment-related datasets (Italian)
+lavoro_datasets <- search_dataflows("lavoro")
+
+# Search for employment-related datasets (multiple terms)
 employment_datasets <- search_dataflows(c("employment", "lavoro", "occupazione"))
 
 # Search unemployment datasets
 unemployment_datasets <- search_dataflows(c("unemployment", "disoccupazione"))
+
+# Search only in dataset IDs
+datasets_534 <- search_dataflows("534", fields = "id")
 }
 }

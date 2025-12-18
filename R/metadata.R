@@ -742,3 +742,81 @@ get_dataset_last_update <- function(dataset_id, timeout = 30) {
   })
 }
 
+#' Get Available Frequencies for Dataset
+#'
+#' Queries the availableconstraint endpoint to determine which frequencies
+#' (A=Annual, Q=Quarterly, M=Monthly) are available for a dataset.
+#'
+#' @param dataset_id Character string specifying dataset ID
+#' @param timeout Numeric timeout in seconds. Default 30
+#'
+#' @return Character vector of available frequency codes (e.g., c("A", "Q")),
+#'   or NULL if request fails
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Get available frequencies for unemployment dataset
+#' freqs <- get_available_frequencies("151_914")
+#' # Returns: c("A", "Q")
+#' }
+get_available_frequencies <- function(dataset_id, timeout = 30) {
+
+  if (!is.character(dataset_id) || length(dataset_id) != 1) {
+    stop("dataset_id must be a single character string")
+  }
+
+  config <- get_istat_config()
+  url <- build_istat_url("availableconstraint", dataset_id = dataset_id)
+
+  tryCatch({
+    # Request XML format (JSON returns empty data for this endpoint)
+    response <- httr::GET(
+      url,
+      httr::add_headers(Accept = "application/xml"),
+      httr::timeout(timeout)
+    )
+
+    if (httr::status_code(response) != 200) {
+      warning("Failed to get constraints for ", dataset_id, ": HTTP ", httr::status_code(response))
+      return(NULL)
+    }
+
+    xml_content <- httr::content(response, as = "text", encoding = "UTF-8")
+
+    # Parse XML to extract FREQ values
+    # Look for pattern: <common:KeyValue id="FREQ">...<common:Value>X</common:Value>...</common:KeyValue>
+    # Use (?s) flag to make . match newlines
+    freq_pattern <- '(?s)<common:KeyValue id="FREQ">(.*?)</common:KeyValue>'
+    freq_match <- regmatches(xml_content, regexpr(freq_pattern, xml_content, perl = TRUE))
+
+    if (length(freq_match) == 0 || nchar(freq_match) == 0) {
+      warning("FREQ dimension not found in constraints for ", dataset_id)
+      return(NULL)
+    }
+
+    # Extract individual values
+    value_pattern <- '<common:Value>([^<]+)</common:Value>'
+    values <- regmatches(freq_match, gregexpr(value_pattern, freq_match, perl = TRUE))[[1]]
+
+    # Clean up the values - handle whitespace
+    freqs <- gsub('<common:Value>|</common:Value>', '', values)
+    freqs <- trimws(freqs)
+
+    if (length(freqs) == 0) {
+      warning("No FREQ values found for ", dataset_id)
+      return(NULL)
+    }
+
+    return(freqs)
+
+  }, error = function(e) {
+    if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
+      warning("Request for available frequencies timed out for ", dataset_id)
+    } else {
+      warning("Failed to get available frequencies for ", dataset_id, ": ", e$message)
+    }
+    return(NULL)
+  })
+}
+

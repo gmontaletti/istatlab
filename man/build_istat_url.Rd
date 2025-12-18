@@ -10,12 +10,13 @@ build_istat_url(
   filter = "ALL",
   start_time = NULL,
   dsd_ref = NULL,
-  updated_after = NULL
+  updated_after = NULL,
+  lastNObservations = NULL
 )
 }
 \arguments{
 \item{endpoint}{Character string specifying the endpoint type
-("data", "dataflow", "datastructure", "codelist")}
+("data", "dataflow", "datastructure", "codelist", "availableconstraint")}
 
 \item{dataset_id}{Character string specifying dataset ID (required for data endpoint)}
 
@@ -27,6 +28,9 @@ build_istat_url(
 
 \item{updated_after}{POSIXct timestamp. If provided, the URL will include the updatedAfter
 parameter to retrieve only data changed since this time. Used for incremental update detection.}
+
+\item{lastNObservations}{Integer. If provided, limits the response to the last N observations
+per time series. Useful for reducing data transfer in connectivity checks.}
 }
 \value{
 Character string containing the constructed API URL
@@ -48,5 +52,8 @@ url <- build_istat_url("datastructure", dsd_ref = "DSD_534_50")
 # Build data URL with update detection
 timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 url <- build_istat_url("data", dataset_id = "534_50", updated_after = timestamp)
+
+# Build lightweight URL for connectivity check
+url <- build_istat_url("data", dataset_id = "534_50", lastNObservations = 1)
 }
 }

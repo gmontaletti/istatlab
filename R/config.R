@@ -15,11 +15,8 @@ NULL
 #'   \itemize{
 #'     \item{base_url}: Base URL for ISTAT SDMX web service
 #'     \item{endpoints}: List of available API endpoints
-#'     \item{provider}: Service provider configuration for rsdmx
 #'     \item{defaults}: Default settings for API calls
-#'     \item{cache}: Cache configuration with TTL settings for different data types
 #'     \item{dataset_categories}: Organized dataset categories
-#'     \item{update_tracking}: Configuration for dataset update detection using updatedAfter parameter
 #'   }
 #' @export
 #'
@@ -50,20 +47,12 @@ get_istat_config <- function() {
       codelist = "https://esploradati.istat.it/SDMXWS/rest/codelist",
       
       # Registry endpoint (SDMX v2.1)
-      registry = "https://esploradati.istat.it/SDMXWS/rest/registry"
+      registry = "https://esploradati.istat.it/SDMXWS/rest/registry",
+
+      # Available constraint endpoint (for dimension values)
+      availableconstraint = "https://esploradati.istat.it/SDMXWS/rest/availableconstraint"
     ),
-    
-    # Service provider configuration for rsdmx
-    provider = list(
-      agencyId = "ISTAT2",
-      name = "Istituto nazionale di statistica (Italia)",
-      scale = "national",
-      country = "ITA",
-      regUrl = "https://esploradati.istat.it/SDMXWS/rest",
-      repoUrl = "https://esploradati.istat.it/SDMXWS/rest",
-      compliant = TRUE
-    ),
-    
+
     # Default settings
     defaults = list(
       timeout = 240,
@@ -81,19 +70,19 @@ get_istat_config <- function() {
       labour_force = c("152_914", "152_915")           # Labour force statistics
     ),
 
-    # Update tracking configuration
-    update_tracking = list(
-      enabled = TRUE,
-      timestamp_file = "meta/dataset_timestamps.json",
-      rate_limit_delay = 12,  # seconds between API requests (5 req/min limit)
-      check_timeout = 30      # timeout for update checks (shorter than downloads)
-    ),
-
     # HTTP request configuration for CSV downloads
     http = list(
       accept_csv = "application/vnd.sdmx.data+csv;version=1.0.0",
       accept_xml = "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
       user_agent = "istatlab R package (https://github.com/gmontaletti/istatlab)"
+    ),
+
+    # Cache file configuration
+    cache = list(
+      codelists_file = "codelists.rds",
+      dataset_map_file = "dataset_codelist_map.rds",
+      metadata_file = "flussi_istat.rds",
+      data_download_log_file = "data_download_log.rds"
     )
   )
 }
@@ -103,13 +92,15 @@ get_istat_config <- function() {
 #' Constructs API URLs for different ISTAT SDMX endpoints using centralized configuration.
 #'
 #' @param endpoint Character string specifying the endpoint type
-#'   ("data", "dataflow", "datastructure", "codelist")
+#'   ("data", "dataflow", "datastructure", "codelist", "availableconstraint")
 #' @param dataset_id Character string specifying dataset ID (required for data endpoint)
 #' @param filter Character string specifying data filters (for data endpoint)
 #' @param start_time Character string specifying start period (for data endpoint)
 #' @param dsd_ref Character string specifying data structure reference (for datastructure)
 #' @param updated_after POSIXct timestamp. If provided, the URL will include the updatedAfter
 #'   parameter to retrieve only data changed since this time. Used for incremental update detection.
+#' @param lastNObservations Integer. If provided, limits the response to the last N observations
+#'   per time series. Useful for reducing data transfer in connectivity checks.
 #'
 #' @return Character string containing the constructed API URL
 #' @export
@@ -128,27 +119,31 @@ get_istat_config <- function() {
 #' # Build data URL with update detection
 #' timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 #' url <- build_istat_url("data", dataset_id = "534_50", updated_after = timestamp)
+#'
+#' # Build lightweight URL for connectivity check
+#' url <- build_istat_url("data", dataset_id = "534_50", lastNObservations = 1)
 #' }
 build_istat_url <- function(endpoint, dataset_id = NULL, filter = "ALL",
                            start_time = NULL, dsd_ref = NULL,
-                           updated_after = NULL) {
-  
+                           updated_after = NULL, lastNObservations = NULL) {
+
   config <- get_istat_config()
   base_endpoint <- config$endpoints[[endpoint]]
-  
+
   if (is.null(base_endpoint)) {
-    stop("Unknown endpoint: ", endpoint, 
+    stop("Unknown endpoint: ", endpoint,
          ". Available endpoints: ", paste(names(config$endpoints), collapse = ", "))
   }
-  
+
   switch(endpoint,
     "data" = {
       if (is.null(dataset_id)) {
         stop("dataset_id is required for data endpoint")
       }
 
-      # Build data URL: /data/{dataset_id}/{filter}/all/{?startPeriod&updatedAfter}
-      query_params <- character(0)
+      # Build data URL: /data/{dataset_id}/{filter}/all/{?params}
+      # includeHistory=false by default to get only current data (not historical revisions)
+      query_params <- c("includeHistory=false")
 
       # Add startPeriod parameter if provided
       if (!is.null(start_time) && nchar(start_time) > 0) {
@@ -171,12 +166,13 @@ build_istat_url <- function(endpoint, dataset_id = NULL, filter = "ALL",
         query_params <- c(query_params, paste0("updatedAfter=", encoded_timestamp))
       }
 
-      # Combine query parameters
-      query_string <- if (length(query_params) > 0) {
-        paste0("?", paste(query_params, collapse = "&"))
-      } else {
-        ""
+      # Add lastNObservations parameter if provided (limits returned observations)
+      if (!is.null(lastNObservations)) {
+        query_params <- c(query_params, paste0("lastNObservations=", as.integer(lastNObservations)))
       }
+
+      # Combine query parameters
+      query_string <- paste0("?", paste(query_params, collapse = "&"))
 
       paste0(base_endpoint, "/", dataset_id, "/", filter, "/all/", query_string)
     },
@@ -196,45 +192,20 @@ build_istat_url <- function(endpoint, dataset_id = NULL, filter = "ALL",
     },
     
     "codelist" = {
-      # Simple codelist endpoint  
+      # Simple codelist endpoint
       base_endpoint
     },
-    
+
+    "availableconstraint" = {
+      if (is.null(dataset_id)) {
+        stop("dataset_id is required for availableconstraint endpoint")
+      }
+      # Build availableconstraint URL: /availableconstraint/{dataset_id}/all/all?mode=available
+      paste0(base_endpoint, "/", dataset_id, "/all/all?mode=available")
+    },
+
     # Default: return base endpoint
     base_endpoint
-  )
-}
-
-#' Get ISTAT Service Provider
-#'
-#' Creates and returns an ISTAT SDMX service provider for use with rsdmx package.
-#'
-#' @return An rsdmx SDMXServiceProvider object
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Get service provider
-#' provider <- get_istat_provider()
-#' rsdmx::addSDMXServiceProvider(provider)
-#' }
-get_istat_provider <- function() {
-  if (!requireNamespace("rsdmx", quietly = TRUE)) {
-    stop("Package 'rsdmx' is required for ISTAT service provider")
-  }
-  
-  config <- get_istat_config()
-  
-  rsdmx::SDMXServiceProvider(
-    agencyId = config$provider$agencyId,
-    name = config$provider$name,
-    scale = config$provider$scale,
-    country = config$provider$country,
-    builder = rsdmx::SDMXREST21RequestBuilder(
-      regUrl = config$provider$regUrl,
-      repoUrl = config$provider$repoUrl,
-      compliant = config$provider$compliant
-    )
   )
 }
 

@@ -11,11 +11,8 @@ A list containing ISTAT SDMX service configuration with the following components
 \itemize{
 \item{base_url}: Base URL for ISTAT SDMX web service
 \item{endpoints}: List of available API endpoints
-\item{provider}: Service provider configuration for rsdmx
 \item{defaults}: Default settings for API calls
-\item{cache}: Cache configuration with TTL settings for different data types
 \item{dataset_categories}: Organized dataset categories
-\item{update_tracking}: Configuration for dataset update detection using updatedAfter parameter
 }
 }
 \description{

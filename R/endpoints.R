@@ -99,72 +99,48 @@ fetch_dataflow_endpoint <- function(force_update = FALSE, cache_dir = NULL) {
 #' Searches available dataflows using keywords in Italian and English.
 #'
 #' @param keywords Character vector of search terms
-#' @param fields Character vector of fields to search in ("name", "description", "id")
-#' @param ignore_case Logical indicating case-insensitive search
+#' @param fields Character vector of fields to search in. Default searches
+#'   Name.it (Italian), Name.en (English), and id
+#' @param ignore_case Logical indicating case-insensitive search. Default TRUE
 #'
 #' @return A filtered data.table of matching dataflows
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Search for employment-related datasets
+#' # Search for employment-related datasets (Italian)
+#' lavoro_datasets <- search_dataflows("lavoro")
+#'
+#' # Search for employment-related datasets (multiple terms)
 #' employment_datasets <- search_dataflows(c("employment", "lavoro", "occupazione"))
-#' 
+#'
 #' # Search unemployment datasets
 #' unemployment_datasets <- search_dataflows(c("unemployment", "disoccupazione"))
+#'
+#' # Search only in dataset IDs
+#' datasets_534 <- search_dataflows("534", fields = "id")
 #' }
-search_dataflows <- function(keywords, fields = c("name", "description"), ignore_case = TRUE) {
-  
+search_dataflows <- function(keywords, fields = c("Name.it", "Name.en", "id"), ignore_case = TRUE) {
+
   dataflows <- fetch_dataflow_endpoint()
   data.table::setDT(dataflows)
-  
+
   # Create search pattern
+
   pattern <- paste(keywords, collapse = "|")
-  
+
   # Search across specified fields
   matches <- data.table::data.table()
-  
+
   for (field in fields) {
     if (field %in% names(dataflows)) {
       field_matches <- dataflows[grepl(pattern, get(field), ignore.case = ignore_case)]
       matches <- data.table::rbindlist(list(matches, field_matches), use.names = TRUE, fill = TRUE)
     }
   }
-  
+
   # Remove duplicates and return
   unique(matches, by = "id")
-}
-
-# ==============================================================================
-# DATASTRUCTURE ENDPOINT FUNCTIONS
-# ==============================================================================
-
-#' Download Data Structure from ISTAT Datastructure Endpoint
-#'
-#' Downloads dataset structure and codelists using the ISTAT SDMX datastructure endpoint:
-#' https://esploradati.istat.it/SDMXWS/rest/datastructure
-#'
-#' @param dataset_ids Character vector of dataset IDs
-#' @param force_update Logical to force codelist update
-#' @param cache_dir Character string for cache directory
-#'
-#' @return A named list of codelists by dataset
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Download codelists for specific datasets
-#' codelists <- fetch_datastructure_endpoint(c("150_908", "534_50"))
-#' }
-fetch_datastructure_endpoint <- function(dataset_ids = NULL, force_update = FALSE, cache_dir = NULL) {
-  
-  config <- get_istat_config()
-  if (is.null(cache_dir)) cache_dir <- config$defaults$cache_dir
-  
-  # Use existing codelist download function
-  download_codelists(dataset_ids = dataset_ids, 
-                    force_update = force_update, 
-                    cache_dir = cache_dir)
 }
 
 # ==============================================================================

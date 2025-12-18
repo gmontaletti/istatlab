@@ -2,19 +2,27 @@
 % Please edit documentation in R/processing.R
 \name{load_metadata_cached}
 \alias{load_metadata_cached}
-\title{Load metadata from files}
+\title{Load Metadata from Cache}
 \usage{
-load_metadata_cached(codelists = NULL, var_dimensions = NULL)
+load_metadata_cached(
+  codelists = NULL,
+  var_dimensions = NULL,
+  cache_dir = "meta"
+)
 }
 \arguments{
-\item{codelists}{Optional pre-loaded codelists. If NULL, loads from file}
+\item{codelists}{Optional pre-loaded codelists. If NULL, loads from cache}
 
-\item{var_dimensions}{Optional pre-loaded variable dimensions. If NULL, loads from file}
+\item{var_dimensions}{Optional pre-loaded variable dimensions. If NULL, loads from cache}
+
+\item{cache_dir}{Character string specifying cache directory}
 }
 \value{
-List with codelists and var_dimensions
+List with codelists (keyed by dataset) and var_dimensions
 }
 \description{
-Loads codelists and variable dimensions from cached metadata files.
+Loads codelists and variable dimensions from the deduplicated cache structure.
+Codelists are stored by codelist ID (e.g., CL_FREQ) and reassembled per-dataset
+for backward compatibility with apply_labels().
 }
 \keyword{internal}

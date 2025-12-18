@@ -13,51 +13,27 @@
 #' @importFrom data.table setorderv
 #' @importFrom data.table tstrsplit
 #' @importFrom data.table copy
+#' @importFrom data.table %chin%
 #' @importFrom zoo as.yearqtr
 #' @importFrom parallel mclapply
 #' @importFrom parallel detectCores
-#' @importFrom scales comma_format
-#' @importFrom stats lm
-#' @importFrom stats coef
-#' @importFrom stats fitted
-#' @importFrom stats residuals
-#' @importFrom stats AIC
-#' @importFrom stats BIC
-#' @importFrom stats ts
-#' @importFrom stats loess
-#' @importFrom stats stl
-#' @importFrom stats predict
-#' @importFrom stats sd
-#' @importFrom stats median
-#' @importFrom stats quantile
-#' @importFrom stats qnorm
-#' @importFrom stats qt
+#' @importFrom stats setNames
 #' @importFrom utils globalVariables
 #' @importFrom utils tail
-#' @importFrom stats setNames
-#' @importFrom stats time
-#' @importFrom stats var
-#' @importFrom data.table %chin%
-#' @importFrom rsdmx SDMXServiceProvider
-#' @importFrom rsdmx SDMXREST21RequestBuilder
-#' @importFrom rsdmx addSDMXServiceProvider
-#' @importFrom rsdmx readSDMX
-#' @importFrom patchwork wrap_plots
-#' @importFrom patchwork plot_annotation
 ## usethis namespace: end
 
 # Suppress R CMD check notes for data.table syntax
-utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue", 
+utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue",
                          "FREQ", "EDITION", "EDITION_new", "DATA_TYPE", "id", "base", "tempo_temp",
                          "tempo_label", "valore_label", "it_description", "id_description",
-                         "..label_cols", "..group_vars", "..varying_cols", "cl", "var",
-                         "upper", "lower", "time", "forecast"))
+                         "en_description", "agencyID", "version",
+                         "..label_cols", "..group_vars", "..varying_cols", "cl", "var", "DATAFLOW"))
 
-#' istatlab: Download and Analyze Italian Labour Market Data from ISTAT
+#' istatlab: Download and Process Italian Labour Market Data from ISTAT
 #'
-#' The istatlab package provides a comprehensive toolkit for downloading,
-#' processing, analyzing, and visualizing Italian labour market data from
-#' ISTAT (Istituto Nazionale di Statistica) through their SDMX API.
+#' The istatlab package provides a toolkit for downloading and processing
+#' Italian labour market data from ISTAT (Istituto Nazionale di Statistica)
+#' through their SDMX API.
 #'
 #' @section Main functions:
 #' \describe{
@@ -73,17 +49,6 @@ utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue",
 #'     \code{\link{apply_labels}()}, \code{\link{filter_by_time}()},
 #'     \code{\link{validate_istat_data}()}
 #'   }
-#'   \item{Analysis:}{
-#'     \code{\link{analyze_trends}()}, \code{\link{calculate_growth_rates}()},
-#'     \code{\link{calculate_summary_stats}()}, \code{\link{detect_structural_breaks}()}
-#'   }
-#'   \item{Forecasting:}{
-#'     \code{\link{forecast_series}()}, \code{\link{evaluate_forecast_accuracy}()}
-#'   }
-#'   \item{Visualization:}{
-#'     \code{\link{create_time_series_plot}()}, \code{\link{create_forecast_plot}()},
-#'     \code{\link{create_comparison_plot}()}, \code{\link{create_dashboard_plot}()}
-#'   }
 #' }
 #'
 #' @section Package workflow:
@@ -92,9 +57,6 @@ utils::globalVariables(c(".", ".N", ".SD", ":=", "ObsDimension", "ObsValue",
 #'   \item Download metadata and identify datasets of interest
 #'   \item Download the actual data using dataset IDs
 #'   \item Process and label the data
-#'   \item Perform analysis (trends, growth rates, structural breaks)
-#'   \item Generate forecasts if needed
-#'   \item Create publication-ready visualizations
 #' }
 #'
 #' @name istatlab-package

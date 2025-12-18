@@ -11,7 +11,9 @@ download_istat_data(
   timeout = NULL,
   verbose = TRUE,
   updated_after = NULL,
-  return_result = FALSE
+  return_result = FALSE,
+  check_update = FALSE,
+  cache_dir = "meta"
 )
 }
 \arguments{
@@ -31,11 +33,18 @@ will be retrieved. Used for incremental update detection.}
 
 \item{return_result}{Logical indicating whether to return full istat_result object
 instead of just the data.table. Default is FALSE for backward compatibility.}
+
+\item{check_update}{Logical indicating whether to check ISTAT's LAST_UPDATE timestamp
+before downloading. If TRUE and data hasn't changed since last download, returns NULL
+with a message. Default is FALSE for backward compatibility.}
+
+\item{cache_dir}{Character string specifying directory for download log cache.
+Default is "meta"}
 }
 \value{
 A data.table containing the downloaded data with an additional 'id' column,
-or NULL if the download fails. If return_result = TRUE, returns an istat_result
-object with additional metadata (exit_code, md5, message, is_timeout).
+or NULL if the download fails or data is unchanged. If return_result = TRUE, returns
+an istat_result object with additional metadata (exit_code, md5, message, is_timeout).
 }
 \description{
 Downloads statistical data from the ISTAT (Istituto Nazionale di Statistica)
@@ -61,5 +70,9 @@ result <- download_istat_data("534_50", return_result = TRUE)
 if (result$success) {
   print(paste("Downloaded", nrow(result$data), "rows, MD5:", result$md5))
 }
+
+# Check if data has been updated before downloading
+data <- download_istat_data("534_50", check_update = TRUE)
+# Returns NULL with message if data unchanged since last download
 }
 }

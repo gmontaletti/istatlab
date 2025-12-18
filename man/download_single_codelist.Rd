@@ -10,9 +10,18 @@ download_single_codelist(dataset_id)
 \item{dataset_id}{Character string specifying the dataset ID}
 }
 \value{
-A data.table containing the codelist
+A list with two elements:
+\itemize{
+\item codelist: data.table containing the codelist with id, id_description,
+en_description, it_description, version, agencyID columns
+\item dimension_mapping: named list mapping dimension IDs (e.g., REF_AREA)
+to codelist references (e.g., "IT1/CL_ITTER107/1.0")
+}
+Returns NULL if download fails.
 }
 \description{
 Internal function to download codelist for a single dataset.
+Fetches JSON from the datastructure endpoint to get both codelist data
+and the correct dimension-to-codelist mapping.
 }
 \keyword{internal}
