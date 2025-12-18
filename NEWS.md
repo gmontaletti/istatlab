@@ -1,3 +1,16 @@
+# istatlab 0.3.0
+
+## New Features
+
+* New `download_istat_data_by_freq()` function for frequency-split download capability enabling parallel retrieval of data by time frequency (monthly, quarterly, annual)
+* New `get_available_frequencies()` function to query available frequencies for a dataset before download
+* Enhanced `filter_by_time()` to handle single-frequency data with improved efficiency
+
+## Improvements
+
+* Optimized download architecture for better performance on multi-frequency datasets
+* Improved time series filtering with frequency detection and validation
+
 # istatlab 0.2.3
 
 ## Maintenance Release
