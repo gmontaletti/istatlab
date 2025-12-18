@@ -1,8 +1,8 @@
 Package: istatlab
 Type: Package
-Title: Download and Analyze Italian Labour Market Data from ISTAT
-Version: 0.2.1
-Date: 2025-12-16
+Title: Download and Process Italian Labour Market Data from ISTAT
+Version: 0.2.2
+Date: 2025-12-18
 Author: Giampaolo Montaletti [aut, cre] (0009-0002-5327-1122)
 Maintainer: Giampaolo Montaletti <giampaolo.montaletti@gmail.com>
 Authors@R: 
@@ -10,11 +10,10 @@ Authors@R:
            email = "giampaolo.montaletti@gmail.com", 
            role = c("aut", "cre"),
            comment = c(ORCID = "0009-0002-5327-1122"))
-Description: A comprehensive toolkit for downloading, processing, analyzing, and 
-    visualizing Italian labour market data from ISTAT (Istituto Nazionale di 
-    Statistica) through their SDMX API. The package provides functions for data 
-    retrieval, metadata handling, time series analysis, forecasting, and 
-    publication-ready visualizations using ggplot2.
+Description: A toolkit for downloading and processing Italian labour market data
+    from ISTAT (Istituto Nazionale di Statistica) through their SDMX API. The
+    package provides functions for data retrieval, metadata handling, and data
+    processing with automatic label application.
 License: MIT + file LICENSE
 URL: https://github.com/gmontaletti/istatlab
 BugReports: https://github.com/gmontaletti/istatlab/issues
@@ -27,19 +26,13 @@ Depends:
 Imports:
     data.table (>= 1.14.0),
     httr (>= 1.4.0),
+    jsonlite,
     readsdmx (>= 0.3.1),
-    rsdmx,
-    zoo (>= 1.8.0),
-    ggplot2 (>= 3.4.0),
-    forecast (>= 8.20),
-    scales (>= 1.2.0),
-    patchwork,
-    jsonlite
+    zoo (>= 1.8.0)
 Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    RJSDMX,
     digest
 Config/testthat/edition: 3
 VignetteBuilder: knitr

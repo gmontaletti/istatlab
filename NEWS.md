@@ -1,3 +1,10 @@
+# istatlab 0.2.2
+
+## Maintenance Release
+
+* Updated test infrastructure and test file organization
+* Enhanced test coverage and validation
+
 # istatlab 0.2.1
 
 ## Maintenance Release
