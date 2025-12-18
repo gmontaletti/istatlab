@@ -191,16 +191,18 @@ list_istat_endpoints <- function() {
     url = unlist(config$endpoints),
     description = c(
       "RESTful API v1 (legacy)",
-      "RESTful API v2", 
+      "RESTful API v2",
       "Data retrieval endpoint",
       "Dataset metadata endpoint",
-      "Data structure and codelists endpoint", 
+      "Data structure and codelists endpoint",
       "Code list definitions endpoint",
-      "SDMX v2.1 registry endpoint"
+      "SDMX v2.1 registry endpoint",
+      "Available constraints (dimension values)"
     ),
     function_prefix = c(
       "rest_v1", "rest_v2", "fetch_data_", "fetch_dataflow_",
-      "fetch_datastructure_", "fetch_codelist_", "fetch_registry_"
+      "download_codelists", "fetch_codelist_", "fetch_registry_",
+      "get_available_frequencies"
     ),
     stringsAsFactors = FALSE
   )
