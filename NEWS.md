@@ -1,3 +1,11 @@
+# istatlab 0.2.3
+
+## Maintenance Release
+
+* Removed deprecated `fetch_datastructure_endpoint()` function (redundant wrapper around `download_codelists()`)
+* Cleaned up package by removing duplicate and unused functions
+* Code quality improvements
+
 # istatlab 0.2.2
 
 ## Maintenance Release
