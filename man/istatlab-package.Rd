@@ -17,7 +17,7 @@ through their SDMX API.
 \describe{
 \item{Data Download:}{
 \code{\link{download_istat_data}()}, \code{\link{download_multiple_datasets}()},
-\code{\link{check_istat_api}()}
+\code{\link{test_endpoint_connectivity}()}
 }
 \item{Metadata Management:}{
 \code{\link{download_metadata}()}, \code{\link{download_codelists}()},

@@ -17,7 +17,7 @@ if (!is.null(data)) {
 
 # 2. Full result with metadata -----
 cat("=== 2. Full Result with Metadata ===\n")
-result <- download_istat_data_full("150_908", start_time = "2000", verbose = FALSE)
+result <- download_istat_data("150_908", start_time = "2000", verbose = FALSE, return_result = TRUE)
 print(result)
 cat("\n")
 

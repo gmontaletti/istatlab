@@ -43,11 +43,7 @@ cat("\n")
 # 4. Test connectivity functions -----
 cat("--- Testing Connectivity Functions ---\n\n")
 
-cat("4.1 check_istat_api()\n")
-api_status <- check_istat_api()
-cat("  API available:", api_status, "\n\n")
-
-cat("4.2 test_endpoint_connectivity()\n")
+cat("4.1 test_endpoint_connectivity()\n")
 connectivity <- test_endpoint_connectivity()
 print(connectivity)
 cat("\n")
@@ -101,14 +97,10 @@ if (!is.null(last_update)) {
 }
 cat("\n")
 
-# 7. Test endpoint fetch functions -----
-cat("--- Testing Endpoint Fetch Functions ---\n\n")
+# 7. Test dataset structure functions -----
+cat("--- Testing Dataset Structure Functions ---\n\n")
 
-cat("7.1 fetch_dataflow_endpoint()\n")
-dataflows <- fetch_dataflow_endpoint()
-cat("  Fetched", nrow(dataflows), "dataflows\n\n")
-
-cat("7.2 get_dataset_dimensions()\n")
+cat("7.1 get_dataset_dimensions()\n")
 dimensions <- get_dataset_dimensions(codice)
 if (!is.null(dimensions)) {
   cat("  Dimensions:", paste(dimensions, collapse = ", "), "\n")
@@ -201,22 +193,17 @@ if (is.null(data_check2)) {
 }
 cat("\n")
 
-cat("9.3 download_istat_data_full()\n")
-cat("  Downloading full data for", codice, "(start_time = 2023)...\n")
-result_full <- download_istat_data_full(codice, start_time = "2023")
-cat("  Result class:", class(result_full), "\n")
-print(result_full)  # Uses the print.istat_result method
-cat("\n")
-
-cat("9.4 fetch_data_endpoint()\n")
-cat("  Fetching data endpoint for", codice, "...\n")
-data_endpoint <- fetch_data_endpoint(codice, start_time = "2023")
-if (!is.null(data_endpoint)) {
-  cat("  Fetched", nrow(data_endpoint), "rows\n")
+cat("9.3 download_istat_data() with return_result=TRUE\n")
+cat("  Downloading with structured result...\n")
+result <- download_istat_data(codice, start_time = "2024", return_result = TRUE, verbose = FALSE)
+cat("  Success:", result$success, "\n")
+cat("  Exit code:", result$exit_code, "\n")
+if (result$success) {
+  cat("  Rows:", nrow(result$data), "\n")
 }
 cat("\n")
 
-cat("9.5 Data download log verification\n")
+cat("9.4 Data download log verification\n")
 log_file <- file.path("meta", config$cache$data_download_log_file)
 if (file.exists(log_file)) {
   download_log <- readRDS(log_file)
@@ -328,10 +315,6 @@ for (name in names(multi_data)) {
   }
 }
 cat("\n")
-
-cat("12.2 fetch_multiple_data_endpoint()\n")
-multi_fetch <- fetch_multiple_data_endpoint(test_datasets, start_time = "2024")
-cat("  Fetched", length(multi_fetch), "dataset(s)\n\n")
 
 # 13. Summary -----
 cat("=== Test Summary ===\n")

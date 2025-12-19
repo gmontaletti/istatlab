@@ -4,28 +4,29 @@
 \alias{test_endpoint_connectivity}
 \title{Test ISTAT Endpoint Connectivity}
 \usage{
-test_endpoint_connectivity(
-  endpoints = c("data", "dataflow"),
-  timeout = 30,
-  verbose = TRUE
-)
+test_endpoint_connectivity(endpoints = "data", timeout = 30, verbose = TRUE)
 }
 \arguments{
-\item{endpoints}{Character vector of endpoint names to test}
+\item{endpoints}{Character vector of endpoint names to test (default "data").
+Available: "data", "dataflow", "datastructure", "codelist", "registry", "availableconstraint"}
 
-\item{timeout}{Numeric timeout for each test}
+\item{timeout}{Numeric timeout in seconds for each test (default 30)}
 
 \item{verbose}{Logical for detailed output}
 }
 \value{
-A data.frame with connectivity test results
+A data.frame with connectivity test results including:
+endpoint, url, accessible, status_code, response_time, error_message
 }
 \description{
-Tests connectivity to different ISTAT SDMX endpoints.
+Tests connectivity to ISTAT SDMX endpoints using lightweight HTTP status checks.
 }
 \examples{
 \dontrun{
-# Test all main endpoints
-status <- test_endpoint_connectivity(c("data", "dataflow", "datastructure"))
+# Quick connectivity check (default: data endpoint only)
+status <- test_endpoint_connectivity()
+
+# Test multiple endpoints
+status <- test_endpoint_connectivity(c("data", "dataflow"))
 }
 }

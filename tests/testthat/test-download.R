@@ -1,10 +1,14 @@
-test_that("check_istat_api works correctly", {
+test_that("test_endpoint_connectivity works correctly", {
   skip_on_cran()
   skip_if_offline()
-  
-  # Test API check function
-  result <- check_istat_api(timeout = 5)
-  expect_type(result, "logical")
+
+  # Test endpoint connectivity function (use default 30s timeout for ISTAT API)
+  result <- suppressWarnings(
+    test_endpoint_connectivity("dataflow", timeout = 15, verbose = FALSE)
+  )
+  expect_s3_class(result, "data.frame")
+  expect_true("accessible" %in% names(result))
+  expect_type(result$accessible, "logical")
 })
 
 test_that("download_istat_data validates inputs correctly", {
@@ -55,14 +59,14 @@ test_that("download_istat_data return_result parameter works", {
   }
 })
 
-# 2. Tests for download_istat_data_full -----
+# 2. Tests for download_istat_data with return_result -----
 
-test_that("download_istat_data_full returns istat_result", {
+test_that("download_istat_data with return_result returns istat_result", {
   skip_on_cran()
   skip_if_offline()
 
-  result <- download_istat_data_full("534_50", start_time = "2024",
-                                     timeout = 60, verbose = FALSE)
+  result <- download_istat_data("534_50", start_time = "2024",
+                                timeout = 60, verbose = FALSE, return_result = TRUE)
 
   # Must return istat_result
   expect_s3_class(result, "istat_result")
@@ -83,13 +87,13 @@ test_that("download_istat_data_full returns istat_result", {
 
 # 3. Tests for MD5 checksum -----
 
-test_that("download_istat_data_full computes MD5 when digest is available", {
+test_that("download_istat_data computes MD5 when digest is available", {
   skip_on_cran()
   skip_if_offline()
   skip_if_not_installed("digest")
 
-  result <- download_istat_data_full("534_50", start_time = "2024",
-                                     timeout = 60, verbose = FALSE)
+  result <- download_istat_data("534_50", start_time = "2024",
+                                timeout = 60, verbose = FALSE, return_result = TRUE)
 
   if (result$success) {
     # MD5 should be computed when digest is available

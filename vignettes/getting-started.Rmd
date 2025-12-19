@@ -29,7 +29,8 @@ Before starting, it's good practice to check if the ISTAT API is accessible:
 
 ```{r}
 # Check if ISTAT API is available
-if (check_istat_api()) {
+status <- test_endpoint_connectivity("data", verbose = FALSE)
+if (status$accessible[1]) {
   message("ISTAT API is accessible!")
 } else {
   message("ISTAT API is not accessible. Check your internet connection.")

@@ -7,92 +7,8 @@
 NULL
 
 # ==============================================================================
-# DATA ENDPOINT FUNCTIONS
+# DATAFLOW ENDPOINT FUNCTIONS
 # ==============================================================================
-
-#' Download Data from ISTAT Data Endpoint
-#'
-#' Downloads statistical data using the ISTAT SDMX data endpoint:
-#' https://esploradati.istat.it/SDMXWS/rest/data
-#'
-#' @param dataset_id Character string specifying the ISTAT dataset ID
-#' @param filter Character string specifying data filters. Default uses config
-#' @param start_time Character string specifying start period
-#' @param timeout Numeric timeout in seconds. Default uses config
-#'
-#' @return A data.table containing the downloaded data
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Download data using data endpoint
-#' data <- fetch_data_endpoint("534_50", start_time = "2020")
-#' }
-fetch_data_endpoint <- function(dataset_id, filter = NULL, start_time = NULL, timeout = NULL) {
-  
-  # Get configuration defaults
-  config <- get_istat_config()
-  if (is.null(filter)) filter <- config$defaults$filter
-  if (is.null(timeout)) timeout <- config$defaults$timeout
-  
-  # Use existing download function with centralized config
-  download_istat_data(dataset_id = dataset_id, 
-                     filter = filter, 
-                     start_time = start_time %||% "", 
-                     timeout = timeout)
-}
-
-#' Download Multiple Datasets from Data Endpoint
-#'
-#' Downloads multiple datasets in parallel using the data endpoint.
-#'
-#' @param dataset_ids Character vector of dataset IDs
-#' @param ... Additional parameters passed to fetch_data_endpoint
-#'
-#' @return A named list of data.tables
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Download multiple datasets by category
-#' employment_ids <- get_dataset_category("employment")
-#' employment_data <- fetch_multiple_data_endpoint(employment_ids)
-#' }
-fetch_multiple_data_endpoint <- function(dataset_ids, ...) {
-  download_multiple_datasets(dataset_ids, ...)
-}
-
-# ==============================================================================
-# DATAFLOW ENDPOINT FUNCTIONS  
-# ==============================================================================
-
-#' Download Dataflows from ISTAT Dataflow Endpoint
-#'
-#' Downloads dataset metadata using the ISTAT SDMX dataflow endpoint:
-#' https://esploradati.istat.it/SDMXWS/rest/dataflow
-#'
-#' @param force_update Logical to force metadata update
-#' @param cache_dir Character string for cache directory
-#'
-#' @return A data.table containing dataflow information
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Get all available dataflows
-#' dataflows <- fetch_dataflow_endpoint()
-#' 
-#' # Filter to find employment-related datasets
-#' employment_flows <- dataflows[grepl("employment|lavoro", name, ignore.case = TRUE)]
-#' }
-fetch_dataflow_endpoint <- function(force_update = FALSE, cache_dir = NULL) {
-  
-  config <- get_istat_config()
-  if (is.null(cache_dir)) cache_dir <- config$defaults$cache_dir
-  
-  # Use existing metadata download function
-  download_metadata(force_update = force_update, cache_dir = cache_dir)
-}
 
 #' Search Dataflows by Keywords
 #'
@@ -122,7 +38,7 @@ fetch_dataflow_endpoint <- function(force_update = FALSE, cache_dir = NULL) {
 #' }
 search_dataflows <- function(keywords, fields = c("Name.it", "Name.en", "id"), ignore_case = TRUE) {
 
-  dataflows <- fetch_dataflow_endpoint()
+  dataflows <- download_metadata()
   data.table::setDT(dataflows)
 
   # Create search pattern
@@ -235,74 +151,128 @@ get_categorized_datasets <- function(category = NULL) {
   }
 }
 
+# 1. check_endpoint_status -----
+
+#' Check Endpoint HTTP Status
+#'
+#' Lightweight connectivity check using curl system command.
+#' Returns only status code without downloading response body.
+#' Equivalent to: curl -s -o /dev/null -w "\%\{http_code\}" --max-time N URL
+#'
+#' @param url Character URL to check
+#' @param timeout Numeric timeout in seconds (default 10)
+#'
+#' @return A list with accessible (logical), status_code, response_time, error
+#' @keywords internal
+check_endpoint_status <- function(url, timeout = 10) {
+  start_time <- Sys.time()
+
+  # Build curl command: get only status code, discard body
+  cmd <- sprintf(
+    'curl -s -o /dev/null -w "%%{http_code}" --max-time %d "%s"',
+    timeout, url
+  )
+
+  tryCatch({
+    # Execute curl and capture status code
+    result <- system(cmd, intern = TRUE, ignore.stderr = TRUE)
+    end_time <- Sys.time()
+    response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
+
+    status_code <- suppressWarnings(as.integer(result))
+    if (is.na(status_code)) status_code <- 0L
+
+    list(
+      accessible = status_code %in% c(200L, 302L, 400L),
+      status_code = status_code,
+      response_time = response_time,
+      error = ""
+    )
+  }, error = function(e) {
+    end_time <- Sys.time()
+    response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
+
+    list(
+      accessible = FALSE,
+      status_code = NA_integer_,
+      response_time = response_time,
+      error = e$message
+    )
+  })
+}
+
 #' Test ISTAT Endpoint Connectivity
 #'
-#' Tests connectivity to different ISTAT SDMX endpoints.
+#' Tests connectivity to ISTAT SDMX endpoints using lightweight HTTP status checks.
 #'
-#' @param endpoints Character vector of endpoint names to test
-#' @param timeout Numeric timeout for each test
+#' @param endpoints Character vector of endpoint names to test (default "data").
+#'   Available: "data", "dataflow", "datastructure", "codelist", "registry", "availableconstraint"
+#' @param timeout Numeric timeout in seconds for each test (default 30)
 #' @param verbose Logical for detailed output
 #'
-#' @return A data.frame with connectivity test results
+#' @return A data.frame with connectivity test results including:
+#'   endpoint, url, accessible, status_code, response_time, error_message
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Test all main endpoints
-#' status <- test_endpoint_connectivity(c("data", "dataflow", "datastructure"))
+#' # Quick connectivity check (default: data endpoint only)
+#' status <- test_endpoint_connectivity()
+#'
+#' # Test multiple endpoints
+#' status <- test_endpoint_connectivity(c("data", "dataflow"))
 #' }
-test_endpoint_connectivity <- function(endpoints = c("data", "dataflow"), timeout = 30, verbose = TRUE) {
-  
+test_endpoint_connectivity <- function(endpoints = "data", timeout = 30, verbose = TRUE) {
+
   config <- get_istat_config()
+  available_endpoints <- names(config$endpoints)
+
+
+  # Validate endpoints
+
+  invalid <- setdiff(endpoints, available_endpoints)
+  if (length(invalid) > 0) {
+    stop("Unknown endpoint(s): ", paste(invalid, collapse = ", "),
+         ". Available: ", paste(available_endpoints, collapse = ", "))
+  }
+
   results <- data.frame(
     endpoint = character(),
-    url = character(), 
+    url = character(),
     accessible = logical(),
+    status_code = integer(),
     response_time = numeric(),
     error_message = character(),
     stringsAsFactors = FALSE
   )
-  
+
   for (endpoint in endpoints) {
     if (verbose) message("Testing ", endpoint, " endpoint...")
-    
-    start_time <- Sys.time()
-    
-    if (endpoint == "data") {
-      # Test data endpoint with connectivity check function
-      accessible <- check_istat_api(timeout = timeout, verbose = FALSE)
-      error_msg <- if (accessible) "" else "Data endpoint connectivity failed"
-      test_url <- build_istat_url("data", 
-                                 dataset_id = config$defaults$test_dataset,
-                                 start_time = as.character(as.numeric(format(Sys.Date(), "%Y")) - 1))
-    } else {
-      # Test other endpoints with simple URL construction
-      test_url <- config$endpoints[[endpoint]]
-      accessible <- TRUE  # Would need specific tests for each endpoint type
-      error_msg <- ""
-    }
-    
-    end_time <- Sys.time()
-    response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
-    
+
+    test_url <- config$endpoints[[endpoint]]
+    status <- check_endpoint_status(test_url, timeout = timeout)
+
     results <- rbind(results, data.frame(
       endpoint = endpoint,
       url = test_url,
-      accessible = accessible,
-      response_time = response_time,
-      error_message = error_msg,
+      accessible = status$accessible,
+      status_code = status$status_code,
+      response_time = status$response_time,
+      error_message = status$error,
       stringsAsFactors = FALSE
     ))
   }
-  
+
   if (verbose) {
     message("\nEndpoint connectivity summary:")
-    for (i in 1:nrow(results)) {
-      status <- if (results$accessible[i]) "[OK] ACCESSIBLE" else "[X] FAILED"
-      message(sprintf("%-15s %s (%.2fs)", results$endpoint[i], status, results$response_time[i]))
+    for (i in seq_len(nrow(results))) {
+      status_text <- if (results$accessible[i]) "[OK]" else "[X]"
+      code_text <- if (is.na(results$status_code[i])) "ERR" else results$status_code[i]
+      time_text <- if (is.na(results$response_time[i])) "-" else sprintf("%.2fs", results$response_time[i])
+      message(sprintf("%-20s %s %s (%s)", results$endpoint[i], status_text, code_text, time_text))
     }
   }
-  
+
   return(results)
 }
 

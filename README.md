@@ -31,7 +31,7 @@ devtools::install_github("gmontaletti/istatlab")
 library(istatlab)
 
 # Check API connectivity
-check_istat_api()
+test_endpoint_connectivity("data")
 
 # Download metadata to explore available datasets
 metadata <- download_metadata()
@@ -54,7 +54,7 @@ create_time_series_plot(processed_data,
 ### Data Download
 - `download_istat_data()`: Download data for a single dataset
 - `download_multiple_datasets()`: Download multiple datasets in parallel
-- `check_istat_api()`: Check API connectivity
+- `test_endpoint_connectivity()`: Check API endpoint connectivity
 
 ### Metadata Management
 - `download_metadata()`: Download dataset metadata

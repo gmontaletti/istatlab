@@ -43,15 +43,13 @@
   - `http_transport.R`: HTTP layer with httr primary and curl fallback
   - `response_processor.R`: CSV parsing, column normalization, and checksum computation
 
-* New `download_istat_data_full()` function returns structured `istat_result` object with:
+* New `return_result` parameter for `download_istat_data()` returns structured `istat_result` object with:
   - `success`: Boolean success indicator
   - `data`: Downloaded data.table
   - `exit_code`: Integer (0=success, 1=error, 2=timeout)
   - `md5`: MD5 checksum for data integrity (requires digest package)
   - `is_timeout`: Boolean timeout indicator
   - `message`: Descriptive status message
-
-* New `return_result` parameter for `download_istat_data()` enables structured results while maintaining backward compatibility
 
 * Enhanced error classification with exit codes following standard conventions:
   - 0: Success
