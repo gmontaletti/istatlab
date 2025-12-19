@@ -1,3 +1,10 @@
+# istatlab 0.3.1
+
+## Improvements
+
+* Refactored connectivity testing to use curl R package instead of system() calls, improving portability across platforms
+* Consolidated API function implementations and simplified connectivity testing logic for better maintainability
+
 # istatlab 0.3.0
 
 ## New Features
