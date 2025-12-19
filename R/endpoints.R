@@ -155,9 +155,8 @@ get_categorized_datasets <- function(category = NULL) {
 
 #' Check Endpoint HTTP Status
 #'
-#' Lightweight connectivity check using curl system command.
-#' Returns only status code without downloading response body.
-#' Equivalent to: curl -s -o /dev/null -w "\%\{http_code\}" --max-time N URL
+#' Lightweight connectivity check using curl R package.
+#' Fetches only response headers (status code) without downloading body.
 #'
 #' @param url Character URL to check
 #' @param timeout Numeric timeout in seconds (default 10)
@@ -167,24 +166,25 @@ get_categorized_datasets <- function(category = NULL) {
 check_endpoint_status <- function(url, timeout = 10) {
   start_time <- Sys.time()
 
-  # Build curl command: get only status code, discard body
-  cmd <- sprintf(
-    'curl -s -o /dev/null -w "%%{http_code}" --max-time %d "%s"',
-    timeout, url
-  )
-
   tryCatch({
-    # Execute curl and capture status code
-    result <- system(cmd, intern = TRUE, ignore.stderr = TRUE)
+    # Create curl handle with timeout and nobody option
+    h <- curl::new_handle()
+    curl::handle_setopt(h,
+      timeout = timeout,
+      connecttimeout = timeout,
+      nobody = TRUE,
+      followlocation = TRUE
+    )
+
+    # Fetch headers only (nobody=TRUE skips body)
+    response <- curl::curl_fetch_memory(url, handle = h)
+
     end_time <- Sys.time()
     response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
 
-    status_code <- suppressWarnings(as.integer(result))
-    if (is.na(status_code)) status_code <- 0L
-
     list(
-      accessible = status_code %in% c(200L, 302L, 400L),
-      status_code = status_code,
+      accessible = response$status_code %in% c(200L, 302L, 400L),
+      status_code = as.integer(response$status_code),
       response_time = response_time,
       error = ""
     )

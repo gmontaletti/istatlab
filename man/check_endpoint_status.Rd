@@ -15,8 +15,7 @@ check_endpoint_status(url, timeout = 10)
 A list with accessible (logical), status_code, response_time, error
 }
 \description{
-Lightweight connectivity check using curl system command.
-Returns only status code without downloading response body.
-Equivalent to: curl -s -o /dev/null -w "\\%\{http_code\}" --max-time N URL
+Lightweight connectivity check using curl R package.
+Fetches only response headers (status code) without downloading body.
 }
 \keyword{internal}
