@@ -1,3 +1,10 @@
+# istatlab 0.3.2
+
+## New Features
+
+* Added `incremental` parameter to download functions (`download_istat_data()`, `download_multiple_datasets()`, `download_istat_data_by_freq()`) for time period filtering using the SDMX startPeriod URL parameter
+* The `incremental` parameter accepts FALSE (default), Date objects, or strings in "YYYY", "YYYY-MM", or "YYYY-MM-DD" format for flexible data retrieval
+
 # istatlab 0.3.1
 
 ## Improvements
