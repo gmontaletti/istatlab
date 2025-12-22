@@ -8,6 +8,7 @@ download_multiple_datasets(
   dataset_ids,
   filter = NULL,
   start_time = "",
+  incremental = FALSE,
   n_cores = parallel::detectCores() - 1,
   verbose = TRUE,
   updated_after = NULL
@@ -19,6 +20,10 @@ download_multiple_datasets(
 \item{filter}{Character string specifying data filters. Default uses config value ("ALL")}
 
 \item{start_time}{Character string specifying the start period}
+
+\item{incremental}{Logical or Date/character. If FALSE (default), fetches all data.
+If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
+fetches only data from that period onwards. Takes precedence over start_time.}
 
 \item{n_cores}{Integer number of cores to use for parallel processing.
 Default is parallel::detectCores() - 1}

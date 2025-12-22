@@ -7,6 +7,10 @@
 #' @param filter Character string specifying data filters. Default uses config value ("ALL")
 #' @param start_time Character string specifying the start period (e.g., "2019").
 #'   If empty, downloads all available data
+#' @param incremental Logical or Date/character. If FALSE (default), fetches all data.
+#'   If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
+#'   fetches only data from that period onwards using the SDMX startPeriod parameter.
+#'   Takes precedence over start_time if both are provided.
 #' @param timeout Numeric timeout in seconds for the download operation. Default uses config value
 #' @param verbose Logical indicating whether to print status messages. Default is TRUE
 #' @param updated_after POSIXct timestamp. If provided, only data updated since this time
@@ -50,9 +54,10 @@
 #' # Returns NULL with message if data unchanged since last download
 #' }
 download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
-                                timeout = NULL, verbose = TRUE,
-                                updated_after = NULL, return_result = FALSE,
-                                check_update = FALSE, cache_dir = "meta") {
+                                incremental = FALSE, timeout = NULL,
+                                verbose = TRUE, updated_after = NULL,
+                                return_result = FALSE, check_update = FALSE,
+                                cache_dir = "meta") {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -67,6 +72,19 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   # Input validation
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
+  }
+
+  # Validate incremental parameter
+  if (!isFALSE(incremental)) {
+    if (inherits(incremental, "Date")) {
+      incremental <- format(incremental, "%Y-%m-%d")
+    } else if (is.character(incremental)) {
+      if (!grepl("^\\d{4}(-\\d{2})?(-\\d{2})?$", incremental)) {
+        stop("incremental must be FALSE, a Date, or character in 'YYYY', 'YYYY-MM', or 'YYYY-MM-DD' format")
+      }
+    } else {
+      stop("incremental must be FALSE, a Date object, or a character string")
+    }
   }
 
   # Smart update check: compare ISTAT's LAST_UPDATE with our download log
@@ -93,10 +111,13 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   istat_log(paste("Downloading dataset", dataset_id), "INFO", verbose)
 
   # Construct API URL using centralized configuration
+  # Determine effective start_time (incremental takes precedence)
+  effective_start_time <- if (!isFALSE(incremental)) incremental else start_time
+
   api_url <- build_istat_url("data",
                             dataset_id = dataset_id,
                             filter = filter,
-                            start_time = start_time,
+                            start_time = effective_start_time,
                             updated_after = updated_after)
 
   # HTTP request using new transport layer
@@ -140,6 +161,9 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
 #' @param dataset_ids Character vector of ISTAT dataset IDs
 #' @param filter Character string specifying data filters. Default uses config value ("ALL")
 #' @param start_time Character string specifying the start period
+#' @param incremental Logical or Date/character. If FALSE (default), fetches all data.
+#'   If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
+#'   fetches only data from that period onwards. Takes precedence over start_time.
 #' @param n_cores Integer number of cores to use for parallel processing.
 #'   Default is parallel::detectCores() - 1
 #' @param verbose Logical indicating whether to print status messages. Default is TRUE
@@ -163,6 +187,7 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
 #' updated_list <- download_multiple_datasets(datasets, updated_after = timestamp)
 #' }
 download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = "",
+                                       incremental = FALSE,
                                        n_cores = parallel::detectCores() - 1,
                                        verbose = TRUE, updated_after = NULL) {
   # Get default values from centralized configuration
@@ -186,6 +211,7 @@ download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = 
     download_istat_data(id,
                        filter = filter,
                        start_time = start_time,
+                       incremental = incremental,
                        verbose = verbose,
                        updated_after = updated_after)
   }
@@ -358,8 +384,8 @@ update_data_download_log <- function(dataset_id, cache_dir = "meta") {
 #' monthly_data <- job_vacancies$M
 #' }
 download_istat_data_by_freq <- function(dataset_id, filter = NULL,
-                                         start_time = "", timeout = NULL,
-                                         verbose = TRUE) {
+                                         start_time = "", incremental = FALSE,
+                                         timeout = NULL, verbose = TRUE) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -379,7 +405,9 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
   if (is.null(freqs) || length(freqs) == 0) {
     # Fallback to single download without frequency filter
     istat_log("Could not determine frequencies, downloading all data", "WARNING", verbose)
-    data <- download_istat_data(dataset_id, filter, start_time, timeout, verbose)
+    data <- download_istat_data(dataset_id, filter = filter, start_time = start_time,
+                                 incremental = incremental, timeout = timeout,
+                                 verbose = verbose)
     return(list(ALL = data))
   }
 
@@ -387,7 +415,9 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
 
   if (length(freqs) == 1) {
     # Single frequency - regular download, no need to filter by freq
-    data <- download_istat_data(dataset_id, filter, start_time, timeout, verbose)
+    data <- download_istat_data(dataset_id, filter = filter, start_time = start_time,
+                                 incremental = incremental, timeout = timeout,
+                                 verbose = verbose)
     result <- list()
     result[[freqs]] <- data
     return(result)
@@ -415,8 +445,8 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
 
     data <- tryCatch({
       download_istat_data(dataset_id, filter = freq_filter,
-                          start_time = start_time, timeout = timeout,
-                          verbose = verbose)
+                          start_time = start_time, incremental = incremental,
+                          timeout = timeout, verbose = verbose)
     }, error = function(e) {
       warning("Failed to download ", freq, " data for ", dataset_id, ": ", e$message)
       NULL

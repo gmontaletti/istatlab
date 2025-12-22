@@ -8,6 +8,7 @@ download_istat_data(
   dataset_id,
   filter = NULL,
   start_time = "",
+  incremental = FALSE,
   timeout = NULL,
   verbose = TRUE,
   updated_after = NULL,
@@ -23,6 +24,11 @@ download_istat_data(
 
 \item{start_time}{Character string specifying the start period (e.g., "2019").
 If empty, downloads all available data}
+
+\item{incremental}{Logical or Date/character. If FALSE (default), fetches all data.
+If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
+fetches only data from that period onwards using the SDMX startPeriod parameter.
+Takes precedence over start_time if both are provided.}
 
 \item{timeout}{Numeric timeout in seconds for the download operation. Default uses config value}
 
