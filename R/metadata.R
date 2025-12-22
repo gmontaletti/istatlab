@@ -215,12 +215,10 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
     dataset_map <- tryCatch(readRDS(map_file), error = function(e) list())
   }
 
-  # 2. Check cache freshness -----
-  file_age <- if (file.exists(codelists_file)) {
-    as.numeric(difftime(Sys.time(), file.info(codelists_file)$mtime, units = "days"))
-  } else {
-    Inf
-  }
+  # 2. Check cache freshness (staggered TTL) -----
+  # Check which codelists are expired based on per-codelist TTL
+  all_codelist_ids <- if (length(shared_codelists) > 0) names(shared_codelists) else character(0)
+  expired_codelists <- check_codelist_expiration(all_codelist_ids, cache_dir)
 
   # 3. Determine which datasets to process -----
   if (is.null(dataset_ids)) {
@@ -231,13 +229,15 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
   # Check which datasets are missing from map
   missing_datasets <- dataset_ids[!dataset_ids %in% names(dataset_map)]
 
-  needs_update <- force_update || (file_age > 14) || (length(missing_datasets) > 0)
+  # Use staggered TTL check instead of file age
+  needs_update <- force_update || (length(missing_datasets) > 0) || (length(expired_codelists) > 0)
 
   if (!needs_update) {
-    message("Using cached codelists (", round(file_age, 1), " days old)")
+    message("Using cached codelists (", length(shared_codelists), " codelists cached)")
   } else {
     # Determine datasets to download
-    datasets_to_download <- if (force_update || file_age > 14) {
+    # If force_update or expired codelists, download all; otherwise just missing datasets
+    datasets_to_download <- if (force_update || length(expired_codelists) > 0) {
       dataset_ids
     } else {
       missing_datasets
@@ -265,14 +265,32 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
           # Extract unique codelist IDs from this dataset
           unique_cl_ids <- unique(raw_codelist$id)
 
+          # Load codelist metadata for TTL tracking
+          cl_metadata <- load_codelist_metadata(cache_dir)
+          current_time <- Sys.time()
+
           # Store each codelist by its ID (deduplicated)
           for (cl_id in unique_cl_ids) {
             if (!(cl_id %in% names(shared_codelists)) || force_update) {
               cl_data <- raw_codelist[id == cl_id,
                 .(id_description, en_description, it_description, version, agencyID)]
               shared_codelists[[cl_id]] <- cl_data
+
+              # Update codelist metadata with staggered TTL
+              cl_metadata[[cl_id]] <- list(
+                first_download = if (cl_id %in% names(cl_metadata)) {
+                  cl_metadata[[cl_id]]$first_download
+                } else {
+                  current_time
+                },
+                last_refresh = current_time,
+                ttl_days = compute_codelist_ttl(cl_id)
+              )
             }
           }
+
+          # Save updated codelist metadata
+          save_codelist_metadata(cl_metadata, cache_dir)
 
           # Update dataset-to-codelist mapping using the correct dimension mapping
           dataset_map[[dataset_id]] <- list(
@@ -820,3 +838,504 @@ get_available_frequencies <- function(dataset_id, timeout = 30) {
   })
 }
 
+# 1. Staggered TTL Functions -----
+
+#' Compute Staggered TTL for Codelist
+#'
+#' Computes a deterministic TTL for a codelist based on a hash of its ID.
+#' This distributes codelist expirations across a time window to prevent
+#' all codelists from expiring simultaneously (thundering herd problem).
+#'
+#' @param codelist_id Character string, codelist ID (e.g., "CL_FREQ")
+#' @param base_ttl Numeric, minimum TTL in days. Default from config (14)
+#' @param jitter_days Numeric, distribution window in days. Default from config (14)
+#'
+#' @return Numeric TTL in days (base_ttl to base_ttl + jitter_days - 1)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Compute TTL for a codelist
+#' ttl <- compute_codelist_ttl("CL_FREQ")
+#' # Returns a value between 14 and 27 days
+#'
+#' # Different codelists get different TTLs
+#' ttl1 <- compute_codelist_ttl("CL_FREQ")
+#' ttl2 <- compute_codelist_ttl("CL_ITTER107")
+#' # ttl1 and ttl2 are deterministic but likely different
+#' }
+compute_codelist_ttl <- function(codelist_id,
+                                  base_ttl = NULL,
+                                  jitter_days = NULL) {
+  config <- get_istat_config()
+
+  if (is.null(base_ttl)) base_ttl <- config$cache$codelist_base_ttl_days
+  if (is.null(jitter_days)) jitter_days <- config$cache$codelist_jitter_days
+
+  # Use a simple hash based on character codes
+  # Sum of character codes modulo jitter_days gives deterministic distribution
+  char_codes <- utf8ToInt(codelist_id)
+  hash_value <- sum(char_codes)
+
+  jitter <- hash_value %% jitter_days
+
+  return(base_ttl + jitter)
+}
+
+#' Load Codelist Metadata Cache
+#'
+#' Loads per-codelist metadata (timestamps, TTL) from cache.
+#' Returns empty list if cache doesn't exist or is corrupted.
+#'
+#' @param cache_dir Character, cache directory path. Default "meta"
+#'
+#' @return Named list of codelist metadata, where each element contains:
+#'   \itemize{
+#'     \item first_download: POSIXct timestamp of first download
+#'     \item last_refresh: POSIXct timestamp of last refresh
+#'     \item ttl_days: Numeric TTL in days for this codelist
+#'   }
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Load codelist metadata
+#' cl_meta <- load_codelist_metadata()
+#' # Access metadata for specific codelist
+#' cl_meta[["CL_FREQ"]]$ttl_days
+#' }
+load_codelist_metadata <- function(cache_dir = "meta") {
+  config <- get_istat_config()
+  metadata_file <- file.path(cache_dir, config$cache$codelist_metadata_file)
+
+  if (file.exists(metadata_file) && file.size(metadata_file) > 0) {
+    tryCatch(
+      readRDS(metadata_file),
+      error = function(e) {
+        warning("Failed to load codelist metadata: ", e$message)
+        list()
+      }
+    )
+  } else {
+    list()
+  }
+}
+
+#' Save Codelist Metadata Cache
+#'
+#' Saves per-codelist metadata (timestamps, TTL) to cache.
+#'
+#' @param metadata Named list of codelist metadata to save
+#' @param cache_dir Character, cache directory path. Default "meta"
+#'
+#' @return Invisible NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Update and save metadata
+#' cl_meta <- load_codelist_metadata()
+#' cl_meta[["CL_FREQ"]] <- list(
+#'   first_download = Sys.time(),
+#'   last_refresh = Sys.time(),
+#'   ttl_days = compute_codelist_ttl("CL_FREQ")
+#' )
+#' save_codelist_metadata(cl_meta)
+#' }
+save_codelist_metadata <- function(metadata, cache_dir = "meta") {
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE)
+  }
+
+  config <- get_istat_config()
+  metadata_file <- file.path(cache_dir, config$cache$codelist_metadata_file)
+
+  tryCatch({
+    saveRDS(metadata, metadata_file)
+    invisible(NULL)
+  }, error = function(e) {
+    warning("Failed to save codelist metadata: ", e$message)
+    invisible(NULL)
+  })
+}
+
+#' Check Which Codelists Need Renewal
+#'
+#' Checks each codelist against its staggered TTL and returns
+#' a list of codelists that need to be refreshed.
+#'
+#' @param codelist_ids Character vector of codelist IDs to check.
+#'   If NULL, checks all cached codelists.
+#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param force_check Logical, if TRUE returns all codelists as expired.
+#'   Default FALSE
+#'
+#' @return Character vector of codelist IDs that need renewal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Check which codelists are expired
+#' expired <- check_codelist_expiration()
+#' message("Expired codelists: ", paste(expired, collapse = ", "))
+#'
+#' # Check specific codelists
+#' expired <- check_codelist_expiration(c("CL_FREQ", "CL_ITTER107"))
+#'
+#' # Force check all as expired
+#' all_cls <- check_codelist_expiration(force_check = TRUE)
+#' }
+check_codelist_expiration <- function(codelist_ids = NULL,
+                                       cache_dir = "meta",
+                                       force_check = FALSE) {
+  config <- get_istat_config()
+
+  # Load current metadata
+  cl_metadata <- load_codelist_metadata(cache_dir)
+
+  # If no codelist IDs provided, check all cached codelists
+  if (is.null(codelist_ids)) {
+    codelists_file <- file.path(cache_dir, config$cache$codelists_file)
+    if (file.exists(codelists_file) && file.size(codelists_file) > 0) {
+      shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) list())
+      codelist_ids <- names(shared_codelists)
+    } else {
+      return(character(0))
+    }
+  }
+
+  if (length(codelist_ids) == 0) {
+    return(character(0))
+  }
+
+  # Migration: if metadata is empty but codelists exist, initialize metadata
+  if (length(cl_metadata) == 0 && length(codelist_ids) > 0) {
+    message("Initializing codelist metadata for staggered TTL...")
+    current_time <- Sys.time()
+    for (cl_id in codelist_ids) {
+      cl_metadata[[cl_id]] <- list(
+        first_download = current_time,
+        last_refresh = current_time,
+        ttl_days = compute_codelist_ttl(cl_id)
+      )
+    }
+    save_codelist_metadata(cl_metadata, cache_dir)
+    # After migration, nothing is expired yet
+    return(character(0))
+  }
+
+  expired <- character(0)
+  current_time <- Sys.time()
+
+  for (cl_id in codelist_ids) {
+    if (force_check) {
+      expired <- c(expired, cl_id)
+      next
+    }
+
+    if (!(cl_id %in% names(cl_metadata))) {
+      # New codelist, not in metadata - needs download
+      expired <- c(expired, cl_id)
+      next
+    }
+
+    meta <- cl_metadata[[cl_id]]
+
+    # Compute age since last refresh
+    age_days <- as.numeric(difftime(current_time, meta$last_refresh, units = "days"))
+
+    # Compare against staggered TTL
+    if (age_days > meta$ttl_days) {
+      expired <- c(expired, cl_id)
+    }
+  }
+
+  return(expired)
+}
+
+#' Ensure Codelists Are Available for Dataset
+#'
+#' Checks if all codelists required by a dataset are in cache.
+#' Downloads missing codelists before labeling operations.
+#' This prevents apply_labels() from failing on new datasets.
+#'
+#' @param dataset_id Character, dataset ID to check
+#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param verbose Logical, print status messages. Default TRUE
+#'
+#' @return Logical, TRUE if all codelists are available (cached or downloaded)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Ensure codelists before labeling
+#' if (ensure_codelists("534_50")) {
+#'   labeled_data <- apply_labels(raw_data)
+#' }
+#'
+#' # Check new dataset
+#' ensure_codelists("150_908", verbose = TRUE)
+#' }
+ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
+  config <- get_istat_config()
+
+  # Check if dataset is already in map
+  map_file <- file.path(cache_dir, config$cache$dataset_map_file)
+  codelists_file <- file.path(cache_dir, config$cache$codelists_file)
+
+  dataset_map <- if (file.exists(map_file) && file.size(map_file) > 0) {
+    tryCatch(readRDS(map_file), error = function(e) list())
+  } else {
+    list()
+  }
+
+  shared_codelists <- if (file.exists(codelists_file) && file.size(codelists_file) > 0) {
+    tryCatch(readRDS(codelists_file), error = function(e) list())
+  } else {
+    list()
+  }
+
+  # Extract root ID for matching (compound IDs like "534_49_DF_XXX" -> "534_49")
+  root_id <- extract_root_id(dataset_id)
+
+  # Check if dataset (or root) is already mapped
+  check_ids <- unique(c(dataset_id, root_id))
+  existing_id <- NULL
+
+  for (check_id in check_ids) {
+    if (check_id %in% names(dataset_map)) {
+      existing_id <- check_id
+      break
+    }
+  }
+
+  if (!is.null(existing_id)) {
+    # Dataset is mapped - check if all its codelists are cached
+    required_cls <- dataset_map[[existing_id]]$codelists
+    missing_cls <- setdiff(required_cls, names(shared_codelists))
+
+    if (length(missing_cls) == 0) {
+      if (verbose) message("Codelists for ", dataset_id, " are already cached")
+      return(TRUE)
+    }
+
+    if (verbose) {
+      message("Missing ", length(missing_cls), " codelists for ", dataset_id)
+    }
+  } else {
+    if (verbose) message("New dataset ", dataset_id, " - downloading codelists")
+  }
+
+  # Download codelists for this dataset
+  result <- tryCatch({
+    download_single_codelist(dataset_id)
+  }, error = function(e) {
+    # Try root ID if full ID fails
+    if (root_id != dataset_id) {
+      tryCatch({
+        download_single_codelist(root_id)
+      }, error = function(e2) NULL)
+    } else {
+      NULL
+    }
+  })
+
+  if (is.null(result) || is.null(result$codelist)) {
+    warning("Failed to download codelists for: ", dataset_id)
+    return(FALSE)
+  }
+
+  raw_codelist <- result$codelist
+  dimension_mapping <- result$dimension_mapping
+
+  # Update shared codelists cache
+  unique_cl_ids <- unique(raw_codelist$id)
+  cl_metadata <- load_codelist_metadata(cache_dir)
+  current_time <- Sys.time()
+
+  for (cl_id in unique_cl_ids) {
+    if (!(cl_id %in% names(shared_codelists))) {
+      cl_data <- raw_codelist[id == cl_id,
+        .(id_description, en_description, it_description, version, agencyID)]
+      shared_codelists[[cl_id]] <- cl_data
+
+      # Initialize metadata for new codelist
+      cl_metadata[[cl_id]] <- list(
+        first_download = current_time,
+        last_refresh = current_time,
+        ttl_days = compute_codelist_ttl(cl_id)
+      )
+    }
+  }
+
+  # Update dataset map
+  dataset_map[[dataset_id]] <- list(
+    codelists = unique_cl_ids,
+    dimensions = dimension_mapping,
+    last_updated = current_time
+  )
+
+  # Save updated caches
+  if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+  saveRDS(shared_codelists, codelists_file)
+  saveRDS(dataset_map, map_file)
+  save_codelist_metadata(cl_metadata, cache_dir)
+
+  if (verbose) {
+    message("Cached ", length(unique_cl_ids), " codelists for ", dataset_id)
+  }
+
+  return(TRUE)
+}
+
+#' Extract Root Dataset ID
+#'
+#' Extracts the root dataset ID from compound IDs.
+#' For example: "534_49_DF_DCSC_GI_ORE_10" -> "534_49"
+#'
+#' @param dataset_id Character string, full dataset ID
+#'
+#' @return Character string, root dataset ID
+#' @keywords internal
+extract_root_id <- function(dataset_id) {
+  if (grepl("_DF_", dataset_id)) {
+    # Extract root before _DF_ suffix
+    sub("_DF_.*$", "", dataset_id)
+  } else {
+    dataset_id
+  }
+}
+
+#' Refresh Expired Codelists
+#'
+#' Downloads fresh versions of expired codelists and updates cache.
+#' Only refreshes codelists that have exceeded their staggered TTL.
+#'
+#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param force_refresh Logical, refresh all codelists regardless of TTL.
+#'   Default FALSE
+#' @param verbose Logical, print status messages. Default TRUE
+#'
+#' @return Invisible list with refresh statistics:
+#'   \itemize{
+#'     \item refreshed: Number of codelists successfully refreshed
+#'     \item total: Total number of cached codelists
+#'     \item expired: Character vector of expired codelist IDs
+#'   }
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Refresh only expired codelists
+#' result <- refresh_expired_codelists()
+#' message("Refreshed ", result$refreshed, " codelists")
+#'
+#' # Force refresh all
+#' refresh_expired_codelists(force_refresh = TRUE)
+#' }
+refresh_expired_codelists <- function(cache_dir = "meta",
+                                       force_refresh = FALSE,
+                                       verbose = TRUE) {
+  config <- get_istat_config()
+
+  # Load current caches
+  codelists_file <- file.path(cache_dir, config$cache$codelists_file)
+  map_file <- file.path(cache_dir, config$cache$dataset_map_file)
+
+  if (!file.exists(codelists_file) || !file.exists(map_file)) {
+    if (verbose) message("No existing cache found. Run download_codelists() first.")
+    return(invisible(list(refreshed = 0, total = 0, expired = character(0))))
+  }
+
+  shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) list())
+  dataset_map <- tryCatch(readRDS(map_file), error = function(e) list())
+  cl_metadata <- load_codelist_metadata(cache_dir)
+
+  if (length(shared_codelists) == 0) {
+    if (verbose) message("No codelists in cache.")
+    return(invisible(list(refreshed = 0, total = 0, expired = character(0))))
+  }
+
+  # Check which codelists need renewal
+  expired_cls <- check_codelist_expiration(names(shared_codelists), cache_dir, force_refresh)
+
+  if (length(expired_cls) == 0) {
+    if (verbose) message("All codelists are current. No refresh needed.")
+    return(invisible(list(refreshed = 0, total = length(shared_codelists), expired = character(0))))
+  }
+
+  if (verbose) {
+    message("Refreshing ", length(expired_cls), " of ", length(shared_codelists), " codelists...")
+  }
+
+  # Build codelist-to-dataset lookup for efficient refresh
+  cl_to_dataset <- list()
+  for (dataset_id in names(dataset_map)) {
+    for (cl_id in dataset_map[[dataset_id]]$codelists) {
+      if (is.null(cl_to_dataset[[cl_id]])) {
+        cl_to_dataset[[cl_id]] <- dataset_id
+      }
+    }
+  }
+
+  # Download fresh codelists
+  success_count <- 0
+  current_time <- Sys.time()
+
+  for (cl_id in expired_cls) {
+    # Find a dataset that uses this codelist
+    dataset_id <- cl_to_dataset[[cl_id]]
+
+    if (is.null(dataset_id)) {
+      if (verbose) message("  Skipping ", cl_id, ": no associated dataset found")
+      next
+    }
+
+    result <- tryCatch({
+      download_single_codelist(dataset_id)
+    }, error = function(e) {
+      if (verbose) warning("  Failed to refresh ", cl_id, ": ", e$message)
+      NULL
+    })
+
+    if (!is.null(result) && !is.null(result$codelist)) {
+      # Update this codelist in shared cache
+      cl_data <- result$codelist[id == cl_id]
+      if (nrow(cl_data) > 0) {
+        cl_data_clean <- cl_data[, .(id_description, en_description,
+                                      it_description, version, agencyID)]
+        shared_codelists[[cl_id]] <- cl_data_clean
+
+        # Update metadata - preserve first_download, update last_refresh
+        cl_metadata[[cl_id]] <- list(
+          first_download = if (cl_id %in% names(cl_metadata)) {
+            cl_metadata[[cl_id]]$first_download
+          } else {
+            current_time
+          },
+          last_refresh = current_time,
+          ttl_days = compute_codelist_ttl(cl_id)
+        )
+
+        success_count <- success_count + 1
+        if (verbose) message("  Refreshed: ", cl_id)
+      }
+    }
+  }
+
+  # Save updated caches
+  if (success_count > 0) {
+    saveRDS(shared_codelists, codelists_file)
+    save_codelist_metadata(cl_metadata, cache_dir)
+  }
+
+  if (verbose) {
+    message("Refresh complete: ", success_count, "/", length(expired_cls), " codelists updated")
+  }
+
+  invisible(list(
+    refreshed = success_count,
+    total = length(shared_codelists),
+    expired = expired_cls
+  ))
+}

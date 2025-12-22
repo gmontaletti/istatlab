@@ -82,7 +82,14 @@ get_istat_config <- function() {
       codelists_file = "codelists.rds",
       dataset_map_file = "dataset_codelist_map.rds",
       metadata_file = "flussi_istat.rds",
-      data_download_log_file = "data_download_log.rds"
+      data_download_log_file = "data_download_log.rds",
+      codelist_metadata_file = "codelist_metadata.rds",
+
+      # Staggered TTL configuration for codelists
+      # Each codelist gets TTL = base + (hash(codelist_id) % jitter)
+      # This prevents all codelists from expiring simultaneously
+      codelist_base_ttl_days = 14,
+      codelist_jitter_days = 14
     )
   )
 }

@@ -51,6 +51,12 @@ testthat::test_file("tests/testthat/test-download.R")
 covr::package_coverage()
 ```
 
+### External Test Workflow
+The test workflow directory is located at:
+`/Users/giampaolomontaletti/Documents/funzioni/test/istatlab_test`
+
+Use this directory for integration testing and workflow validation outside the package structure.
+
 ### Documentation
 ```r
 # Generate documentation from roxygen2 comments
