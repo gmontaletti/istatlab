@@ -364,6 +364,9 @@ update_data_download_log <- function(dataset_id, cache_dir = "meta") {
 #' to detect available frequencies, then makes separate downloads for each.
 #'
 #' @inheritParams download_istat_data
+#' @param freq Character string specifying a single frequency to download (A, Q, or M).
+#'   If NULL (default), downloads all available frequencies. When specified, only
+#'   the requested frequency is downloaded, avoiding unnecessary API calls.
 #'
 #' @return Named list of data.tables by frequency (e.g., list(A = dt, Q = dt)).
 #'   Each element contains data for a single frequency. If the dataset has only
@@ -379,13 +382,17 @@ update_data_download_log <- function(dataset_id, cache_dir = "meta") {
 #' annual_data <- data_list$A
 #' quarterly_data <- data_list$Q
 #'
+#' # Download only a specific frequency (more efficient)
+#' annual_only <- download_istat_data_by_freq("151_914", start_time = "2020", freq = "A")
+#'
 #' # Single-frequency dataset
 #' job_vacancies <- download_istat_data_by_freq("534_50", start_time = "2024")
 #' monthly_data <- job_vacancies$M
 #' }
 download_istat_data_by_freq <- function(dataset_id, filter = NULL,
                                          start_time = "", incremental = FALSE,
-                                         timeout = NULL, verbose = TRUE) {
+                                         timeout = NULL, verbose = TRUE,
+                                         freq = NULL) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -398,7 +405,34 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
     stop("dataset_id must be a single character string")
   }
 
-  # Get available frequencies
+  # If specific frequency requested, download only that one (skip frequency detection)
+  if (!is.null(freq)) {
+    if (!is.character(freq) || length(freq) != 1 || !freq %in% c("A", "Q", "M")) {
+      stop("freq must be a single character: 'A', 'Q', or 'M'")
+    }
+
+    istat_log(paste("Downloading single frequency:", freq, "for", dataset_id), "INFO", verbose)
+
+    # Get dimension count to build correct filter
+    dims <- get_dataset_dimensions(dataset_id)
+    n_dims <- if (!is.null(dims)) length(dims) else 8
+
+    # Build filter with frequency prefix
+    freq_filter <- if (is.null(filter) || filter == "ALL") {
+      paste0(freq, paste(rep(".", n_dims - 1), collapse = ""))
+    } else {
+      paste0(freq, ".", sub("^[^.]*\\.?", "", filter))
+    }
+
+    data <- download_istat_data(dataset_id, filter = freq_filter,
+                                start_time = start_time, incremental = incremental,
+                                timeout = timeout, verbose = verbose)
+    result <- list()
+    result[[freq]] <- data
+    return(result)
+  }
+
+  # Get available frequencies (when freq not specified)
   istat_log(paste("Checking available frequencies for", dataset_id), "INFO", verbose)
   freqs <- get_available_frequencies(dataset_id)
 

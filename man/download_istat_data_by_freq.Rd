@@ -10,7 +10,8 @@ download_istat_data_by_freq(
   start_time = "",
   incremental = FALSE,
   timeout = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  freq = NULL
 )
 }
 \arguments{
@@ -29,6 +30,10 @@ Takes precedence over start_time if both are provided.}
 \item{timeout}{Numeric timeout in seconds for the download operation. Default uses config value}
 
 \item{verbose}{Logical indicating whether to print status messages. Default is TRUE}
+
+\item{freq}{Character string specifying a single frequency to download (A, Q, or M).
+If NULL (default), downloads all available frequencies. When specified, only
+the requested frequency is downloaded, avoiding unnecessary API calls.}
 }
 \value{
 Named list of data.tables by frequency (e.g., list(A = dt, Q = dt)).
@@ -48,6 +53,9 @@ data_list <- download_istat_data_by_freq("151_914", start_time = "2020")
 # Access by frequency
 annual_data <- data_list$A
 quarterly_data <- data_list$Q
+
+# Download only a specific frequency (more efficient)
+annual_only <- download_istat_data_by_freq("151_914", start_time = "2020", freq = "A")
 
 # Single-frequency dataset
 job_vacancies <- download_istat_data_by_freq("534_50", start_time = "2024")
