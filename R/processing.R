@@ -53,7 +53,7 @@ extract_root_dataset_id <- function(dataset_id) {
 #'   \item Optimized column filtering using uniqueN()
 #'   \item In-place factor conversion using set() operations
 #' }
-#' 
+#'
 #' For large datasets (>100K rows), this optimized version can be 5-10x faster
 #' than the original implementation.
 #'
@@ -62,54 +62,67 @@ extract_root_dataset_id <- function(dataset_id) {
 #' # Basic usage
 #' raw_data <- download_istat_data("150_908")
 #' labeled_data <- apply_labels(raw_data)
-#' 
+#'
 #' # With performance timing
 #' labeled_data <- apply_labels(raw_data, timing = TRUE, verbose = TRUE)
 #' execution_time <- attr(labeled_data, "execution_time")
 #' }
-apply_labels <- function(data, codelists = NULL, var_dimensions = NULL, 
-                       timing = FALSE, verbose = FALSE) {
-  
+apply_labels <- function(
+  data,
+  codelists = NULL,
+  var_dimensions = NULL,
+  timing = FALSE,
+  verbose = FALSE
+) {
   # Initialize timing
-  if (timing) start_time <- Sys.time()
-  
+  if (timing) {
+    start_time <- Sys.time()
+  }
+
   if (!data.table::is.data.table(data)) {
     data.table::setDT(data)
   }
-  
+
   # Work with reference to avoid copying
   df <- data.table::copy(data)
-  
+
   if (timing && verbose) {
     message("Setup time: ", round(as.numeric(Sys.time() - start_time), 3), "s")
     metadata_start <- Sys.time()
   }
-  
+
   # Optimized metadata loading with static caching
   metadata <- load_metadata_cached(codelists, var_dimensions)
   codelists <- metadata$codelists
   var_dimensions <- metadata$var_dimensions
-  
+
   if (timing && verbose) {
-    message("Metadata loading time: ", round(as.numeric(Sys.time() - metadata_start), 3), "s")
+    message(
+      "Metadata loading time: ",
+      round(as.numeric(Sys.time() - metadata_start), 3),
+      "s"
+    )
     processing_start <- Sys.time()
   }
-  
+
   # Get dimension names (exclude standard columns) - vectorized
   standard_cols <- c("ObsDimension", "ObsValue", "id")
   dimension_names <- setdiff(names(df), standard_cols)
-  
+
   # Convert dimension columns to character - single operation
   if (length(dimension_names) > 0) {
-    df[, (dimension_names) := lapply(.SD, as.character), .SDcols = dimension_names]
+    df[,
+      (dimension_names) := lapply(.SD, as.character),
+      .SDcols = dimension_names
+    ]
   }
-  
+
   # Get dataset-specific codelists and dimensions
-  dataset_id <- df$id[1L]  # Use first element instead of unique() for speed
+  dataset_id <- df$id[1L] # Use first element instead of unique() for speed
   if (is.na(dataset_id)) {
     stop("Data contains no dataset ID")
   }
-  
+
   dataset_key <- paste0("X", dataset_id)
   dataset_codelists <- codelists[[dataset_key]]
   dataset_dimensions <- var_dimensions[[dataset_key]]
@@ -132,46 +145,64 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL,
   }
 
   if (is.null(dataset_codelists) || is.null(dataset_dimensions)) {
-    warning("Codelists or dimensions not available for dataset: ", dataset_id,
-            " (also tried root: ", extract_root_dataset_id(dataset_id), ")")
+    warning(
+      "Codelists or dimensions not available for dataset: ",
+      dataset_id,
+      " (also tried root: ",
+      extract_root_dataset_id(dataset_id),
+      ")"
+    )
     return(df)
   }
-  
+
   # Create dimension mapping - optimized
   dim_mapping <- create_dimension_mapping_optimized(dataset_dimensions)
-  
+
   if (timing && verbose) {
-    message("Preprocessing time: ", round(as.numeric(Sys.time() - processing_start), 3), "s")
+    message(
+      "Preprocessing time: ",
+      round(as.numeric(Sys.time() - processing_start), 3),
+      "s"
+    )
     labeling_start <- Sys.time()
   }
-  
+
   # Apply labels - VECTORIZED APPROACH (biggest optimization)
-  df <- apply_labels_vectorized(df, dim_mapping, dataset_codelists, dimension_names)
-  
+  df <- apply_labels_vectorized(
+    df,
+    dim_mapping,
+    dataset_codelists,
+    dimension_names
+  )
+
   if (timing && verbose) {
-    message("Label application time: ", round(as.numeric(Sys.time() - labeling_start), 3), "s")
+    message(
+      "Label application time: ",
+      round(as.numeric(Sys.time() - labeling_start), 3),
+      "s"
+    )
     postprocess_start <- Sys.time()
   }
-  
+
   # Process time dimension
   df <- process_time_dimension(df)
-  
+
   # Process observation values - use set for in-place modification
   data.table::set(df, j = "valore_label", value = as.numeric(df$ObsValue))
-  
+
   # Handle editions (keep only latest)
   if ("EDITION" %in% names(df)) {
     df <- process_editions(df)
   }
-  
+
   # Optimized column filtering - use data.table operations
   df <- filter_varying_columns_optimized(df)
-  
+
   # Handle data types with bases
   if ("DATA_TYPE" %in% names(df) && any(grepl("base", df$DATA_TYPE))) {
     df <- process_data_types(df)
   }
-  
+
   # Keep both code columns and label columns
   # No filtering needed - data.table already has both FREQ (code) and FREQ_label (label)
 
@@ -184,7 +215,10 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL,
   }
 
   # Convert character columns to factors - optimized with set operations
-  char_cols <- setdiff(names(df), c("tempo", "valore", "tempo_temp", "ObsValue", "id"))
+  char_cols <- setdiff(
+    names(df),
+    c("tempo", "valore", "tempo_temp", "ObsValue", "id")
+  )
   if (length(char_cols) > 0) {
     for (col in char_cols) {
       if (is.character(df[[col]])) {
@@ -192,11 +226,15 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL,
       }
     }
   }
-  
+
   if (timing && verbose) {
-    message("Post-processing time: ", round(as.numeric(Sys.time() - postprocess_start), 3), "s")
+    message(
+      "Post-processing time: ",
+      round(as.numeric(Sys.time() - postprocess_start), 3),
+      "s"
+    )
   }
-  
+
   if (timing) {
     total_time <- as.numeric(Sys.time() - start_time)
     if (verbose) {
@@ -204,7 +242,7 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL,
     }
     attr(df, "execution_time") <- total_time
   }
-  
+
   return(df)
 }
 
@@ -222,12 +260,31 @@ apply_labels <- function(data, codelists = NULL, var_dimensions = NULL,
 #'
 #' @return List with codelists (keyed by dataset) and var_dimensions
 #' @keywords internal
-load_metadata_cached <- function(codelists = NULL, var_dimensions = NULL, cache_dir = "meta") {
+# In-memory metadata cache environment
+.metadata_cache <- new.env(parent = emptyenv())
 
+load_metadata_cached <- function(
+  codelists = NULL,
+  var_dimensions = NULL,
+  cache_dir = "meta"
+) {
   # Return pre-loaded data if provided
-
   if (!is.null(codelists) && !is.null(var_dimensions)) {
     return(list(codelists = codelists, var_dimensions = var_dimensions))
+  }
+
+  # Check in-memory cache first
+  cache_key <- cache_dir
+  if (exists(cache_key, envir = .metadata_cache)) {
+    cached <- get(cache_key, envir = .metadata_cache)
+    result <- cached
+    if (!is.null(codelists)) {
+      result$codelists <- codelists
+    }
+    if (!is.null(var_dimensions)) {
+      result$var_dimensions <- var_dimensions
+    }
+    return(result)
   }
 
   config <- get_istat_config()
@@ -264,70 +321,91 @@ load_metadata_cached <- function(codelists = NULL, var_dimensions = NULL, cache_
     # Combine into single data.table
     dataset_cl_list <- Filter(Negate(is.null), dataset_cl_list)
     if (length(dataset_cl_list) > 0) {
-      assembled_codelists[[dataset_key]] <- data.table::rbindlist(dataset_cl_list, fill = TRUE)
+      assembled_codelists[[dataset_key]] <- data.table::rbindlist(
+        dataset_cl_list,
+        fill = TRUE
+      )
     }
 
     # Set var_dimensions from mapping
     assembled_var_dimensions[[dataset_key]] <- mapping$dimensions
   }
 
+  # Store in in-memory cache
+  result <- list(
+    codelists = assembled_codelists,
+    var_dimensions = assembled_var_dimensions
+  )
+  assign(cache_key, result, envir = .metadata_cache)
+
   # Override with pre-loaded values if provided
   if (!is.null(codelists)) {
-    assembled_codelists <- codelists
+    result$codelists <- codelists
   }
   if (!is.null(var_dimensions)) {
-    assembled_var_dimensions <- var_dimensions
+    result$var_dimensions <- var_dimensions
   }
 
-  list(codelists = assembled_codelists, var_dimensions = assembled_var_dimensions)
+  result
 }
 
 #' Create optimized dimension mapping
 #' @keywords internal
 create_dimension_mapping_optimized <- function(dataset_dimensions) {
-  if (length(dataset_dimensions) == 0) return(data.table::data.table())
-  
+  if (length(dataset_dimensions) == 0) {
+    return(data.table::data.table())
+  }
+
   dim_mapping <- data.table::data.table(
     cl = unlist(dataset_dimensions),
     var = names(dataset_dimensions)
   )
-  
+
   # Optimized string splitting
-  dim_mapping[, c("agency", "codelist", "version") := data.table::tstrsplit(cl, "/", fixed = TRUE)]
-  
+  dim_mapping[,
+    c("agency", "codelist", "version") := data.table::tstrsplit(
+      cl,
+      "/",
+      fixed = TRUE
+    )
+  ]
+
   # Set key for fast lookups
   data.table::setkey(dim_mapping, var)
-  
+
   return(dim_mapping)
 }
 
 #' Apply labels using vectorized operations - MAIN OPTIMIZATION
 #' @keywords internal
-apply_labels_vectorized <- function(df, dim_mapping, dataset_codelists, dimension_names) {
-
+apply_labels_vectorized <- function(
+  df,
+  dim_mapping,
+  dataset_codelists,
+  dimension_names
+) {
   if (!data.table::is.data.table(dataset_codelists) || nrow(dim_mapping) == 0) {
     return(df)
   }
 
-  # Process all dimensions
+  # Process all dimensions using match() instead of merge()
   for (dim_name in dimension_names) {
-
     # Fast key-based lookup
     codelist_id <- dim_mapping[.(dim_name)]$codelist
 
     if (length(codelist_id) > 0 && !is.na(codelist_id)) {
-
       # Pre-filter codelists once
       relevant_labels <- dataset_codelists[id %chin% codelist_id]
 
       if (nrow(relevant_labels) > 0) {
-        # Create lookup table with dimension-specific column names
         label_col <- paste0(dim_name, "_label")
-        lookup_dt <- relevant_labels[, .(id_description, it_description)]
-        data.table::setnames(lookup_dt, c(dim_name, label_col))
-
-        # Merge to add label column, keeping original columns
-        df <- merge(df, lookup_dt, by = dim_name, all.x = TRUE)
+        # Use match() + set() instead of merge() to avoid data.table allocation
+        idx <- match(df[[dim_name]], relevant_labels$id_description)
+        data.table::set(
+          df,
+          j = label_col,
+          value = relevant_labels$it_description[idx]
+        )
       }
     }
   }
@@ -338,26 +416,22 @@ apply_labels_vectorized <- function(df, dim_mapping, dataset_codelists, dimensio
 #' Optimized column filtering using data.table operations
 #' @keywords internal
 filter_varying_columns_optimized <- function(df) {
-
   # Only filter constant columns when there are multiple rows to compare
   # With 1 row, all columns would have uniqueN==1 and be removed
   if (nrow(df) <= 1) {
     return(df)
   }
 
-  # Use data.table's efficient column operations
+  # Use vapply for vectorized uniqueness check
   col_names <- names(df)
-
-  # Vectorized uniqueness check - much faster than lapply
-  varying_mask <- rep(TRUE, length(col_names))
-
-  for (i in seq_along(col_names)) {
-    col_name <- col_names[i]
-    # Use data.table's fast uniqueN function
-    if (data.table::uniqueN(df[[col_name]]) <= 1L) {
-      varying_mask[i] <- FALSE
-    }
-  }
+  varying_mask <- vapply(
+    col_names,
+    function(cn) {
+      data.table::uniqueN(df[[cn]]) > 1L
+    },
+    logical(1),
+    USE.NAMES = FALSE
+  )
 
   varying_cols <- col_names[varying_mask]
 
@@ -370,8 +444,8 @@ filter_varying_columns_optimized <- function(df) {
 
 #' Process Time Dimension
 #'
-#' Processes the time dimension in ISTAT data, converting SDMX time codes to 
-#' appropriate R Date objects. Handles monthly (M), quarterly (Q), and annual (A) 
+#' Processes the time dimension in ISTAT data, converting SDMX time codes to
+#' appropriate R Date objects. Handles monthly (M), quarterly (Q), and annual (A)
 #' frequency data with proper date formatting.
 #'
 #' @param data A data.table with ObsDimension column containing SDMX time codes
@@ -380,34 +454,40 @@ filter_varying_columns_optimized <- function(df) {
 #' @return The data.table with processed tempo_label column containing Date objects
 #' @keywords internal
 process_time_dimension <- function(data) {
-  
   data.table::setnames(data, "ObsDimension", "tempo_temp")
-  
+
+  # Hoist FREQ check once
+  has_freq <- "FREQ" %in% names(data)
+  if (has_freq) {
+    freq_vals <- data$FREQ
+  }
+
   # Monthly data
-  if ("FREQ" %in% names(data) && nrow(data[FREQ == "M"]) > 0) {
+  if (has_freq && any(freq_vals == "M")) {
     data[FREQ == "M", tempo_label := as.Date(paste0(tempo_temp, "-01"))]
   }
-  
+
   # Quarterly data (format: 2024-Q1 or 2024Q1)
-  if ("FREQ" %in% names(data) && nrow(data[FREQ == "Q"]) > 0) {
-    # Convert "2024-Q1" to "2024 Q1" for zoo::as.yearqtr
+  if (has_freq && any(freq_vals == "Q")) {
     data[FREQ == "Q", tempo_temp := gsub("-", " ", tempo_temp)]
-    # Use zoo's as.Date.yearqtr explicitly (base::as.Date doesn't handle yearqtr)
-    data[FREQ == "Q", tempo_label := zoo::as.Date.yearqtr(zoo::as.yearqtr(tempo_temp))]
+    data[
+      FREQ == "Q",
+      tempo_label := zoo::as.Date.yearqtr(zoo::as.yearqtr(tempo_temp))
+    ]
   }
-  
+
   # Annual data
-  if ("FREQ" %in% names(data) && nrow(data[FREQ == "A"]) > 0) {
+  if (has_freq && any(freq_vals == "A")) {
     data[FREQ == "A", tempo_label := as.Date(paste0(tempo_temp, "-01-01"))]
   }
-  
+
   return(data)
 }
 
 #' Process Editions
 #'
 #' Handles multiple editions in ISTAT data by keeping only the latest edition.
-#' This ensures data consistency when ISTAT has published multiple versions 
+#' This ensures data consistency when ISTAT has published multiple versions
 #' of the same dataset with different publication dates.
 #'
 #' @param data A data.table with EDITION column containing edition dates
@@ -416,16 +496,15 @@ process_time_dimension <- function(data) {
 #' @return The data.table filtered to contain only observations from the latest edition
 #' @keywords internal
 process_editions <- function(data) {
-  
   # Clean and convert edition dates
   data[, EDITION_new := gsub("[GM_]", "-", EDITION)]
   data[nchar(EDITION_new) < 9, EDITION_new := paste0(EDITION_new, "-01")]
   data[, EDITION_new := as.Date(EDITION_new)]
-  
+
   # Keep only the latest edition
   latest_edition <- max(data$EDITION)
   data <- data[EDITION == latest_edition]
-  
+
   return(data)
 }
 
@@ -441,18 +520,17 @@ process_editions <- function(data) {
 #' @return The data.table filtered to contain only data from the latest base year
 #' @keywords internal
 process_data_types <- function(data) {
-  
   if (any(grepl("base", data$DATA_TYPE))) {
     # Extract base year
     data[, base := sub("=.*", "", DATA_TYPE)]
     data[, base := as.numeric(substring(base, nchar(base) - 3))]
-    
+
     # Keep only the latest base
     latest_base <- max(data$base, na.rm = TRUE)
     data <- data[base == latest_base]
     data[, base := NULL]
   }
-  
+
   return(data)
 }
 
@@ -487,24 +565,26 @@ clean_variable_names <- function(names) {
 #' \dontrun{
 #' is_valid <- validate_istat_data(my_data, c("tempo", "valore"))
 #' }
-validate_istat_data <- function(data, required_cols = c("ObsDimension", "ObsValue")) {
-  
+validate_istat_data <- function(
+  data,
+  required_cols = c("ObsDimension", "ObsValue")
+) {
   if (!data.table::is.data.table(data)) {
     warning("Data is not a data.table")
     return(FALSE)
   }
-  
+
   if (nrow(data) == 0) {
     warning("Data has zero rows")
     return(FALSE)
   }
-  
+
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
     warning("Missing required columns: ", paste(missing_cols, collapse = ", "))
     return(FALSE)
   }
-  
+
   return(TRUE)
 }
 
@@ -531,9 +611,12 @@ validate_istat_data <- function(data, required_cols = c("ObsDimension", "ObsValu
 #' q_data <- download_istat_data_by_freq("151_914")$Q
 #' filtered_q <- filter_by_time(q_data, start_date = "2024-01-01")
 #' }
-filter_by_time <- function(data, start_date = NULL, end_date = NULL,
-                           time_col = "ObsDimension") {
-
+filter_by_time <- function(
+  data,
+  start_date = NULL,
+  end_date = NULL,
+  time_col = "ObsDimension"
+) {
   if (!data.table::is.data.table(data)) {
     data.table::setDT(data)
   }
@@ -569,12 +652,17 @@ filter_by_time <- function(data, start_date = NULL, end_date = NULL,
 
   # Handle raw ObsDimension with frequency-specific parsing
   if ("FREQ" %in% names(data)) {
-    freq <- unique(data$FREQ)[1]  # Should be single frequency after split
+    freq <- unique(data$FREQ)[1] # Should be single frequency after split
 
     # Parse dates based on frequency
-    parsed_dates <- switch(freq,
+    parsed_dates <- switch(
+      freq,
       "A" = as.Date(paste0(data[[time_col]], "-01-01")),
-      "Q" = zoo::as.Date.yearqtr(zoo::as.yearqtr(gsub("-", " ", data[[time_col]]))),
+      "Q" = zoo::as.Date.yearqtr(zoo::as.yearqtr(gsub(
+        "-",
+        " ",
+        data[[time_col]]
+      ))),
       "M" = as.Date(paste0(data[[time_col]], "-01")),
       # Fallback: try direct conversion
       tryCatch(as.Date(data[[time_col]]), error = function(e) NULL)
