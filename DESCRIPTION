@@ -15,7 +15,8 @@ Description: A toolkit for downloading and processing Italian labour market data
     package provides functions for data retrieval, metadata handling, and data
     processing with automatic label application.
 License: MIT + file LICENSE
-URL: https://github.com/gmontaletti/istatlab
+URL: https://gmontaletti.github.io/istatlab/,
+    https://github.com/gmontaletti/istatlab
 BugReports: https://github.com/gmontaletti/istatlab/issues
 Encoding: UTF-8
 LazyData: true
@@ -34,6 +35,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    digest
+    digest,
+    ggplot2,
+    pkgdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
