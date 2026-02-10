@@ -1,0 +1,1006 @@
+# API ISTAT SDMX: guida completa
+
+``` r
+library(istatlab)
+library(data.table)
+```
+
+## 1. Introduzione all’API SDMX
+
+SDMX (Statistical Data and Metadata eXchange) è uno standard
+internazionale ISO 17369 per lo scambio di dati e metadati statistici.
+ISTAT implementa questo standard attraverso un servizio web RESTful
+disponibile all’indirizzo <https://esploradati.istat.it/SDMXWS>.
+
+Il pacchetto `istatlab` fornisce funzioni per accedere all’API SDMX di
+ISTAT in modo efficiente. La configurazione del servizio può essere
+ottenuta con
+[`get_istat_config()`](https://gmontaletti.github.io/istatlab/reference/get_istat_config.md):
+
+``` r
+# 1. Ottenere la configurazione del servizio -----
+config <- get_istat_config()
+
+# Struttura della configurazione
+str(config, max.level = 1)
+```
+
+La configurazione include:
+
+- `base_url`: URL base del servizio SDMX di ISTAT
+- `endpoints`: endpoint disponibili per l’accesso ai dati e ai metadati
+- `defaults`: impostazioni predefinite (timeout, cache, filtri)
+- `dataset_categories`: categorie organizzate di dataset
+- `http`: configurazione delle richieste HTTP
+- `cache`: impostazioni della cache locale
+
+Gli endpoint principali sono:
+
+``` r
+# 2. Visualizzare gli endpoint disponibili -----
+config$endpoints$rest_v1          # API RESTful v1 (legacy)
+config$endpoints$rest_v2          # API RESTful v2
+config$endpoints$data             # Endpoint per il download dei dati
+config$endpoints$dataflow         # Elenco dei dataset disponibili
+config$endpoints$datastructure    # Struttura dei dataset e codelists
+config$endpoints$codelist         # Definizioni delle codelists
+config$endpoints$registry         # Endpoint registry SDMX v2.1
+config$endpoints$availableconstraint  # Valori disponibili per le dimensioni
+```
+
+Le impostazioni predefinite includono:
+
+``` r
+# 3. Impostazioni predefinite -----
+config$defaults$timeout           # Timeout richieste HTTP (240 secondi)
+config$defaults$cache_days        # Durata cache metadati (14 giorni)
+config$defaults$cache_dir         # Directory cache locale ("meta")
+config$defaults$test_dataset      # Dataset per test di connettività ("534_50")
+```
+
+## 2. Struttura degli endpoint
+
+Il pacchetto `istatlab` utilizza la funzione
+[`build_istat_url()`](https://gmontaletti.github.io/istatlab/reference/build_istat_url.md)
+per costruire URL conformi allo standard SDMX. Questa funzione gestisce
+automaticamente i parametri necessari per ciascun endpoint.
+
+### Endpoint data
+
+L’endpoint data viene utilizzato per scaricare i dati da un dataset
+specifico:
+
+``` r
+# 1. URL per il download dei dati -----
+url <- build_istat_url(
+  endpoint = "data",
+  dataset_id = "534_50",
+  start_time = "2020"
+)
+print(url)
+
+# Con intervallo temporale completo
+url <- build_istat_url(
+  endpoint = "data",
+  dataset_id = "534_50",
+  start_time = "2020",
+  end_time = "2023"
+)
+print(url)
+
+# Con filtro personalizzato
+url <- build_istat_url(
+  endpoint = "data",
+  dataset_id = "534_50",
+  filter = "A.IT",  # Frequenza annuale, Italia
+  start_time = "2020"
+)
+print(url)
+```
+
+### Endpoint dataflow
+
+L’endpoint dataflow restituisce l’elenco di tutti i dataset disponibili:
+
+``` r
+# 2. URL per l'elenco dei dataset -----
+url <- build_istat_url(endpoint = "dataflow")
+print(url)
+```
+
+### Endpoint datastructure
+
+L’endpoint datastructure fornisce la struttura di un dataset, incluse le
+dimensioni e le codelists:
+
+``` r
+# 3. URL per la struttura di un dataset -----
+url <- build_istat_url(
+  endpoint = "datastructure",
+  dsd_ref = "DSD_534_50"
+)
+print(url)
+```
+
+### Endpoint codelist
+
+L’endpoint codelist restituisce le definizioni delle codelists:
+
+``` r
+# 4. URL per le definizioni delle codelists -----
+url <- build_istat_url(endpoint = "codelist")
+print(url)
+```
+
+### Parametri di query
+
+L’API SDMX supporta vari parametri di query per filtrare e limitare i
+dati:
+
+``` r
+# 5. Parametri di query avanzati -----
+
+# Limitare il numero di osservazioni
+url <- build_istat_url(
+  endpoint = "data",
+  dataset_id = "534_50",
+  lastNObservations = 10
+)
+
+# Filtrare per data di aggiornamento
+timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
+url <- build_istat_url(
+  endpoint = "data",
+  dataset_id = "534_50",
+  updated_after = timestamp
+)
+print(url)
+```
+
+### Elenco completo degli endpoint
+
+La funzione
+[`list_istat_endpoints()`](https://gmontaletti.github.io/istatlab/reference/list_istat_endpoints.md)
+restituisce informazioni su tutti gli endpoint disponibili:
+
+``` r
+# 6. Visualizzare tutti gli endpoint -----
+endpoints <- list_istat_endpoints()
+print(endpoints)
+```
+
+## 3. Verifica della connettività
+
+Prima di iniziare a scaricare dati, è opportuno verificare la
+connettività al servizio SDMX. La funzione
+[`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md)
+esegue test di connessione agli endpoint.
+
+### Test di un singolo endpoint
+
+``` r
+# 1. Testare l'endpoint data -----
+result <- test_endpoint_connectivity(
+  endpoints = "data",
+  verbose = TRUE
+)
+print(result)
+```
+
+Il risultato include:
+
+- `endpoint`: nome dell’endpoint testato
+- `url`: URL completo dell’endpoint
+- `accessible`: logico che indica se l’endpoint è raggiungibile
+- `status_code`: codice HTTP della risposta
+- `response_time`: tempo di risposta in secondi
+- `error_message`: messaggio di errore eventuale
+
+### Test di tutti gli endpoint
+
+``` r
+# 2. Testare tutti gli endpoint -----
+all_endpoints <- c(
+  "data",
+  "dataflow",
+  "datastructure",
+  "codelist",
+  "registry",
+  "availableconstraint"
+)
+
+results <- test_endpoint_connectivity(
+  endpoints = all_endpoints,
+  timeout = 30,
+  verbose = TRUE
+)
+
+# Verificare quali endpoint sono accessibili
+accessible_endpoints <- results[results$accessible == TRUE, ]
+print(accessible_endpoints)
+```
+
+### Interpretazione dei risultati
+
+I codici di stato HTTP più comuni sono:
+
+- `200`: richiesta riuscita
+- `404`: risorsa non trovata
+- `500`: errore interno del server
+- `503`: servizio temporaneamente non disponibile
+- `NA`: errore di connessione (timeout, rete, firewall)
+
+### Risoluzione dei problemi
+
+In caso di problemi di connettività:
+
+``` r
+# 3. Diagnostica della connettività -----
+
+# Verificare la connessione di rete
+if (!results$accessible[results$endpoint == "data"]) {
+  cat("Possibili cause:\n")
+  cat("- Connessione Internet assente\n")
+  cat("- Firewall aziendale che blocca l'accesso\n")
+  cat("- Configurazione proxy non corretta\n")
+  cat("- Servizio ISTAT temporaneamente non disponibile\n")
+}
+
+# Aumentare il timeout per connessioni lente
+results_slow <- test_endpoint_connectivity(
+  endpoints = "data",
+  timeout = 60,
+  verbose = TRUE
+)
+```
+
+## 4. Catalogo dei dataset
+
+ISTAT pubblica centinaia di dataset attraverso l’API SDMX. Il pacchetto
+`istatlab` fornisce funzioni per esplorare il catalogo e trovare i
+dataset di interesse.
+
+### Download del catalogo completo
+
+La funzione
+[`download_metadata()`](https://gmontaletti.github.io/istatlab/reference/download_metadata.md)
+scarica l’elenco completo dei dataset disponibili. I metadati vengono
+memorizzati nella cache locale e aggiornati automaticamente ogni 14
+giorni:
+
+``` r
+# 1. Scaricare il catalogo dei dataset -----
+catalogo <- download_metadata()
+data.table::setDT(catalogo)
+
+# Visualizzare la struttura
+str(catalogo)
+
+# Prime righe del catalogo
+head(catalogo[, .(id, Name.it, Name.en)])
+```
+
+Il catalogo include:
+
+- `id`: identificatore univoco del dataset
+- `Name.it`: nome del dataset in italiano
+- `Name.en`: nome del dataset in inglese
+- Altri campi descrittivi
+
+### Cache dei metadati
+
+I metadati vengono salvati nella directory `meta/` della directory di
+lavoro:
+
+``` r
+# 2. Verifica della cache -----
+config <- get_istat_config()
+
+# File della cache
+cache_file <- file.path(
+  config$defaults$cache_dir,
+  config$cache$metadata_file
+)
+print(cache_file)
+
+# La cache viene aggiornata automaticamente dopo 14 giorni
+# Per forzare l'aggiornamento, eliminare il file della cache
+```
+
+### Ricerca per parole chiave
+
+La funzione
+[`search_dataflows()`](https://gmontaletti.github.io/istatlab/reference/search_dataflows.md)
+permette di cercare dataset per parole chiave in italiano e inglese:
+
+``` r
+# 3. Ricerca di dataset -----
+
+# Ricerca in italiano
+occupati <- search_dataflows("occupati")
+print(occupati[, .(id, Name.it)])
+
+# Ricerca in inglese
+vacancy <- search_dataflows("vacancy")
+print(vacancy[, .(id, Name.en)])
+
+# Ricerca multipla (OR logico)
+lavoro <- search_dataflows(c("lavoro", "employment", "occupazione"))
+print(lavoro[, .(id, Name.it, Name.en)])
+
+# Ricerca solo negli identificatori
+dataset_534 <- search_dataflows("534", fields = "id")
+print(dataset_534[, .(id, Name.it)])
+```
+
+### Dataset correlati
+
+La funzione
+[`expand_dataset_ids()`](https://gmontaletti.github.io/istatlab/reference/expand_dataset_ids.md)
+trova dataset correlati (base e sotto-dataset):
+
+``` r
+# 4. Trovare dataset correlati -----
+correlati <- expand_dataset_ids("150_908")
+print(correlati)
+
+# Esempio: 150_908, 150_915, 150_916 sono dataset correlati
+# sull'occupazione (mensile, trimestrale, annuale)
+```
+
+### Dataset organizzati per categoria
+
+Il pacchetto organizza i dataset più comuni in categorie:
+
+``` r
+# 5. Dataset per categoria -----
+
+# Tutte le categorie disponibili
+tutte_categorie <- get_categorized_datasets()
+str(tutte_categorie)
+
+# Dataset di una categoria specifica
+employment_ids <- get_dataset_category("employment")
+print(employment_ids)
+
+unemployment_ids <- get_dataset_category("unemployment")
+print(unemployment_ids)
+
+job_vacancies_ids <- get_dataset_category("job_vacancies")
+print(job_vacancies_ids)
+
+labour_force_ids <- get_dataset_category("labour_force")
+print(labour_force_ids)
+```
+
+## 5. Esplorare la struttura di un dataset
+
+Prima di scaricare i dati, è utile conoscere la struttura del dataset,
+le dimensioni disponibili e i valori delle codelists.
+
+### Dimensioni del dataset
+
+La funzione
+[`get_dataset_dimensions()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_dimensions.md)
+restituisce i nomi delle dimensioni:
+
+``` r
+# 1. Ottenere le dimensioni -----
+dimensioni <- get_dataset_dimensions("150_908")
+print(dimensioni)
+
+# Esempio di output: FREQ, ITTER107, SESSO, ETA1, TIPO_DATO, etc.
+```
+
+### Codelists
+
+Le codelists contengono i valori possibili per ciascuna dimensione. La
+funzione
+[`download_codelists()`](https://gmontaletti.github.io/istatlab/reference/download_codelists.md)
+scarica tutte le codelists per un dataset:
+
+``` r
+# 2. Scaricare le codelists -----
+codelists <- download_codelists("150_908")
+
+# Struttura: lista nominata di data.table
+names(codelists)
+
+# Esempio: codelist ITTER107 (territorio)
+head(codelists[["ITTER107"]])
+
+# Esempio: codelist SESSO (genere)
+print(codelists[["SESSO"]])
+
+# Esempio: codelist ETA1 (classi di età)
+print(codelists[["ETA1"]])
+```
+
+Ogni codelist è un data.table con colonne:
+
+- `id`: codice identificativo
+- `name`: descrizione testuale
+
+### Funzioni alternative per le codelists
+
+``` r
+# 3. Funzioni alternative -----
+
+# get_dataset_codelists: alias di download_codelists
+codelists_alt <- get_dataset_codelists("150_908")
+identical(codelists, codelists_alt)
+
+# ensure_codelists: verifica che le codelists siano in cache
+ensure_codelists("150_908")
+# Questa funzione scarica le codelists solo se non sono già presenti
+```
+
+### Dimensioni dal registry
+
+La funzione
+[`fetch_registry_dimensions()`](https://gmontaletti.github.io/istatlab/reference/fetch_registry_dimensions.md)
+utilizza l’endpoint registry per ottenere informazioni sulle dimensioni:
+
+``` r
+# 4. Dimensioni dal registry API -----
+dim_registry <- fetch_registry_dimensions("150_908")
+print(dim_registry)
+
+# Questa funzione è equivalente a get_dataset_dimensions
+# ma utilizza esplicitamente l'endpoint registry
+```
+
+### Ispezionare una codelist
+
+Una volta scaricate le codelists, è possibile ispezionarle nel
+dettaglio:
+
+``` r
+# 5. Ispezionare una codelist specifica -----
+codelists <- download_codelists("534_50")
+
+# Codelist ITTER107 (territorio)
+territorio <- codelists[["ITTER107"]]
+print(territorio)
+
+# Filtrare per regioni
+regioni <- territorio[grepl("^IT[A-Z]", id)]
+print(regioni)
+
+# Codelist FREQ (frequenza)
+frequenze <- codelists[["FREQ"]]
+print(frequenze)
+# M = mensile, Q = trimestrale, A = annuale
+```
+
+## 6. Download dei dati
+
+Il pacchetto `istatlab` fornisce funzioni flessibili per il download dei
+dati dall’API SDMX di ISTAT.
+
+### Download di base
+
+La funzione
+[`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md)
+scarica i dati da un dataset specificato:
+
+``` r
+# 1. Download di base -----
+dati <- download_istat_data(
+  dataset_id = "150_908",
+  start_time = "2023"
+)
+
+# Visualizzare la struttura
+str(dati)
+head(dati)
+```
+
+### Parametri principali
+
+La funzione supporta numerosi parametri:
+
+- `dataset_id`: identificatore del dataset (obbligatorio)
+- `filter`: filtro dimensionale (default “ALL”)
+- `start_time`: periodo iniziale
+- `end_time`: periodo finale
+- `incremental`: periodo iniziale per download incrementale
+- `timeout`: timeout della richiesta in secondi
+- `verbose`: messaggi diagnostici
+- `updated_after`: timestamp per rilevare aggiornamenti
+- `return_result`: restituire oggetto `istat_result` completo
+- `check_update`: verificare se ci sono aggiornamenti
+- `cache_dir`: directory della cache
+- `existing_data`: data.table esistente per merge
+
+### Download con intervallo temporale
+
+``` r
+# 2. Download con intervallo temporale -----
+dati_range <- download_istat_data(
+  dataset_id = "150_908",
+  start_time = "2020",
+  end_time = "2023"
+)
+
+# Verifica dell'intervallo temporale
+range(dati_range$TIME_PERIOD)
+```
+
+### Download incrementale
+
+Il parametro `incremental` permette di scaricare solo i dati a partire
+da una certa data:
+
+``` r
+# 3. Download incrementale -----
+dati_incrementali <- download_istat_data(
+  dataset_id = "150_908",
+  incremental = "2024"
+)
+
+# Questa modalità è utile per aggiornare dataset già scaricati
+# scaricando solo i nuovi dati
+```
+
+### Verifica aggiornamenti
+
+Il parametro `check_update` verifica se ci sono aggiornamenti
+disponibili prima di scaricare:
+
+``` r
+# 4. Verifica aggiornamenti -----
+dati_update <- download_istat_data(
+  dataset_id = "534_50",
+  check_update = TRUE
+)
+
+# Se non ci sono aggiornamenti, la funzione restituisce NULL
+# senza scaricare i dati
+```
+
+### Merge con dati esistenti
+
+Il parametro `existing_data` permette di unire i nuovi dati con quelli
+già scaricati:
+
+``` r
+# 5. Merge con dati esistenti -----
+
+# Prima scarico i dati fino al 2023
+dati_vecchi <- download_istat_data(
+  dataset_id = "534_50",
+  start_time = "2020",
+  end_time = "2023"
+)
+
+# Poi scarico i dati del 2024 e li unisco
+dati_completi <- download_istat_data(
+  dataset_id = "534_50",
+  start_time = "2024",
+  existing_data = dati_vecchi
+)
+
+# dati_completi contiene ora tutto il periodo 2020-2024
+```
+
+### Oggetto risultato completo
+
+Il parametro `return_result = TRUE` restituisce un oggetto
+`istat_result` con informazioni aggiuntive:
+
+``` r
+# 6. Oggetto risultato completo -----
+risultato <- download_istat_data(
+  dataset_id = "534_50",
+  return_result = TRUE
+)
+
+# Struttura dell'oggetto istat_result
+str(risultato)
+
+# Componenti:
+risultato$data          # data.table con i dati
+risultato$success       # logico: download riuscito?
+risultato$exit_code     # codice di uscita
+risultato$md5           # hash MD5 dei dati
+risultato$message       # messaggio descrittivo
+risultato$is_timeout    # logico: timeout?
+```
+
+### Download per frequenza
+
+La funzione
+[`download_istat_data_by_freq()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data_by_freq.md)
+separa i dati per frequenza temporale:
+
+``` r
+# 7. Download per frequenza -----
+
+# Scaricare tutte le frequenze (separatamente)
+dati_freq <- download_istat_data_by_freq(
+  dataset_id = "151_914",
+  start_time = "2020"
+)
+
+# Risultato: lista nominata con data.table per ogni frequenza
+names(dati_freq)  # "M", "Q", "A" (mensile, trimestrale, annuale)
+
+# Accedere ai dati mensili
+dati_mensili <- dati_freq[["M"]]
+head(dati_mensili)
+
+# Accedere ai dati trimestrali
+dati_trimestrali <- dati_freq[["Q"]]
+head(dati_trimestrali)
+
+# Scaricare solo una frequenza specifica
+solo_trimestrale <- download_istat_data_by_freq(
+  dataset_id = "151_914",
+  start_time = "2020",
+  freq = "Q"
+)
+```
+
+### Download multiplo
+
+La funzione
+[`download_multiple_datasets()`](https://gmontaletti.github.io/istatlab/reference/download_multiple_datasets.md)
+permette di scaricare più dataset in parallelo:
+
+``` r
+# 8. Download multiplo -----
+
+# Scaricare più dataset contemporaneamente
+ids <- c("534_50", "534_51", "534_52")
+dati_multipli <- download_multiple_datasets(
+  dataset_ids = ids,
+  start_time = "2020"
+)
+
+# Risultato: lista nominata con un data.table per ogni dataset
+names(dati_multipli)
+
+# Accedere ai dati di un dataset specifico
+dati_50 <- dati_multipli[["534_50"]]
+head(dati_50)
+
+# Download multiplo con filtro di aggiornamento
+timestamp <- as.POSIXct("2025-01-01 00:00:00", tz = "UTC")
+dati_aggiornati <- download_multiple_datasets(
+  dataset_ids = ids,
+  updated_after = timestamp
+)
+
+# Vengono scaricati solo i dataset aggiornati dopo il timestamp
+```
+
+## 7. Elaborazione dei dati
+
+Dopo il download, i dati vengono restituiti in formato grezzo con codici
+dimensionali. Il pacchetto fornisce funzioni per trasformare i codici in
+etichette leggibili.
+
+### Applicazione delle etichette
+
+La funzione
+[`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md)
+trasforma i codici dimensionali in etichette descrittive:
+
+``` r
+# 1. Applicare le etichette -----
+
+# Scaricare dati grezzi
+dati_raw <- download_istat_data(
+  dataset_id = "150_908",
+  start_time = "2023"
+)
+
+# Prima: colonne con codici (ITTER107, SESSO, ETA1, etc.)
+head(dati_raw)
+
+# Applicare le etichette
+dati_labeled <- apply_labels(dati_raw)
+
+# Dopo: colonne con codici + colonne con etichette
+head(dati_labeled)
+```
+
+La funzione
+[`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md)
+crea:
+
+- Colonna `tempo`: data convertita da TIME_PERIOD
+- Colonna `valore`: valore numerico da OBS_VALUE
+- Colonne `*_label`: etichette descrittive per ogni dimensione (es.
+  `ITTER107_label`, `SESSO_label`)
+- Mantiene tutte le colonne originali
+
+### Filtro temporale
+
+La funzione
+[`filter_by_time()`](https://gmontaletti.github.io/istatlab/reference/filter_by_time.md)
+filtra i dati per intervallo temporale:
+
+``` r
+# 2. Filtrare per periodo -----
+
+# Filtrare per anno
+dati_2024 <- filter_by_time(
+  dati_labeled,
+  start_date = "2024-01-01"
+)
+
+# Filtrare per intervallo
+dati_range <- filter_by_time(
+  dati_labeled,
+  start_date = "2023-01-01",
+  end_date = "2023-12-31"
+)
+
+# Specificare la colonna temporale (se diversa da "tempo")
+dati_custom <- filter_by_time(
+  dati_labeled,
+  start_date = "2024-01-01",
+  time_col = "TIME_PERIOD"
+)
+```
+
+### Validazione dei dati
+
+La funzione
+[`validate_istat_data()`](https://gmontaletti.github.io/istatlab/reference/validate_istat_data.md)
+verifica la qualità e la struttura dei dati:
+
+``` r
+# 3. Validare i dati -----
+validazione <- validate_istat_data(dati_labeled)
+
+# Restituisce un oggetto con informazioni diagnostiche
+str(validazione)
+
+# Verifica:
+# - Presenza di colonne obbligatorie
+# - Valori mancanti
+# - Duplicati
+# - Consistenza dei tipi di dato
+```
+
+### Normalizzazione dei nomi delle variabili
+
+La funzione
+[`clean_variable_names()`](https://gmontaletti.github.io/istatlab/reference/clean_variable_names.md)
+normalizza i nomi delle colonne:
+
+``` r
+# 4. Normalizzare i nomi delle colonne -----
+dati_clean <- clean_variable_names(dati_labeled)
+
+# Rimuove caratteri speciali, converte in minuscolo,
+# sostituisce spazi con underscore
+names(dati_clean)
+```
+
+## 8. Formati di risposta e gestione errori
+
+L’API SDMX di ISTAT supporta diversi formati di risposta. Il pacchetto
+`istatlab` utilizza il formato CSV per efficienza.
+
+### Formato CSV
+
+Il formato CSV viene richiesto tramite l’header HTTP:
+
+``` r
+# 1. Configurazione del formato -----
+config <- get_istat_config()
+
+# Header per richiesta CSV
+print(config$http$accept_csv)
+# "application/vnd.sdmx.data+csv;version=1.0.0"
+
+# Header per richiesta XML (alternativa)
+print(config$http$accept_xml)
+# "application/vnd.sdmx.structurespecificdata+xml;version=2.1"
+```
+
+### Oggetto istat_result
+
+L’oggetto `istat_result` restituito da
+`download_istat_data(return_result = TRUE)` contiene:
+
+``` r
+# 2. Componenti dell'oggetto istat_result -----
+risultato <- download_istat_data(
+  dataset_id = "534_50",
+  return_result = TRUE
+)
+
+# data: data.table con i dati scaricati
+dati <- risultato$data
+class(dati)  # "data.table" "data.frame"
+
+# success: logico che indica successo del download
+risultato$success  # TRUE o FALSE
+
+# exit_code: codice numerico dello stato
+# 0 = successo, 1 = errore, 2 = timeout, 3 = nessun aggiornamento
+risultato$exit_code
+
+# md5: hash MD5 dei dati (per verifica integrità)
+risultato$md5
+
+# message: messaggio descrittivo
+risultato$message
+
+# is_timeout: logico che indica timeout
+risultato$is_timeout
+```
+
+### Codici di errore HTTP
+
+I codici HTTP più comuni e il loro significato:
+
+``` r
+# 3. Interpretazione dei codici di stato -----
+
+# 200: richiesta riuscita
+# 404: dataset non trovato
+if (risultato$exit_code == 1) {
+  cat("Errore: verificare che il dataset_id sia corretto\n")
+}
+
+# 500: errore interno del server ISTAT
+# 503: servizio temporaneamente non disponibile
+if (risultato$exit_code == 1) {
+  cat("Errore del server: riprovare più tardi\n")
+}
+
+# Timeout: richiesta scaduta
+if (risultato$is_timeout) {
+  cat("Timeout: aumentare il parametro timeout\n")
+}
+```
+
+### Gestione degli errori
+
+Esempio di gestione errori con
+[`tryCatch()`](https://rdrr.io/r/base/conditions.html):
+
+``` r
+# 4. Gestione errori con tryCatch -----
+dati <- tryCatch(
+  {
+    download_istat_data(
+      dataset_id = "150_908",
+      start_time = "2020",
+      timeout = 120
+    )
+  },
+  error = function(e) {
+    cat("Errore nel download:\n")
+    cat(conditionMessage(e), "\n")
+    return(NULL)
+  },
+  warning = function(w) {
+    cat("Avviso:\n")
+    cat(conditionMessage(w), "\n")
+  }
+)
+
+# Verificare il risultato
+if (is.null(dati)) {
+  cat("Download fallito\n")
+} else {
+  cat("Download riuscito:", nrow(dati), "righe\n")
+}
+```
+
+### Gestione programmatica con return_result
+
+Utilizzare `return_result = TRUE` per gestione programmatica degli
+errori:
+
+``` r
+# 5. Gestione programmatica -----
+risultato <- download_istat_data(
+  dataset_id = "150_908",
+  start_time = "2020",
+  return_result = TRUE
+)
+
+# Verifica del successo
+if (risultato$success) {
+  # Download riuscito
+  dati <- risultato$data
+  cat("Scaricate", nrow(dati), "righe\n")
+  cat("Hash MD5:", risultato$md5, "\n")
+
+} else {
+  # Download fallito
+  cat("Errore:", risultato$message, "\n")
+
+  # Gestione per tipo di errore
+  if (risultato$is_timeout) {
+    cat("Suggerimento: aumentare il timeout\n")
+  } else if (risultato$exit_code == 3) {
+    cat("Nessun aggiornamento disponibile\n")
+  } else {
+    cat("Verificare dataset_id e connessione\n")
+  }
+}
+```
+
+## 9. Risorse aggiuntive
+
+### Dataset comuni
+
+Tabella dei dataset più utilizzati per il mercato del lavoro italiano:
+
+| Dataset ID | Descrizione                              | Frequenza           |
+|------------|------------------------------------------|---------------------|
+| 150_908    | Dati mensili sull’occupazione            | Mensile             |
+| 150_915    | Statistiche trimestrali sull’occupazione | Trimestrale         |
+| 151_914    | Tassi di disoccupazione                  | Mensile/Trimestrale |
+| 534_50     | Posti vacanti                            | Trimestrale         |
+| 534_51     | Posti vacanti per settore                | Trimestrale         |
+| 534_52     | Posti vacanti per regione                | Trimestrale         |
+| 152_914    | Forze di lavoro                          | Mensile/Trimestrale |
+| 152_915    | Forze di lavoro per regione              | Trimestrale         |
+
+### Esempi di utilizzo
+
+``` r
+# 1. Download dataset comuni -----
+
+# Occupazione mensile
+occupazione <- download_istat_data(
+  dataset_id = "150_908",
+  start_time = "2023"
+)
+dati_occ <- apply_labels(occupazione)
+
+# Disoccupazione trimestrale
+disoccupazione <- download_istat_data_by_freq(
+  dataset_id = "151_914",
+  start_time = "2023",
+  freq = "Q"
+)
+
+# Posti vacanti
+vacancy <- download_istat_data(
+  dataset_id = "534_50",
+  start_time = "2020"
+)
+dati_vac <- apply_labels(vacancy)
+```
+
+### Link utili
+
+- **Catalogo SDMX ISTAT**: <https://esploradati.istat.it/databrowser/>
+- **Documentazione SDMX**: <https://sdmx.org/>
+- **Standard ISO 17369**: <https://www.iso.org/standard/52500.html>
+- **Repository GitHub istatlab**:
+  <https://github.com/gmontaletti/istatlab>
+- **Segnalazione problemi**:
+  <https://github.com/gmontaletti/istatlab/issues>
+
+### Altre vignette
+
+Per approfondire l’utilizzo del pacchetto, consultare le altre vignette:
+
+- `getting-started-it`: guida introduttiva al pacchetto istatlab
+- `gestione-dati-it`: elaborazione e analisi dei dati scaricati
+
+``` r
+# 2. Aprire le vignette -----
+vignette("getting-started-it", package = "istatlab")
+vignette("gestione-dati-it", package = "istatlab")
+```
+
+### Supporto
+
+Per domande, suggerimenti o segnalazioni:
+
+- Email: <giampaolo.montaletti@gmail.com>
+- GitHub Issues: <https://github.com/gmontaletti/istatlab/issues>
+- ORCID: <https://orcid.org/0009-0002-5327-1122>

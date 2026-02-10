@@ -1,0 +1,328 @@
+# istatlab
+
+**istatlab** is a comprehensive R package for downloading, processing,
+analyzing, and visualizing Italian labour market data from ISTAT
+(Istituto Nazionale di Statistica) through their SDMX API.
+
+## Features
+
+- **Data Download**: Streamlined access to ISTAT’s SDMX API with
+  automatic retry and error handling
+- **Metadata Management**: Comprehensive metadata handling including
+  codelists and dimensions
+- **Data Processing**: Automatic labeling, time formatting, and data
+  validation
+- **Time Series Analysis**: Trend analysis, growth rate calculations,
+  and structural break detection
+- **Forecasting**: Multiple forecasting methods including ARIMA, ETS,
+  and linear trends
+- **Visualization**: Publication-ready plots with ggplot2 integration
+
+## Installation
+
+You can install the development version of istatlab from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("gmontaletti/istatlab")
+```
+
+## Quick Start
+
+``` r
+library(istatlab)
+
+# Check API connectivity
+test_endpoint_connectivity("data")
+
+# Download metadata to explore available datasets
+metadata <- download_metadata()
+head(metadata)
+
+# Download data for a specific dataset
+data <- download_istat_data("150_908", start_time = "2020")
+
+# Apply labels and process the data
+processed_data <- apply_labels(data)
+
+# Create a time series plot
+create_time_series_plot(processed_data, 
+                       title = "Italian Labour Market Data",
+                       subtitle = "Source: ISTAT")
+```
+
+## Main Functions
+
+### Data Download
+
+- [`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md):
+  Download data for a single dataset
+- [`download_multiple_datasets()`](https://gmontaletti.github.io/istatlab/reference/download_multiple_datasets.md):
+  Download multiple datasets in parallel
+- [`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md):
+  Check API endpoint connectivity
+
+### Metadata Management
+
+- [`download_metadata()`](https://gmontaletti.github.io/istatlab/reference/download_metadata.md):
+  Download dataset metadata
+- [`download_codelists()`](https://gmontaletti.github.io/istatlab/reference/download_codelists.md):
+  Download codelists for dimension labeling
+- [`get_dataset_dimensions()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_dimensions.md):
+  Get dimensions for a specific dataset
+
+### Data Processing
+
+- [`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md):
+  Apply dimension labels to raw data
+- [`filter_by_time()`](https://gmontaletti.github.io/istatlab/reference/filter_by_time.md):
+  Filter data by time period
+- [`validate_istat_data()`](https://gmontaletti.github.io/istatlab/reference/validate_istat_data.md):
+  Validate data structure
+
+### Analysis
+
+- `analyze_trends()`: Perform trend analysis using various methods
+- `calculate_growth_rates()`: Calculate period, annual, or cumulative
+  growth rates
+- `calculate_summary_stats()`: Generate comprehensive summary statistics
+- `detect_structural_breaks()`: Detect structural breaks in time series
+
+### Forecasting
+
+- [`forecast_series()`](https://gmontaletti.github.io/istatlab/reference/forecast_series.md):
+  Generate forecasts using multiple methods
+- `evaluate_forecast_accuracy()`: Evaluate forecast performance
+- `create_forecast_summary()`: Create forecast summary tables
+
+### Visualization
+
+- `create_time_series_plot()`: Standard time series plots
+- `create_forecast_plot()`: Plots with forecasts and confidence
+  intervals
+- `create_comparison_plot()`: Compare multiple series or groups
+- `create_growth_plot()`: Growth rate visualization
+- `create_dashboard_plot()`: Multi-panel dashboard plots
+
+## Workflow Example
+
+``` r
+library(istatlab)
+
+# 1. Explore available datasets
+metadata <- download_metadata()
+print(metadata[grepl("employment", Name.it, ignore.case = TRUE), .(id, Name.it)])
+
+# 2. Download data for employment statistics
+employment_data <- download_istat_data("150_915", start_time = "2015")
+
+# 3. Process and label the data
+processed_employment <- apply_labels(employment_data)
+
+# 4. Calculate growth rates
+employment_with_growth <- calculate_growth_rates(processed_employment, 
+                                               type = "annual")
+
+# 5. Analyze trends
+trend_analysis <- analyze_trends(processed_employment, method = "linear")
+
+# 6. Generate forecasts
+forecast_results <- forecast_series(processed_employment, 
+                                   periods = 12, 
+                                   method = "auto.arima")
+
+# 7. Create visualizations
+ts_plot <- create_time_series_plot(processed_employment,
+                                  title = "Italian Employment Trends",
+                                  subtitle = "Source: ISTAT")
+
+forecast_plot <- create_forecast_plot(processed_employment, forecast_results,
+                                     title = "Employment Forecast")
+
+# 8. Create a dashboard
+dashboard <- create_dashboard_plot(processed_employment,
+                                  panels = c("timeseries", "growth"),
+                                  title = "Employment Dashboard")
+```
+
+## Dataset IDs
+
+Common ISTAT dataset IDs for labour market data:
+
+- `150_908`: Monthly employment data
+- `150_915`: Quarterly employment statistics  
+- `150_916`: Annual employment indicators
+- `151_914`: Unemployment rates
+- `152_913`: Labour force participation
+- `534_50`: Job vacancies
+- `532_930`: Working hours
+
+## Configuration
+
+The package automatically handles: - API timeouts and connection
+issues - Metadata caching (refreshes every 14 days) - Data validation
+and error handling - Memory-efficient data processing with data.table
+
+## Dependencies
+
+Core dependencies: - `data.table`: Fast data manipulation - `httr`: HTTP
+requests - `jsonlite`: JSON parsing - `readsdmx`: SDMX data parsing -
+`zoo`: Time series handling
+
+## Contributing
+
+Contributions are welcome! Please see
+[CONTRIBUTING.md](https://gmontaletti.github.io/istatlab/CONTRIBUTING.md)
+for guidelines.
+
+## License
+
+MIT License. See
+[LICENSE](https://gmontaletti.github.io/istatlab/LICENSE) for details.
+
+## Citation
+
+To cite istatlab in publications:
+
+``` r
+citation("istatlab")
+```
+
+Montaletti, G. (2025). istatlab: Download and Process Italian Labour
+Market Data from ISTAT. R package version 0.3.2.
+<https://github.com/gmontaletti/istatlab>
+
+## Author
+
+Giampaolo Montaletti (<giampaolo.montaletti@gmail.com>)  
+ORCID: [0009-0002-5327-1122](https://orcid.org/0009-0002-5327-1122)  
+GitHub: [gmontaletti](https://github.com/gmontaletti)
+
+## Acknowledgments
+
+- ISTAT for providing comprehensive labour market data through their
+  SDMX API
+- The R community for excellent packages that make this work possible
+
+# Package index
+
+## Configuration
+
+Configure API endpoints and package settings.
+
+- [`istat_config`](https://gmontaletti.github.io/istatlab/reference/istat_config.md)
+  : ISTAT SDMX Web Service Configuration
+- [`get_istat_config()`](https://gmontaletti.github.io/istatlab/reference/get_istat_config.md)
+  : Get ISTAT SDMX Service Configuration
+- [`endpoints`](https://gmontaletti.github.io/istatlab/reference/endpoints.md)
+  : ISTAT SDMX Endpoint Functions
+- [`list_istat_endpoints()`](https://gmontaletti.github.io/istatlab/reference/list_istat_endpoints.md)
+  : List Available ISTAT Endpoints
+- [`build_istat_url()`](https://gmontaletti.github.io/istatlab/reference/build_istat_url.md)
+  : Build ISTAT API URL
+- [`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md)
+  : Test ISTAT Endpoint Connectivity
+
+## Data Download
+
+Download data from ISTAT SDMX API.
+
+- [`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md)
+  : Download Data from ISTAT SDMX API
+- [`download_istat_data_by_freq()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data_by_freq.md)
+  : Download ISTAT Data Split by Frequency
+- [`download_multiple_datasets()`](https://gmontaletti.github.io/istatlab/reference/download_multiple_datasets.md)
+  : Download Multiple Datasets
+- [`istat_result`](https://gmontaletti.github.io/istatlab/reference/istat_result.md)
+  : ISTAT Download Result Structure
+
+## Metadata
+
+Manage dataset metadata, search, and explore structure.
+
+- [`download_metadata()`](https://gmontaletti.github.io/istatlab/reference/download_metadata.md)
+  : Download Dataset Metadata
+- [`search_dataflows()`](https://gmontaletti.github.io/istatlab/reference/search_dataflows.md)
+  : Search Dataflows by Keywords
+- [`expand_dataset_ids()`](https://gmontaletti.github.io/istatlab/reference/expand_dataset_ids.md)
+  : Expand Dataset IDs to Include All Matching Variants
+- [`get_dataset_dimensions()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_dimensions.md)
+  : Get Dataset Dimensions
+- [`get_dataset_last_update()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_last_update.md)
+  : Get Dataset Last Update Timestamp from ISTAT API
+- [`get_available_frequencies()`](https://gmontaletti.github.io/istatlab/reference/get_available_frequencies.md)
+  : Get Available Frequencies for Dataset
+- [`get_categorized_datasets()`](https://gmontaletti.github.io/istatlab/reference/get_categorized_datasets.md)
+  : Get Dataset Information by Category
+- [`get_dataset_category()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_category.md)
+  : Get Dataset Category
+- [`fetch_registry_dimensions()`](https://gmontaletti.github.io/istatlab/reference/fetch_registry_dimensions.md)
+  : Get Dataset Dimensions from Registry Endpoint
+
+## Cache & TTL
+
+Codelist caching and time-to-live management.
+
+- [`download_codelists()`](https://gmontaletti.github.io/istatlab/reference/download_codelists.md)
+  : Download Codelists
+- [`get_dataset_codelists()`](https://gmontaletti.github.io/istatlab/reference/get_dataset_codelists.md)
+  : Get Codelists Used by Dataset
+- [`ensure_codelists()`](https://gmontaletti.github.io/istatlab/reference/ensure_codelists.md)
+  : Ensure Codelists Are Available for Dataset
+- [`load_codelist_metadata()`](https://gmontaletti.github.io/istatlab/reference/load_codelist_metadata.md)
+  : Load Codelist Metadata Cache
+- [`save_codelist_metadata()`](https://gmontaletti.github.io/istatlab/reference/save_codelist_metadata.md)
+  : Save Codelist Metadata Cache
+- [`compute_codelist_ttl()`](https://gmontaletti.github.io/istatlab/reference/compute_codelist_ttl.md)
+  : Compute Staggered TTL for Codelist
+- [`check_codelist_expiration()`](https://gmontaletti.github.io/istatlab/reference/check_codelist_expiration.md)
+  : Check Which Codelists Need Renewal
+- [`refresh_expired_codelists()`](https://gmontaletti.github.io/istatlab/reference/refresh_expired_codelists.md)
+  : Refresh Expired Codelists
+
+## Data Processing
+
+Label, filter, validate, and clean downloaded data.
+
+- [`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md)
+  : Apply Labels to ISTAT Data
+- [`filter_by_time()`](https://gmontaletti.github.io/istatlab/reference/filter_by_time.md)
+  : Filter Data by Time Period
+- [`validate_istat_data()`](https://gmontaletti.github.io/istatlab/reference/validate_istat_data.md)
+  : Validate ISTAT Data
+- [`clean_variable_names()`](https://gmontaletti.github.io/istatlab/reference/clean_variable_names.md)
+  : Clean Variable Names
+
+## Forecasting
+
+Time series forecasting methods.
+
+- [`forecast_series()`](https://gmontaletti.github.io/istatlab/reference/forecast_series.md)
+  : Forecast a time series using multiple models
+- [`print(`*`<istat_forecast>`*`)`](https://gmontaletti.github.io/istatlab/reference/print.istat_forecast.md)
+  : Print method for istat_forecast objects
+- [`plot(`*`<istat_forecast>`*`)`](https://gmontaletti.github.io/istatlab/reference/plot.istat_forecast.md)
+  : Plot method for istat_forecast objects
+
+## Visualization Preparation
+
+Prepare data for plotting.
+
+- [`prepare_for_plotting()`](https://gmontaletti.github.io/istatlab/reference/prepare_for_plotting.md)
+  : Prepare ISTAT Data for Plotting
+- [`print(`*`<istat_plot_ready>`*`)`](https://gmontaletti.github.io/istatlab/reference/print.istat_plot_ready.md)
+  : Print Method for istat_plot_ready
+
+# Articles
+
+### All vignettes
+
+- [API ISTAT SDMX: guida
+  completa](https://gmontaletti.github.io/istatlab/articles/api-istat-sdmx-it.md):
+- [Gestione efficiente dei dati
+  ISTAT](https://gmontaletti.github.io/istatlab/articles/gestione-dati-it.md):
+- [Introduzione a
+  istatlab](https://gmontaletti.github.io/istatlab/articles/getting-started-it.md):
+- [Getting Started with
+  istatlab](https://gmontaletti.github.io/istatlab/articles/getting-started.md):
