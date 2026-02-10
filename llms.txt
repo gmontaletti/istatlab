@@ -223,6 +223,8 @@ Configure API endpoints and package settings.
   : Build ISTAT API URL
 - [`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md)
   : Test ISTAT Endpoint Connectivity
+- [`reset_rate_limiter()`](https://gmontaletti.github.io/istatlab/reference/reset_rate_limiter.md)
+  : Reset Rate Limiter State
 
 ## Data Download
 

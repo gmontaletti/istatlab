@@ -23,6 +23,7 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/compute_series_stats.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/create_dimension_mapping_optimized.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/create_download_result.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/detect_ban.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-metadata_cache.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/download_codelists.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/download_istat_data.html</loc></url>
@@ -52,10 +53,14 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_curl.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_httr.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_json.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_with_retry.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_xml.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/index.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/integrate_downloaded_data.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/is_connectivity_error.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/is_http_error.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/is_rate_limited_error.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/is_timeout_error.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_config.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_fetch_data_csv.html</loc></url>
@@ -78,9 +83,11 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/process_editions.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/process_time_dimension.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/refresh_expired_codelists.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/reset_rate_limiter.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/save_codelist_metadata.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/search_dataflows.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.html</loc></url>
+<url><loc>https://gmontaletti.github.io/istatlab/reference/throttle.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/update_data_download_log.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/validate_istat_data.html</loc></url>
 </urlset>

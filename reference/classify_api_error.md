@@ -9,6 +9,8 @@ codes follow the reference implementation:
 
 - 2: Timeout error
 
+- 3: Rate limited (HTTP 429)
+
 ## Usage
 
 ``` r

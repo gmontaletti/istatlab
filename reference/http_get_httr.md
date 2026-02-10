@@ -1,6 +1,7 @@
 # HTTP GET using httr Package
 
 Internal function that performs HTTP GET using the httr package.
+Captures response headers on non-200 responses for retry logic.
 
 ## Usage
 
@@ -28,4 +29,4 @@ http_get_httr(url, timeout, accept, verbose)
 
 ## Value
 
-A list with success, content, status_code, and error components
+A list with success, content, status_code, error, and headers components

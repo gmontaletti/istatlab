@@ -40,3 +40,5 @@ A list with components:
 - error: Error message if failed (or NULL)
 
 - method: Character indicating which method succeeded ("httr" or "curl")
+
+- headers: Response headers list (when available)

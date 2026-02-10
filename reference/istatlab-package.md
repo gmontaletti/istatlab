@@ -43,11 +43,15 @@ A typical workflow with istatlab involves:
 
 Useful links:
 
+- <https://gmontaletti.github.io/istatlab/>
+
 - <https://github.com/gmontaletti/istatlab>
 
 - Report bugs at <https://github.com/gmontaletti/istatlab/issues>
 
 Useful links:
+
+- <https://gmontaletti.github.io/istatlab/>
 
 - <https://github.com/gmontaletti/istatlab>
 
