@@ -43,6 +43,7 @@ A typical workflow with istatlab involves:
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://gmontaletti.github.io/istatlab/}
   \item \url{https://github.com/gmontaletti/istatlab}
   \item Report bugs at \url{https://github.com/gmontaletti/istatlab/issues}
 }
@@ -50,6 +51,7 @@ Useful links:
 
 Useful links:
 \itemize{
+  \item \url{https://gmontaletti.github.io/istatlab/}
   \item \url{https://github.com/gmontaletti/istatlab}
   \item Report bugs at \url{https://github.com/gmontaletti/istatlab/issues}
 }

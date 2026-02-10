@@ -77,6 +77,18 @@ get_istat_config <- function() {
       user_agent = "istatlab R package (https://github.com/gmontaletti/istatlab)"
     ),
 
+    # Rate limiting configuration (ISTAT enforces ~5 req/min)
+    rate_limit = list(
+      delay = 13, # seconds between requests (~4.6 req/min)
+      min_delay = 5, # minimum allowed delay (user override floor)
+      max_retries = 3, # retry attempts on 429/503
+      initial_backoff = 60, # first retry wait (seconds)
+      backoff_multiplier = 2, # exponential backoff factor
+      max_backoff = 300, # cap at 5 minutes
+      jitter_fraction = 0.1, # +/- 10% randomization on delays
+      ban_detection_threshold = 3 # consecutive 429s = likely ban
+    ),
+
     # Cache file configuration
     cache = list(
       codelists_file = "codelists.rds",

@@ -36,8 +36,11 @@ NULL
 #' # Search only in dataset IDs
 #' datasets_534 <- search_dataflows("534", fields = "id")
 #' }
-search_dataflows <- function(keywords, fields = c("Name.it", "Name.en", "id"), ignore_case = TRUE) {
-
+search_dataflows <- function(
+  keywords,
+  fields = c("Name.it", "Name.en", "id"),
+  ignore_case = TRUE
+) {
   dataflows <- download_metadata()
   data.table::setDT(dataflows)
 
@@ -50,8 +53,16 @@ search_dataflows <- function(keywords, fields = c("Name.it", "Name.en", "id"), i
 
   for (field in fields) {
     if (field %in% names(dataflows)) {
-      field_matches <- dataflows[grepl(pattern, get(field), ignore.case = ignore_case)]
-      matches <- data.table::rbindlist(list(matches, field_matches), use.names = TRUE, fill = TRUE)
+      field_matches <- dataflows[grepl(
+        pattern,
+        get(field),
+        ignore.case = ignore_case
+      )]
+      matches <- data.table::rbindlist(
+        list(matches, field_matches),
+        use.names = TRUE,
+        fill = TRUE
+      )
     }
   }
 
@@ -78,7 +89,7 @@ search_dataflows <- function(keywords, fields = c("Name.it", "Name.en", "id"), i
 #' dims <- fetch_registry_dimensions("150_908")
 #' }
 fetch_registry_dimensions <- function(dataset_id) {
-  # Use existing dimension function  
+  # Use existing dimension function
   get_dataset_dimensions(dataset_id)
 }
 
@@ -101,7 +112,7 @@ fetch_registry_dimensions <- function(dataset_id) {
 #' }
 list_istat_endpoints <- function() {
   config <- get_istat_config()
-  
+
   data.frame(
     endpoint = names(config$endpoints),
     url = unlist(config$endpoints),
@@ -116,8 +127,13 @@ list_istat_endpoints <- function() {
       "Available constraints (dimension values)"
     ),
     function_prefix = c(
-      "rest_v1", "rest_v2", "fetch_data_", "fetch_dataflow_",
-      "download_codelists", "fetch_codelist_", "fetch_registry_",
+      "rest_v1",
+      "rest_v2",
+      "fetch_data_",
+      "fetch_dataflow_",
+      "download_codelists",
+      "fetch_codelist_",
+      "fetch_registry_",
       "get_available_frequencies"
     ),
     stringsAsFactors = FALSE
@@ -137,13 +153,13 @@ list_istat_endpoints <- function() {
 #' \dontrun{
 #' # Get all categorized datasets
 #' all_categories <- get_categorized_datasets()
-#' 
+#'
 #' # Get just employment datasets
 #' employment <- get_categorized_datasets("employment")
 #' }
 get_categorized_datasets <- function(category = NULL) {
   config <- get_istat_config()
-  
+
   if (is.null(category)) {
     return(config$dataset_categories)
   } else {
@@ -164,41 +180,54 @@ get_categorized_datasets <- function(category = NULL) {
 #' @return A list with accessible (logical), status_code, response_time, error
 #' @keywords internal
 check_endpoint_status <- function(url, timeout = 10) {
+  throttle()
   start_time <- Sys.time()
 
-  tryCatch({
-    # Create curl handle with timeout and nobody option
-    h <- curl::new_handle()
-    curl::handle_setopt(h,
-      timeout = timeout,
-      connecttimeout = timeout,
-      nobody = TRUE,
-      followlocation = TRUE
-    )
+  tryCatch(
+    {
+      # Create curl handle with timeout and nobody option
+      h <- curl::new_handle()
+      curl::handle_setopt(
+        h,
+        timeout = timeout,
+        connecttimeout = timeout,
+        nobody = TRUE,
+        followlocation = TRUE
+      )
 
-    # Fetch headers only (nobody=TRUE skips body)
-    response <- curl::curl_fetch_memory(url, handle = h)
+      # Fetch headers only (nobody=TRUE skips body)
+      response <- curl::curl_fetch_memory(url, handle = h)
 
-    end_time <- Sys.time()
-    response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
+      end_time <- Sys.time()
+      response_time <- as.numeric(difftime(
+        end_time,
+        start_time,
+        units = "secs"
+      ))
 
-    list(
-      accessible = response$status_code %in% c(200L, 302L, 400L),
-      status_code = as.integer(response$status_code),
-      response_time = response_time,
-      error = ""
-    )
-  }, error = function(e) {
-    end_time <- Sys.time()
-    response_time <- as.numeric(difftime(end_time, start_time, units = "secs"))
+      list(
+        accessible = response$status_code %in% c(200L, 302L, 400L),
+        status_code = as.integer(response$status_code),
+        response_time = response_time,
+        error = ""
+      )
+    },
+    error = function(e) {
+      end_time <- Sys.time()
+      response_time <- as.numeric(difftime(
+        end_time,
+        start_time,
+        units = "secs"
+      ))
 
-    list(
-      accessible = FALSE,
-      status_code = NA_integer_,
-      response_time = response_time,
-      error = e$message
-    )
-  })
+      list(
+        accessible = FALSE,
+        status_code = NA_integer_,
+        response_time = response_time,
+        error = e$message
+      )
+    }
+  )
 }
 
 #' Test ISTAT Endpoint Connectivity
@@ -222,18 +251,24 @@ check_endpoint_status <- function(url, timeout = 10) {
 #' # Test multiple endpoints
 #' status <- test_endpoint_connectivity(c("data", "dataflow"))
 #' }
-test_endpoint_connectivity <- function(endpoints = "data", timeout = 30, verbose = TRUE) {
-
+test_endpoint_connectivity <- function(
+  endpoints = "data",
+  timeout = 30,
+  verbose = TRUE
+) {
   config <- get_istat_config()
   available_endpoints <- names(config$endpoints)
-
 
   # Validate endpoints
 
   invalid <- setdiff(endpoints, available_endpoints)
   if (length(invalid) > 0) {
-    stop("Unknown endpoint(s): ", paste(invalid, collapse = ", "),
-         ". Available: ", paste(available_endpoints, collapse = ", "))
+    stop(
+      "Unknown endpoint(s): ",
+      paste(invalid, collapse = ", "),
+      ". Available: ",
+      paste(available_endpoints, collapse = ", ")
+    )
   }
 
   results <- data.frame(
@@ -247,29 +282,48 @@ test_endpoint_connectivity <- function(endpoints = "data", timeout = 30, verbose
   )
 
   for (endpoint in endpoints) {
-    if (verbose) message("Testing ", endpoint, " endpoint...")
+    if (verbose) {
+      message("Testing ", endpoint, " endpoint...")
+    }
 
     test_url <- config$endpoints[[endpoint]]
     status <- check_endpoint_status(test_url, timeout = timeout)
 
-    results <- rbind(results, data.frame(
-      endpoint = endpoint,
-      url = test_url,
-      accessible = status$accessible,
-      status_code = status$status_code,
-      response_time = status$response_time,
-      error_message = status$error,
-      stringsAsFactors = FALSE
-    ))
+    results <- rbind(
+      results,
+      data.frame(
+        endpoint = endpoint,
+        url = test_url,
+        accessible = status$accessible,
+        status_code = status$status_code,
+        response_time = status$response_time,
+        error_message = status$error,
+        stringsAsFactors = FALSE
+      )
+    )
   }
 
   if (verbose) {
     message("\nEndpoint connectivity summary:")
     for (i in seq_len(nrow(results))) {
       status_text <- if (results$accessible[i]) "[OK]" else "[X]"
-      code_text <- if (is.na(results$status_code[i])) "ERR" else results$status_code[i]
-      time_text <- if (is.na(results$response_time[i])) "-" else sprintf("%.2fs", results$response_time[i])
-      message(sprintf("%-20s %s %s (%s)", results$endpoint[i], status_text, code_text, time_text))
+      code_text <- if (is.na(results$status_code[i])) {
+        "ERR"
+      } else {
+        results$status_code[i]
+      }
+      time_text <- if (is.na(results$response_time[i])) {
+        "-"
+      } else {
+        sprintf("%.2fs", results$response_time[i])
+      }
+      message(sprintf(
+        "%-20s %s %s (%s)",
+        results$endpoint[i],
+        status_text,
+        code_text,
+        time_text
+      ))
     }
   }
 

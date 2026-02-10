@@ -19,6 +19,7 @@ Exit codes follow the reference implementation:
 \item 0: Success
 \item 1: Generic error (connectivity, HTTP, parsing)
 \item 2: Timeout error
+\item 3: Rate limited (HTTP 429)
 }
 }
 \keyword{internal}

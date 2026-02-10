@@ -49,6 +49,7 @@ reference:
       - list_istat_endpoints
       - build_istat_url
       - test_endpoint_connectivity
+      - reset_rate_limiter
 
   - title: Data Download
     desc: Download data from ISTAT SDMX API.

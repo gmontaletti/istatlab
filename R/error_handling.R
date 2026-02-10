@@ -35,9 +35,14 @@ NULL
 #'
 #' @return A list with class "istat_result"
 #' @keywords internal
-create_download_result <- function(success, data = NULL, exit_code = 0L,
-                                   message = "", md5 = NA_character_,
-                                   is_timeout = FALSE) {
+create_download_result <- function(
+  success,
+  data = NULL,
+  exit_code = 0L,
+  message = "",
+  md5 = NA_character_,
+  is_timeout = FALSE
+) {
   structure(
     list(
       success = success,
@@ -131,7 +136,11 @@ is_connectivity_error <- function(error_message) {
   )
 
   error_lower <- tolower(error_message)
-  any(vapply(connectivity_patterns, function(p) grepl(p, error_lower), logical(1)))
+  any(vapply(
+    connectivity_patterns,
+    function(p) grepl(p, error_lower),
+    logical(1)
+  ))
 }
 
 #' Check if Error is HTTP Status Error
@@ -154,6 +163,7 @@ is_http_error <- function(error_message) {
     "401",
     "403",
     "404",
+    "429",
     "500",
     "502",
     "503"
@@ -161,6 +171,33 @@ is_http_error <- function(error_message) {
 
   error_lower <- tolower(error_message)
   any(vapply(http_patterns, function(p) grepl(p, error_lower), logical(1)))
+}
+
+#' Check if Error is Rate Limiting
+#'
+#' Detects HTTP 429 and rate limiting errors from messages.
+#'
+#' @param error_message Character string containing error message
+#'
+#' @return Logical indicating if error is rate-limit-related
+#' @keywords internal
+is_rate_limited_error <- function(error_message) {
+  if (is.null(error_message) || !is.character(error_message)) {
+    return(FALSE)
+  }
+
+  rate_limit_patterns <- c(
+    "429",
+    "too many requests",
+    "rate limit"
+  )
+
+  error_lower <- tolower(error_message)
+  any(vapply(
+    rate_limit_patterns,
+    function(p) grepl(p, error_lower),
+    logical(1)
+  ))
 }
 
 # 3. Error classification -----
@@ -172,6 +209,7 @@ is_http_error <- function(error_message) {
 #' - 0: Success
 #' - 1: Generic error (connectivity, HTTP, parsing)
 #' - 2: Timeout error
+#' - 3: Rate limited (HTTP 429)
 #'
 #' @param error_message Character string containing error message
 #'
@@ -188,6 +226,12 @@ classify_api_error <- function(error_message) {
       exit_code = 2L,
       message = paste("Server timeout:", error_message)
     )
+  } else if (is_rate_limited_error(error_message)) {
+    list(
+      type = "rate_limited",
+      exit_code = 3L,
+      message = paste("Rate limited:", error_message)
+    )
   } else if (is_connectivity_error(error_message)) {
     list(
       type = "connectivity",
@@ -198,7 +242,7 @@ classify_api_error <- function(error_message) {
     list(
       type = "http",
       exit_code = 1L,
-      message = error_message  # Don't add prefix, it's already in the message
+      message = error_message # Don't add prefix, it's already in the message
     )
   } else {
     list(
@@ -223,7 +267,9 @@ classify_api_error <- function(error_message) {
 #' @return Invisible NULL
 #' @keywords internal
 istat_log <- function(msg, level = "INFO", verbose = TRUE) {
-  if (!verbose) return(invisible(NULL))
+  if (!verbose) {
+    return(invisible(NULL))
+  }
 
   timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
   full_msg <- paste0(timestamp, " [", level, "] - ", msg)

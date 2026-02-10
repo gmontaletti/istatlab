@@ -282,32 +282,25 @@ download_multiple_datasets <- function(
     message("Downloading ", length(dataset_ids), " datasets...")
   }
 
-  # Create download function
-  download_function <- function(id) {
-    download_istat_data(
-      id,
+  # Rate limiting requires sequential execution
+  if (n_cores > 1 && length(dataset_ids) > 1 && verbose) {
+    message(
+      "Rate limiting requires sequential execution. Ignoring n_cores parameter."
+    )
+  }
+
+  result <- vector("list", length(dataset_ids))
+  for (i in seq_along(dataset_ids)) {
+    if (i > 1) {
+      throttle()
+    }
+    result[[i]] <- download_istat_data(
+      dataset_ids[i],
       filter = filter,
       start_time = start_time,
       incremental = incremental,
       verbose = verbose,
       updated_after = updated_after
-    )
-  }
-
-  # Use parallel processing
-  if (n_cores > 1 && length(dataset_ids) > 1) {
-    if (verbose) {
-      message("Using parallel processing with ", n_cores, " cores...")
-    }
-    result <- parallel::mclapply(
-      dataset_ids,
-      download_function,
-      mc.cores = n_cores
-    )
-  } else {
-    result <- lapply(
-      dataset_ids,
-      download_function
     )
   }
 
@@ -624,7 +617,11 @@ download_istat_data_by_freq <- function(
 
   # Multiple frequencies - split downloads
   result <- list()
-  for (freq in freqs) {
+  for (i in seq_along(freqs)) {
+    freq <- freqs[i]
+    if (i > 1) {
+      throttle()
+    }
     # Build filter with frequency prefix
     # SDMX filter syntax: {FREQ}.{dim2}.{dim3}... (dot-separated, first is FREQ)
     freq_filter <- if (is.null(filter) || filter == "ALL") {

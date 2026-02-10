@@ -23,6 +23,7 @@ A list with components:
 \item{status_code}: HTTP status code (or NA)
 \item{error}: Error message if failed (or NULL)
 \item{method}: Character indicating which method succeeded ("httr" or "curl")
+\item{headers}: Response headers list (when available)
 }
 }
 \description{

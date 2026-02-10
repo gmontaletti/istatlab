@@ -14,108 +14,131 @@
 #' \dontrun{
 #' # Download metadata (uses cache if available)
 #' metadata <- download_metadata()
-#' 
+#'
 #' # Force update of metadata
 #' metadata <- download_metadata(force_update = TRUE)
 #' }
 download_metadata <- function(force_update = FALSE, cache_dir = "meta") {
-  
   # Create cache directory if it doesn't exist
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)
   }
-  
+
   metadata_file <- file.path(cache_dir, "flussi_istat.rds")
-  
+
   # Create file if it doesn't exist
   if (!file.exists(metadata_file)) {
     file.create(metadata_file)
     Sys.setFileTime(metadata_file, "1980-12-04")
   }
-  
+
   # Check if update is needed (file_age in days)
-  file_age <- as.numeric(difftime(Sys.time(), file.info(metadata_file)$mtime, units = "days"))
+  file_age <- as.numeric(difftime(
+    Sys.time(),
+    file.info(metadata_file)$mtime,
+    units = "days"
+  ))
   needs_update <- force_update || (file_age > 14)
-  
+
   if (needs_update) {
     message("Downloading ISTAT metadata...")
 
-    download_result <- tryCatch({
-      # Get dataflow endpoint URL from config
-      config <- get_istat_config()
-      dataflow_url <- config$endpoints$dataflow
+    download_result <- tryCatch(
+      {
+        # Get dataflow endpoint URL from config
+        config <- get_istat_config()
+        dataflow_url <- config$endpoints$dataflow
 
-      # Download dataflows as JSON and parse
-      response <- httr::GET(
-        dataflow_url,
-        httr::add_headers(Accept = "application/json"),
-        httr::timeout(config$defaults$timeout)
-      )
+        # Download dataflows as JSON and parse
+        json_data <- http_get_json(
+          dataflow_url,
+          timeout = config$defaults$timeout,
+          simplifyVector = TRUE,
+          flatten = FALSE
+        )
 
-      if (httr::status_code(response) != 200) {
-        stop("HTTP error: ", httr::status_code(response))
+        dataflows <- json_data$data$dataflows
+        names_df <- dataflows$names
+
+        # Extract dsdRef from structure URN
+        extract_dsdref <- function(urn) {
+          if (is.null(urn) || is.na(urn)) {
+            return(NA_character_)
+          }
+          m <- regmatches(urn, regexpr("DataStructure=IT1:([^(]+)", urn))
+          if (length(m) > 0) {
+            gsub("DataStructure=IT1:", "", m)
+          } else {
+            NA_character_
+          }
+        }
+
+        # Build data.table with standard column names
+        istat_flussi <- data.table::data.table(
+          id = dataflows$id,
+          agencyID = dataflows$agencyID,
+          version = dataflows$version,
+          Name.en = names_df$en,
+          Name.it = names_df$it,
+          dsdRef = sapply(dataflows$structure, extract_dsdref)
+        )
+
+        # Save metadata
+        saveRDS(istat_flussi, metadata_file)
+        message(
+          "Metadata downloaded and cached successfully (",
+          nrow(istat_flussi),
+          " datasets)"
+        )
+        TRUE # Success indicator
+      },
+      error = function(e) {
+        # Check if it's a timeout or connectivity issue
+        if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+          warning(
+            "ISTAT metadata request timed out. The server may be experiencing ",
+            "high load. Please try again later."
+          )
+        } else if (
+          grepl(
+            "resolve|connection|network|internet",
+            e$message,
+            ignore.case = TRUE
+          )
+        ) {
+          warning(
+            "Cannot connect to ISTAT API for metadata. Please check your internet ",
+            "connection or try again later. Error: ",
+            e$message
+          )
+        } else {
+          warning("Failed to download metadata: ", e$message)
+        }
+        FALSE # Failure indicator
       }
+    )
 
-      json_content <- httr::content(response, as = "text", encoding = "UTF-8")
-      json_data <- jsonlite::fromJSON(json_content, flatten = FALSE)
-
-      dataflows <- json_data$data$dataflows
-      names_df <- dataflows$names
-
-      # Extract dsdRef from structure URN
-      extract_dsdref <- function(urn) {
-        if (is.null(urn) || is.na(urn)) return(NA_character_)
-        m <- regmatches(urn, regexpr("DataStructure=IT1:([^(]+)", urn))
-        if (length(m) > 0) gsub("DataStructure=IT1:", "", m) else NA_character_
-      }
-
-      # Build data.table with standard column names
-      istat_flussi <- data.table::data.table(
-        id = dataflows$id,
-        agencyID = dataflows$agencyID,
-        version = dataflows$version,
-        Name.en = names_df$en,
-        Name.it = names_df$it,
-        dsdRef = sapply(dataflows$structure, extract_dsdref)
-      )
-
-      # Save metadata
-      saveRDS(istat_flussi, metadata_file)
-      message("Metadata downloaded and cached successfully (", nrow(istat_flussi), " datasets)")
-      TRUE  # Success indicator
-
-    }, error = function(e) {
-      # Check if it's a timeout or connectivity issue
-      if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
-        warning("ISTAT metadata request timed out. The server may be experiencing ",
-                "high load. Please try again later.")
-      } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
-        warning("Cannot connect to ISTAT API for metadata. Please check your internet ",
-                "connection or try again later. Error: ", e$message)
-      } else {
-        warning("Failed to download metadata: ", e$message)
-      }
-      FALSE  # Failure indicator
-    })
-    
     # If download failed, try to load existing cached metadata if available
     if (!download_result) {
       if (file.exists(metadata_file) && file.size(metadata_file) > 0) {
         warning("Download failed but using existing cached metadata")
       } else {
-        stop("Cannot download metadata and no cached version available. Please check your internet connection and try again.")
+        stop(
+          "Cannot download metadata and no cached version available. Please check your internet connection and try again."
+        )
       }
     }
-    
   } else {
     message("Using cached metadata (", round(file_age, 1), " days old)")
   }
-  
+
   # Load and return metadata
   if (file.exists(metadata_file) && file.size(metadata_file) > 0) {
     readRDS(metadata_file)
   } else {
-    stop("No metadata file available. Please check your internet connection and try download_metadata() again.")
+    stop(
+      "No metadata file available. Please check your internet connection and try download_metadata() again."
+    )
   }
 }
 
@@ -137,38 +160,60 @@ download_metadata <- function(force_update = FALSE, cache_dir = "meta") {
 #' # Returns: c("ATECO_2007", "BASE_YEAR", "CORREZ", "FREQ", ...)
 #' }
 get_dataset_dimensions <- function(dataset_id) {
-
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
   }
 
-  tryCatch({
-    # Use datastructure endpoint to get dimension mapping
-    result <- download_single_codelist(dataset_id)
+  tryCatch(
+    {
+      # Use datastructure endpoint to get dimension mapping
+      result <- download_single_codelist(dataset_id)
 
-    if (is.null(result) || is.null(result$dimension_mapping) ||
-        length(result$dimension_mapping) == 0) {
-      warning("No dimension data found for dataset: ", dataset_id)
+      if (
+        is.null(result) ||
+          is.null(result$dimension_mapping) ||
+          length(result$dimension_mapping) == 0
+      ) {
+        warning("No dimension data found for dataset: ", dataset_id)
+        return(NULL)
+      }
+
+      # Dimension names are the keys of the dimension_mapping
+      dimensions <- names(result$dimension_mapping)
+
+      return(dimensions)
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+        warning(
+          "Request for dataset dimensions timed out. Dataset: ",
+          dataset_id,
+          ". Please try again later."
+        )
+      } else if (
+        grepl(
+          "resolve|connection|network|internet",
+          e$message,
+          ignore.case = TRUE
+        )
+      ) {
+        warning(
+          "Cannot connect to ISTAT API for dataset dimensions. Dataset: ",
+          dataset_id,
+          ". Please check your internet connection. Error: ",
+          e$message
+        )
+      } else {
+        warning(
+          "Failed to get dataset dimensions for ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+      }
       return(NULL)
     }
-
-    # Dimension names are the keys of the dimension_mapping
-    dimensions <- names(result$dimension_mapping)
-
-    return(dimensions)
-
-  }, error = function(e) {
-    if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
-      warning("Request for dataset dimensions timed out. Dataset: ", dataset_id,
-              ". Please try again later.")
-    } else if (grepl("resolve|connection|network|internet", e$message, ignore.case = TRUE)) {
-      warning("Cannot connect to ISTAT API for dataset dimensions. Dataset: ", dataset_id,
-              ". Please check your internet connection. Error: ", e$message)
-    } else {
-      warning("Failed to get dataset dimensions for ", dataset_id, ": ", e$message)
-    }
-    return(NULL)
-  })
+  )
 }
 
 #' Download Codelists
@@ -193,8 +238,11 @@ get_dataset_dimensions <- function(dataset_id) {
 #' # Download all available codelists
 #' all_codelists <- download_codelists()
 #' }
-download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_dir = "meta") {
-
+download_codelists <- function(
+  dataset_ids = NULL,
+  force_update = FALSE,
+  cache_dir = "meta"
+) {
   # Create cache directory if it doesn't exist
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)
@@ -209,7 +257,9 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
   dataset_map <- list()
 
   if (file.exists(codelists_file) && file.size(codelists_file) > 0) {
-    shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) list())
+    shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) {
+      list()
+    })
   }
   if (file.exists(map_file) && file.size(map_file) > 0) {
     dataset_map <- tryCatch(readRDS(map_file), error = function(e) list())
@@ -217,7 +267,11 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
 
   # 2. Check cache freshness (staggered TTL) -----
   # Check which codelists are expired based on per-codelist TTL
-  all_codelist_ids <- if (length(shared_codelists) > 0) names(shared_codelists) else character(0)
+  all_codelist_ids <- if (length(shared_codelists) > 0) {
+    names(shared_codelists)
+  } else {
+    character(0)
+  }
   expired_codelists <- check_codelist_expiration(all_codelist_ids, cache_dir)
 
   # 3. Determine which datasets to process -----
@@ -230,10 +284,16 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
   missing_datasets <- dataset_ids[!dataset_ids %in% names(dataset_map)]
 
   # Use staggered TTL check instead of file age
-  needs_update <- force_update || (length(missing_datasets) > 0) || (length(expired_codelists) > 0)
+  needs_update <- force_update ||
+    (length(missing_datasets) > 0) ||
+    (length(expired_codelists) > 0)
 
   if (!needs_update) {
-    message("Using cached codelists (", length(shared_codelists), " codelists cached)")
+    message(
+      "Using cached codelists (",
+      length(shared_codelists),
+      " codelists cached)"
+    )
   } else {
     # Determine datasets to download
     # If force_update or expired codelists, download all; otherwise just missing datasets
@@ -244,21 +304,37 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
     }
 
     if (length(datasets_to_download) > 0) {
-      message("Downloading ISTAT codelists for ", length(datasets_to_download), " dataset(s)...")
+      message(
+        "Downloading ISTAT codelists for ",
+        length(datasets_to_download),
+        " dataset(s)..."
+      )
 
       success_count <- 0
       failed_count <- 0
 
       for (dataset_id in datasets_to_download) {
-        result <- tryCatch({
-          download_single_codelist(dataset_id)
-        }, error = function(e) {
-          warning("Failed to download codelist for ", dataset_id, ": ", e$message)
-          NULL
-        })
+        result <- tryCatch(
+          {
+            download_single_codelist(dataset_id)
+          },
+          error = function(e) {
+            warning(
+              "Failed to download codelist for ",
+              dataset_id,
+              ": ",
+              e$message
+            )
+            NULL
+          }
+        )
 
         # download_single_codelist now returns list(codelist, dimension_mapping)
-        if (!is.null(result) && !is.null(result$codelist) && nrow(result$codelist) > 0) {
+        if (
+          !is.null(result) &&
+            !is.null(result$codelist) &&
+            nrow(result$codelist) > 0
+        ) {
           raw_codelist <- result$codelist
           dimension_mapping <- result$dimension_mapping
 
@@ -272,8 +348,16 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
           # Store each codelist by its ID (deduplicated)
           for (cl_id in unique_cl_ids) {
             if (!(cl_id %in% names(shared_codelists)) || force_update) {
-              cl_data <- raw_codelist[id == cl_id,
-                .(id_description, en_description, it_description, version, agencyID)]
+              cl_data <- raw_codelist[
+                id == cl_id,
+                .(
+                  id_description,
+                  en_description,
+                  it_description,
+                  version,
+                  agencyID
+                )
+              ]
               shared_codelists[[cl_id]] <- cl_data
 
               # Update codelist metadata with staggered TTL
@@ -313,10 +397,17 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
       if (success_count > 0) {
         saveRDS(shared_codelists, codelists_file)
         saveRDS(dataset_map, map_file)
-        message("Codelists cached: ", length(shared_codelists), " unique codelists for ",
-                length(dataset_map), " datasets")
+        message(
+          "Codelists cached: ",
+          length(shared_codelists),
+          " unique codelists for ",
+          length(dataset_map),
+          " datasets"
+        )
       } else if (length(shared_codelists) == 0) {
-        warning("No codelists could be downloaded. Please check your internet connection.")
+        warning(
+          "No codelists could be downloaded. Please check your internet connection."
+        )
         return(NULL)
       }
     }
@@ -327,7 +418,10 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
   requested_datasets <- dataset_ids[dataset_ids %in% names(dataset_map)]
 
   if (length(requested_datasets) == 0) {
-    warning("No codelists found for requested datasets: ", paste(dataset_ids, collapse = ", "))
+    warning(
+      "No codelists found for requested datasets: ",
+      paste(dataset_ids, collapse = ", ")
+    )
     return(NULL)
   }
 
@@ -349,7 +443,10 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
 
     dataset_cl_list <- Filter(Negate(is.null), dataset_cl_list)
     if (length(dataset_cl_list) > 0) {
-      result[[dataset_key]] <- data.table::rbindlist(dataset_cl_list, fill = TRUE)
+      result[[dataset_key]] <- data.table::rbindlist(
+        dataset_cl_list,
+        fill = TRUE
+      )
     }
   }
 
@@ -374,7 +471,6 @@ download_codelists <- function(dataset_ids = NULL, force_update = FALSE, cache_d
 #'   Returns NULL if download fails.
 #' @keywords internal
 download_single_codelist <- function(dataset_id) {
-
   # Get metadata to find dsdRef
   metadata <- download_metadata()
   data.table::setDT(metadata)
@@ -388,48 +484,45 @@ download_single_codelist <- function(dataset_id) {
   # Construct API URL for datastructure
   api_url <- build_istat_url("datastructure", dsd_ref = dsd_ref)
 
-  tryCatch({
-    # Fetch JSON response
-    response <- httr::GET(
-      api_url,
-      httr::add_headers(Accept = "application/json"),
-      httr::timeout(60)
-    )
+  tryCatch(
+    {
+      # Fetch JSON response
+      json_data <- http_get_json(api_url, timeout = 60, verbose = FALSE)
 
-    if (httr::status_code(response) != 200) {
-      warning("ISTAT API returned status code: ", httr::status_code(response),
-              " for dataset ", dataset_id)
+      # 1. Extract dimension mapping from JSON
+      dimension_mapping <- extract_dimension_mapping_from_json(json_data)
+
+      # 2. Extract codelist data from JSON
+      codelist_dt <- extract_codelists_from_json(json_data)
+
+      if (is.null(codelist_dt) || nrow(codelist_dt) == 0) {
+        warning("No codelist data found in response for dataset ", dataset_id)
+        return(NULL)
+      }
+
+      return(list(
+        codelist = codelist_dt,
+        dimension_mapping = dimension_mapping
+      ))
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
+        warning(
+          "Request timed out for dataset ",
+          dataset_id,
+          ". Please try again later."
+        )
+      } else {
+        warning(
+          "Failed to download codelist for dataset ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+      }
       return(NULL)
     }
-
-    # Parse JSON
-    json_content <- httr::content(response, as = "text", encoding = "UTF-8")
-    json_data <- jsonlite::fromJSON(json_content, simplifyVector = FALSE)
-
-    # 1. Extract dimension mapping from JSON
-    dimension_mapping <- extract_dimension_mapping_from_json(json_data)
-
-    # 2. Extract codelist data from JSON
-    codelist_dt <- extract_codelists_from_json(json_data)
-
-    if (is.null(codelist_dt) || nrow(codelist_dt) == 0) {
-      warning("No codelist data found in response for dataset ", dataset_id)
-      return(NULL)
-    }
-
-    return(list(
-      codelist = codelist_dt,
-      dimension_mapping = dimension_mapping
-    ))
-
-  }, error = function(e) {
-    if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
-      warning("Request timed out for dataset ", dataset_id, ". Please try again later.")
-    } else {
-      warning("Failed to download codelist for dataset ", dataset_id, ": ", e$message)
-    }
-    return(NULL)
-  })
+  )
 }
 
 #' Extract Codelists from JSON Response
@@ -444,38 +537,43 @@ download_single_codelist <- function(dataset_id) {
 extract_codelists_from_json <- function(json_data) {
   result_list <- list()
 
-  tryCatch({
-    codelists <- json_data$data$codelists
-    if (is.null(codelists)) return(data.table::data.table())
+  tryCatch(
+    {
+      codelists <- json_data$data$codelists
+      if (is.null(codelists)) {
+        return(data.table::data.table())
+      }
 
-    for (cl in codelists) {
-      cl_id <- cl$id
-      version <- cl$version
-      agency <- cl$agencyID
-      codes <- cl$codes
+      for (cl in codelists) {
+        cl_id <- cl$id
+        version <- cl$version
+        agency <- cl$agencyID
+        codes <- cl$codes
 
-      if (!is.null(codes) && length(codes) > 0) {
-        for (code in codes) {
-          code_id <- code$id
-          names_list <- code$names
+        if (!is.null(codes) && length(codes) > 0) {
+          for (code in codes) {
+            code_id <- code$id
+            names_list <- code$names
 
-          en_desc <- if (!is.null(names_list$en)) names_list$en else code$name
-          it_desc <- if (!is.null(names_list$it)) names_list$it else en_desc
+            en_desc <- if (!is.null(names_list$en)) names_list$en else code$name
+            it_desc <- if (!is.null(names_list$it)) names_list$it else en_desc
 
-          result_list[[length(result_list) + 1]] <- list(
-            id = cl_id,
-            id_description = code_id,
-            en_description = en_desc,
-            it_description = it_desc,
-            version = version,
-            agencyID = agency
-          )
+            result_list[[length(result_list) + 1]] <- list(
+              id = cl_id,
+              id_description = code_id,
+              en_description = en_desc,
+              it_description = it_desc,
+              version = version,
+              agencyID = agency
+            )
+          }
         }
       }
+    },
+    error = function(e) {
+      warning("Failed to parse codelists from JSON: ", e$message)
     }
-  }, error = function(e) {
-    warning("Failed to parse codelists from JSON: ", e$message)
-  })
+  )
 
   if (length(result_list) == 0) {
     return(data.table::data.table())
@@ -564,35 +662,45 @@ expand_dataset_ids <- function(dataset_codes, metadata = NULL, expand = TRUE) {
 extract_dimension_mapping_from_json <- function(json_data) {
   dimensions <- list()
 
-  tryCatch({
-    # Navigate to dimensionList in the JSON structure
-    ds <- json_data$data$dataStructures[[1]]
-    if (is.null(ds)) return(dimensions)
+  tryCatch(
+    {
+      # Navigate to dimensionList in the JSON structure
+      ds <- json_data$data$dataStructures[[1]]
+      if (is.null(ds)) {
+        return(dimensions)
+      }
 
-    dim_list <- ds$dataStructureComponents$dimensionList
-    if (is.null(dim_list)) return(dimensions)
+      dim_list <- ds$dataStructureComponents$dimensionList
+      if (is.null(dim_list)) {
+        return(dimensions)
+      }
 
-    # Process each dimension
-    for (d in dim_list$dimensions) {
-      dim_id <- d$id
-      enum <- d$localRepresentation$enumeration
+      # Process each dimension
+      for (d in dim_list$dimensions) {
+        dim_id <- d$id
+        enum <- d$localRepresentation$enumeration
 
-      if (!is.null(dim_id) && !is.null(enum)) {
-        # Extract codelist info from URN
-        # Format: urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IT1:CL_FREQ(1.0)
-        cl_match <- regmatches(enum, regexec("Codelist=([^:]+):([^(]+)[(]([^)]+)[)]", enum))[[1]]
+        if (!is.null(dim_id) && !is.null(enum)) {
+          # Extract codelist info from URN
+          # Format: urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IT1:CL_FREQ(1.0)
+          cl_match <- regmatches(
+            enum,
+            regexec("Codelist=([^:]+):([^(]+)[(]([^)]+)[)]", enum)
+          )[[1]]
 
-        if (length(cl_match) == 4) {
-          agency <- cl_match[2]
-          cl_id <- cl_match[3]
-          version <- cl_match[4]
-          dimensions[[dim_id]] <- paste0(agency, "/", cl_id, "/", version)
+          if (length(cl_match) == 4) {
+            agency <- cl_match[2]
+            cl_id <- cl_match[3]
+            version <- cl_match[4]
+            dimensions[[dim_id]] <- paste0(agency, "/", cl_id, "/", version)
+          }
         }
       }
+    },
+    error = function(e) {
+      warning("Failed to parse dimension mapping from JSON: ", e$message)
     }
-  }, error = function(e) {
-    warning("Failed to parse dimension mapping from JSON: ", e$message)
-  })
+  )
 
   return(dimensions)
 }
@@ -693,7 +801,6 @@ get_dataset_codelists <- function(dataset_id, cache_dir = "meta") {
 #' # Returns: POSIXct "2025-12-17 10:06:46 UTC"
 #' }
 get_dataset_last_update <- function(dataset_id, timeout = 30) {
-
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
   }
@@ -701,63 +808,67 @@ get_dataset_last_update <- function(dataset_id, timeout = 30) {
   config <- get_istat_config()
   url <- paste0(config$endpoints$dataflow, "/IT1/", dataset_id)
 
-  tryCatch({
-    # Request JSON response (default format from ISTAT API)
-    response <- httr::GET(
-      url,
-      httr::add_headers(Accept = "application/json"),
-      httr::timeout(timeout)
-    )
+  tryCatch(
+    {
+      # Request JSON response (default format from ISTAT API)
+      json_data <- http_get_json(
+        url,
+        timeout = timeout,
+        verbose = FALSE,
+        simplifyVector = TRUE,
+        flatten = FALSE
+      )
 
-    if (httr::status_code(response) != 200) {
-      warning("Failed to fetch dataflow for ", dataset_id, ": HTTP ", httr::status_code(response))
+      # Navigate to annotations in the dataflow structure
+      dataflows <- json_data$data$dataflows
+      if (is.null(dataflows) || length(dataflows) == 0) {
+        warning("No dataflow found in response for ", dataset_id)
+        return(NULL)
+      }
+
+      annotations <- dataflows$annotations[[1]]
+      if (is.null(annotations)) {
+        warning("No annotations found for ", dataset_id)
+        return(NULL)
+      }
+
+      # Find LAST_UPDATE annotation
+      last_update_row <- annotations[annotations$id == "LAST_UPDATE", ]
+      if (nrow(last_update_row) == 0) {
+        warning("LAST_UPDATE annotation not found for ", dataset_id)
+        return(NULL)
+      }
+
+      timestamp_str <- last_update_row$title[1]
+
+      # Parse ISO 8601 timestamp
+      # Handle format: 2025-12-17T10:06:46.972Z
+      timestamp <- as.POSIXct(
+        timestamp_str,
+        format = "%Y-%m-%dT%H:%M:%OS",
+        tz = "UTC"
+      )
+
+      if (is.na(timestamp)) {
+        # Try without milliseconds
+        timestamp <- as.POSIXct(
+          timestamp_str,
+          format = "%Y-%m-%dT%H:%M:%S",
+          tz = "UTC"
+        )
+      }
+
+      return(timestamp)
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
+        warning("Request for LAST_UPDATE timed out for ", dataset_id)
+      } else {
+        warning("Failed to get LAST_UPDATE for ", dataset_id, ": ", e$message)
+      }
       return(NULL)
     }
-
-    json_content <- httr::content(response, as = "text", encoding = "UTF-8")
-    json_data <- jsonlite::fromJSON(json_content, flatten = FALSE)
-
-    # Navigate to annotations in the dataflow structure
-    dataflows <- json_data$data$dataflows
-    if (is.null(dataflows) || length(dataflows) == 0) {
-      warning("No dataflow found in response for ", dataset_id)
-      return(NULL)
-    }
-
-    annotations <- dataflows$annotations[[1]]
-    if (is.null(annotations)) {
-      warning("No annotations found for ", dataset_id)
-      return(NULL)
-    }
-
-    # Find LAST_UPDATE annotation
-    last_update_row <- annotations[annotations$id == "LAST_UPDATE", ]
-    if (nrow(last_update_row) == 0) {
-      warning("LAST_UPDATE annotation not found for ", dataset_id)
-      return(NULL)
-    }
-
-    timestamp_str <- last_update_row$title[1]
-
-    # Parse ISO 8601 timestamp
-    # Handle format: 2025-12-17T10:06:46.972Z
-    timestamp <- as.POSIXct(timestamp_str, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
-
-    if (is.na(timestamp)) {
-      # Try without milliseconds
-      timestamp <- as.POSIXct(timestamp_str, format = "%Y-%m-%dT%H:%M:%S", tz = "UTC")
-    }
-
-    return(timestamp)
-
-  }, error = function(e) {
-    if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
-      warning("Request for LAST_UPDATE timed out for ", dataset_id)
-    } else {
-      warning("Failed to get LAST_UPDATE for ", dataset_id, ": ", e$message)
-    }
-    return(NULL)
-  })
+  )
 }
 
 #' Get Available Frequencies for Dataset
@@ -779,7 +890,6 @@ get_dataset_last_update <- function(dataset_id, timeout = 30) {
 #' # Returns: c("A", "Q")
 #' }
 get_available_frequencies <- function(dataset_id, timeout = 30) {
-
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
   }
@@ -787,55 +897,57 @@ get_available_frequencies <- function(dataset_id, timeout = 30) {
   config <- get_istat_config()
   url <- build_istat_url("availableconstraint", dataset_id = dataset_id)
 
-  tryCatch({
-    # Request XML format (JSON returns empty data for this endpoint)
-    response <- httr::GET(
-      url,
-      httr::add_headers(Accept = "application/xml"),
-      httr::timeout(timeout)
-    )
+  tryCatch(
+    {
+      # Request XML format (JSON returns empty data for this endpoint)
+      xml_content <- http_get_xml(url, timeout = timeout, verbose = FALSE)
 
-    if (httr::status_code(response) != 200) {
-      warning("Failed to get constraints for ", dataset_id, ": HTTP ", httr::status_code(response))
+      # Parse XML to extract FREQ values
+      # Look for pattern: <common:KeyValue id="FREQ">...<common:Value>X</common:Value>...</common:KeyValue>
+      # Use (?s) flag to make . match newlines
+      freq_pattern <- '(?s)<common:KeyValue id="FREQ">(.*?)</common:KeyValue>'
+      freq_match <- regmatches(
+        xml_content,
+        regexpr(freq_pattern, xml_content, perl = TRUE)
+      )
+
+      if (length(freq_match) == 0 || nchar(freq_match) == 0) {
+        warning("FREQ dimension not found in constraints for ", dataset_id)
+        return(NULL)
+      }
+
+      # Extract individual values
+      value_pattern <- '<common:Value>([^<]+)</common:Value>'
+      values <- regmatches(
+        freq_match,
+        gregexpr(value_pattern, freq_match, perl = TRUE)
+      )[[1]]
+
+      # Clean up the values - handle whitespace
+      freqs <- gsub('<common:Value>|</common:Value>', '', values)
+      freqs <- trimws(freqs)
+
+      if (length(freqs) == 0) {
+        warning("No FREQ values found for ", dataset_id)
+        return(NULL)
+      }
+
+      return(freqs)
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
+        warning("Request for available frequencies timed out for ", dataset_id)
+      } else {
+        warning(
+          "Failed to get available frequencies for ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+      }
       return(NULL)
     }
-
-    xml_content <- httr::content(response, as = "text", encoding = "UTF-8")
-
-    # Parse XML to extract FREQ values
-    # Look for pattern: <common:KeyValue id="FREQ">...<common:Value>X</common:Value>...</common:KeyValue>
-    # Use (?s) flag to make . match newlines
-    freq_pattern <- '(?s)<common:KeyValue id="FREQ">(.*?)</common:KeyValue>'
-    freq_match <- regmatches(xml_content, regexpr(freq_pattern, xml_content, perl = TRUE))
-
-    if (length(freq_match) == 0 || nchar(freq_match) == 0) {
-      warning("FREQ dimension not found in constraints for ", dataset_id)
-      return(NULL)
-    }
-
-    # Extract individual values
-    value_pattern <- '<common:Value>([^<]+)</common:Value>'
-    values <- regmatches(freq_match, gregexpr(value_pattern, freq_match, perl = TRUE))[[1]]
-
-    # Clean up the values - handle whitespace
-    freqs <- gsub('<common:Value>|</common:Value>', '', values)
-    freqs <- trimws(freqs)
-
-    if (length(freqs) == 0) {
-      warning("No FREQ values found for ", dataset_id)
-      return(NULL)
-    }
-
-    return(freqs)
-
-  }, error = function(e) {
-    if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
-      warning("Request for available frequencies timed out for ", dataset_id)
-    } else {
-      warning("Failed to get available frequencies for ", dataset_id, ": ", e$message)
-    }
-    return(NULL)
-  })
+  )
 }
 
 # 1. Staggered TTL Functions -----
@@ -864,13 +976,19 @@ get_available_frequencies <- function(dataset_id, timeout = 30) {
 #' ttl2 <- compute_codelist_ttl("CL_ITTER107")
 #' # ttl1 and ttl2 are deterministic but likely different
 #' }
-compute_codelist_ttl <- function(codelist_id,
-                                  base_ttl = NULL,
-                                  jitter_days = NULL) {
+compute_codelist_ttl <- function(
+  codelist_id,
+  base_ttl = NULL,
+  jitter_days = NULL
+) {
   config <- get_istat_config()
 
-  if (is.null(base_ttl)) base_ttl <- config$cache$codelist_base_ttl_days
-  if (is.null(jitter_days)) jitter_days <- config$cache$codelist_jitter_days
+  if (is.null(base_ttl)) {
+    base_ttl <- config$cache$codelist_base_ttl_days
+  }
+  if (is.null(jitter_days)) {
+    jitter_days <- config$cache$codelist_jitter_days
+  }
 
   # Use a simple hash based on character codes
   # Sum of character codes modulo jitter_days gives deterministic distribution
@@ -950,13 +1068,16 @@ save_codelist_metadata <- function(metadata, cache_dir = "meta") {
   config <- get_istat_config()
   metadata_file <- file.path(cache_dir, config$cache$codelist_metadata_file)
 
-  tryCatch({
-    saveRDS(metadata, metadata_file)
-    invisible(NULL)
-  }, error = function(e) {
-    warning("Failed to save codelist metadata: ", e$message)
-    invisible(NULL)
-  })
+  tryCatch(
+    {
+      saveRDS(metadata, metadata_file)
+      invisible(NULL)
+    },
+    error = function(e) {
+      warning("Failed to save codelist metadata: ", e$message)
+      invisible(NULL)
+    }
+  )
 }
 
 #' Check Which Codelists Need Renewal
@@ -985,9 +1106,11 @@ save_codelist_metadata <- function(metadata, cache_dir = "meta") {
 #' # Force check all as expired
 #' all_cls <- check_codelist_expiration(force_check = TRUE)
 #' }
-check_codelist_expiration <- function(codelist_ids = NULL,
-                                       cache_dir = "meta",
-                                       force_check = FALSE) {
+check_codelist_expiration <- function(
+  codelist_ids = NULL,
+  cache_dir = "meta",
+  force_check = FALSE
+) {
   config <- get_istat_config()
 
   # Load current metadata
@@ -997,7 +1120,10 @@ check_codelist_expiration <- function(codelist_ids = NULL,
   if (is.null(codelist_ids)) {
     codelists_file <- file.path(cache_dir, config$cache$codelists_file)
     if (file.exists(codelists_file) && file.size(codelists_file) > 0) {
-      shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) list())
+      shared_codelists <- tryCatch(
+        readRDS(codelists_file),
+        error = function(e) list()
+      )
       codelist_ids <- names(shared_codelists)
     } else {
       return(character(0))
@@ -1042,7 +1168,11 @@ check_codelist_expiration <- function(codelist_ids = NULL,
     meta <- cl_metadata[[cl_id]]
 
     # Compute age since last refresh
-    age_days <- as.numeric(difftime(current_time, meta$last_refresh, units = "days"))
+    age_days <- as.numeric(difftime(
+      current_time,
+      meta$last_refresh,
+      units = "days"
+    ))
 
     # Compare against staggered TTL
     if (age_days > meta$ttl_days) {
@@ -1089,7 +1219,9 @@ ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
     list()
   }
 
-  shared_codelists <- if (file.exists(codelists_file) && file.size(codelists_file) > 0) {
+  shared_codelists <- if (
+    file.exists(codelists_file) && file.size(codelists_file) > 0
+  ) {
     tryCatch(readRDS(codelists_file), error = function(e) list())
   } else {
     list()
@@ -1115,7 +1247,9 @@ ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
     missing_cls <- setdiff(required_cls, names(shared_codelists))
 
     if (length(missing_cls) == 0) {
-      if (verbose) message("Codelists for ", dataset_id, " are already cached")
+      if (verbose) {
+        message("Codelists for ", dataset_id, " are already cached")
+      }
       return(TRUE)
     }
 
@@ -1127,18 +1261,24 @@ ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
   }
 
   # Download codelists for this dataset
-  result <- tryCatch({
-    download_single_codelist(dataset_id)
-  }, error = function(e) {
-    # Try root ID if full ID fails
-    if (root_id != dataset_id) {
-      tryCatch({
-        download_single_codelist(root_id)
-      }, error = function(e2) NULL)
-    } else {
-      NULL
+  result <- tryCatch(
+    {
+      download_single_codelist(dataset_id)
+    },
+    error = function(e) {
+      # Try root ID if full ID fails
+      if (root_id != dataset_id) {
+        tryCatch(
+          {
+            download_single_codelist(root_id)
+          },
+          error = function(e2) NULL
+        )
+      } else {
+        NULL
+      }
     }
-  })
+  )
 
   if (is.null(result) || is.null(result$codelist)) {
     warning("Failed to download codelists for: ", dataset_id)
@@ -1155,8 +1295,10 @@ ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
 
   for (cl_id in unique_cl_ids) {
     if (!(cl_id %in% names(shared_codelists))) {
-      cl_data <- raw_codelist[id == cl_id,
-        .(id_description, en_description, it_description, version, agencyID)]
+      cl_data <- raw_codelist[
+        id == cl_id,
+        .(id_description, en_description, it_description, version, agencyID)
+      ]
       shared_codelists[[cl_id]] <- cl_data
 
       # Initialize metadata for new codelist
@@ -1176,7 +1318,9 @@ ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
   )
 
   # Save updated caches
-  if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE)
+  }
   saveRDS(shared_codelists, codelists_file)
   saveRDS(dataset_map, map_file)
   save_codelist_metadata(cl_metadata, cache_dir)
@@ -1233,9 +1377,11 @@ extract_root_id <- function(dataset_id) {
 #' # Force refresh all
 #' refresh_expired_codelists(force_refresh = TRUE)
 #' }
-refresh_expired_codelists <- function(cache_dir = "meta",
-                                       force_refresh = FALSE,
-                                       verbose = TRUE) {
+refresh_expired_codelists <- function(
+  cache_dir = "meta",
+  force_refresh = FALSE,
+  verbose = TRUE
+) {
   config <- get_istat_config()
 
   # Load current caches
@@ -1243,29 +1389,51 @@ refresh_expired_codelists <- function(cache_dir = "meta",
   map_file <- file.path(cache_dir, config$cache$dataset_map_file)
 
   if (!file.exists(codelists_file) || !file.exists(map_file)) {
-    if (verbose) message("No existing cache found. Run download_codelists() first.")
+    if (verbose) {
+      message("No existing cache found. Run download_codelists() first.")
+    }
     return(invisible(list(refreshed = 0, total = 0, expired = character(0))))
   }
 
-  shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) list())
+  shared_codelists <- tryCatch(readRDS(codelists_file), error = function(e) {
+    list()
+  })
   dataset_map <- tryCatch(readRDS(map_file), error = function(e) list())
   cl_metadata <- load_codelist_metadata(cache_dir)
 
   if (length(shared_codelists) == 0) {
-    if (verbose) message("No codelists in cache.")
+    if (verbose) {
+      message("No codelists in cache.")
+    }
     return(invisible(list(refreshed = 0, total = 0, expired = character(0))))
   }
 
   # Check which codelists need renewal
-  expired_cls <- check_codelist_expiration(names(shared_codelists), cache_dir, force_refresh)
+  expired_cls <- check_codelist_expiration(
+    names(shared_codelists),
+    cache_dir,
+    force_refresh
+  )
 
   if (length(expired_cls) == 0) {
-    if (verbose) message("All codelists are current. No refresh needed.")
-    return(invisible(list(refreshed = 0, total = length(shared_codelists), expired = character(0))))
+    if (verbose) {
+      message("All codelists are current. No refresh needed.")
+    }
+    return(invisible(list(
+      refreshed = 0,
+      total = length(shared_codelists),
+      expired = character(0)
+    )))
   }
 
   if (verbose) {
-    message("Refreshing ", length(expired_cls), " of ", length(shared_codelists), " codelists...")
+    message(
+      "Refreshing ",
+      length(expired_cls),
+      " of ",
+      length(shared_codelists),
+      " codelists..."
+    )
   }
 
   # Build codelist-to-dataset lookup for efficient refresh
@@ -1287,23 +1455,35 @@ refresh_expired_codelists <- function(cache_dir = "meta",
     dataset_id <- cl_to_dataset[[cl_id]]
 
     if (is.null(dataset_id)) {
-      if (verbose) message("  Skipping ", cl_id, ": no associated dataset found")
+      if (verbose) {
+        message("  Skipping ", cl_id, ": no associated dataset found")
+      }
       next
     }
 
-    result <- tryCatch({
-      download_single_codelist(dataset_id)
-    }, error = function(e) {
-      if (verbose) warning("  Failed to refresh ", cl_id, ": ", e$message)
-      NULL
-    })
+    result <- tryCatch(
+      {
+        download_single_codelist(dataset_id)
+      },
+      error = function(e) {
+        if (verbose) {
+          warning("  Failed to refresh ", cl_id, ": ", e$message)
+        }
+        NULL
+      }
+    )
 
     if (!is.null(result) && !is.null(result$codelist)) {
       # Update this codelist in shared cache
       cl_data <- result$codelist[id == cl_id]
       if (nrow(cl_data) > 0) {
-        cl_data_clean <- cl_data[, .(id_description, en_description,
-                                      it_description, version, agencyID)]
+        cl_data_clean <- cl_data[, .(
+          id_description,
+          en_description,
+          it_description,
+          version,
+          agencyID
+        )]
         shared_codelists[[cl_id]] <- cl_data_clean
 
         # Update metadata - preserve first_download, update last_refresh
@@ -1330,7 +1510,13 @@ refresh_expired_codelists <- function(cache_dir = "meta",
   }
 
   if (verbose) {
-    message("Refresh complete: ", success_count, "/", length(expired_cls), " codelists updated")
+    message(
+      "Refresh complete: ",
+      success_count,
+      "/",
+      length(expired_cls),
+      " codelists updated"
+    )
   }
 
   invisible(list(
