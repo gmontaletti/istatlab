@@ -7,6 +7,9 @@
 #' @param filter Character string specifying data filters. Default uses config value ("ALL")
 #' @param start_time Character string specifying the start period (e.g., "2019").
 #'   If empty, downloads all available data
+#' @param end_time Character string or Date specifying the end period (e.g., "2024",
+#'   "2024-06", "2024-06-30"). If empty (default), no upper bound is applied.
+#'   Accepts formats "YYYY", "YYYY-MM", or "YYYY-MM-DD".
 #' @param incremental Logical or Date/character. If FALSE (default), fetches all data.
 #'   If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
 #'   fetches only data from that period onwards using the SDMX startPeriod parameter.
@@ -22,6 +25,9 @@
 #'   with a message. Default is FALSE for backward compatibility.
 #' @param cache_dir Character string specifying directory for download log cache.
 #'   Default is "meta"
+#' @param existing_data Optional data.table of previously downloaded data. When provided,
+#'   the function determines the already-covered date range and downloads only
+#'   non-overlapping periods, merging and deduplicating the result.
 #'
 #' @return A data.table containing the downloaded data with an additional 'id' column,
 #'   or NULL if the download fails or data is unchanged. If return_result = TRUE, returns
@@ -39,6 +45,9 @@
 #' # Download with specific filter
 #' data <- download_istat_data("534_50", filter = "M..", start_time = "2020")
 #'
+#' # Download data for a specific date interval
+#' data <- download_istat_data("534_50", start_time = "2020", end_time = "2023")
+#'
 #' # Download only data updated since a specific timestamp
 #' timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 #' data <- download_istat_data("534_50", updated_after = timestamp)
@@ -53,11 +62,20 @@
 #' data <- download_istat_data("534_50", check_update = TRUE)
 #' # Returns NULL with message if data unchanged since last download
 #' }
-download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
-                                incremental = FALSE, timeout = NULL,
-                                verbose = TRUE, updated_after = NULL,
-                                return_result = FALSE, check_update = FALSE,
-                                cache_dir = "meta") {
+download_istat_data <- function(
+  dataset_id,
+  filter = NULL,
+  start_time = "",
+  end_time = "",
+  incremental = FALSE,
+  timeout = NULL,
+  verbose = TRUE,
+  updated_after = NULL,
+  return_result = FALSE,
+  check_update = FALSE,
+  cache_dir = "meta",
+  existing_data = NULL
+) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -80,10 +98,27 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
       incremental <- format(incremental, "%Y-%m-%d")
     } else if (is.character(incremental)) {
       if (!grepl("^\\d{4}(-\\d{2})?(-\\d{2})?$", incremental)) {
-        stop("incremental must be FALSE, a Date, or character in 'YYYY', 'YYYY-MM', or 'YYYY-MM-DD' format")
+        stop(
+          "incremental must be FALSE, a Date, or character in 'YYYY', 'YYYY-MM', or 'YYYY-MM-DD' format"
+        )
       }
     } else {
       stop("incremental must be FALSE, a Date object, or a character string")
+    }
+  }
+
+  # Validate end_time parameter
+  if (nchar(end_time) > 0) {
+    if (inherits(end_time, "Date")) {
+      end_time <- format(end_time, "%Y-%m-%d")
+    } else if (is.character(end_time)) {
+      if (!grepl("^\\d{4}(-\\d{2})?(-\\d{2})?$", end_time)) {
+        stop(
+          "end_time must be a character in 'YYYY', 'YYYY-MM', or 'YYYY-MM-DD' format, or a Date object"
+        )
+      }
+    } else {
+      stop("end_time must be a character string or a Date object")
     }
   }
 
@@ -91,9 +126,17 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   if (check_update) {
     update_check <- check_data_update_needed(dataset_id, cache_dir, verbose)
     if (!update_check$needs_update) {
-      istat_log(paste("Data unchanged since", update_check$last_download,
-                     "(ISTAT last update:", update_check$istat_last_update, ")"),
-               "INFO", verbose)
+      istat_log(
+        paste(
+          "Data unchanged since",
+          update_check$last_download,
+          "(ISTAT last update:",
+          update_check$istat_last_update,
+          ")"
+        ),
+        "INFO",
+        verbose
+      )
       if (return_result) {
         return(create_download_result(
           success = TRUE,
@@ -114,11 +157,14 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
   # Determine effective start_time (incremental takes precedence)
   effective_start_time <- if (!isFALSE(incremental)) incremental else start_time
 
-  api_url <- build_istat_url("data",
-                            dataset_id = dataset_id,
-                            filter = filter,
-                            start_time = effective_start_time,
-                            updated_after = updated_after)
+  api_url <- build_istat_url(
+    "data",
+    dataset_id = dataset_id,
+    filter = filter,
+    start_time = effective_start_time,
+    end_time = end_time,
+    updated_after = updated_after
+  )
 
   # HTTP request using new transport layer
   http_result <- http_get(api_url, timeout = timeout, verbose = verbose)
@@ -128,17 +174,42 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
 
   # Handle failure
   if (!result$success) {
-    warning("Failed to download data for dataset: ", dataset_id, " - ", result$message)
-    if (return_result) return(result)
+    warning(
+      "Failed to download data for dataset: ",
+      dataset_id,
+      " - ",
+      result$message
+    )
+    if (return_result) {
+      return(result)
+    }
     return(NULL)
   }
 
   # Add dataset identifier column
   result$data[, id := dataset_id]
 
-  md5_info <- if (!is.na(result$md5)) paste(" (MD5:", substr(result$md5, 1, 8), "...)") else ""
-  istat_log(paste("Downloaded", nrow(result$data), "rows for dataset", dataset_id, md5_info),
-            "INFO", verbose)
+  # Integrate with existing data if provided (overlap deduplication)
+  if (!is.null(existing_data)) {
+    result$data <- integrate_downloaded_data(existing_data, result$data)
+  }
+
+  md5_info <- if (!is.na(result$md5)) {
+    paste(" (MD5:", substr(result$md5, 1, 8), "...)")
+  } else {
+    ""
+  }
+  istat_log(
+    paste(
+      "Downloaded",
+      nrow(result$data),
+      "rows for dataset",
+      dataset_id,
+      md5_info
+    ),
+    "INFO",
+    verbose
+  )
 
   # Update download log with ISTAT's LAST_UPDATE timestamp
   if (check_update) {
@@ -186,10 +257,15 @@ download_istat_data <- function(dataset_id, filter = NULL, start_time = "",
 #' timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
 #' updated_list <- download_multiple_datasets(datasets, updated_after = timestamp)
 #' }
-download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = "",
-                                       incremental = FALSE,
-                                       n_cores = parallel::detectCores() - 1,
-                                       verbose = TRUE, updated_after = NULL) {
+download_multiple_datasets <- function(
+  dataset_ids,
+  filter = NULL,
+  start_time = "",
+  incremental = FALSE,
+  n_cores = parallel::detectCores() - 1,
+  verbose = TRUE,
+  updated_after = NULL
+) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -208,12 +284,14 @@ download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = 
 
   # Create download function
   download_function <- function(id) {
-    download_istat_data(id,
-                       filter = filter,
-                       start_time = start_time,
-                       incremental = incremental,
-                       verbose = verbose,
-                       updated_after = updated_after)
+    download_istat_data(
+      id,
+      filter = filter,
+      start_time = start_time,
+      incremental = incremental,
+      verbose = verbose,
+      updated_after = updated_after
+    )
   }
 
   # Use parallel processing
@@ -237,7 +315,13 @@ download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = 
 
   if (verbose) {
     successful <- sum(!sapply(result, is.null))
-    message("Download complete: ", successful, " of ", length(dataset_ids), " datasets successful")
+    message(
+      "Download complete: ",
+      successful,
+      " of ",
+      length(dataset_ids),
+      " datasets successful"
+    )
   }
 
   return(result)
@@ -256,8 +340,11 @@ download_multiple_datasets <- function(dataset_ids, filter = NULL, start_time = 
 #'
 #' @return List with needs_update (logical), istat_last_update, last_download timestamps
 #' @keywords internal
-check_data_update_needed <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
-
+check_data_update_needed <- function(
+  dataset_id,
+  cache_dir = "meta",
+  verbose = TRUE
+) {
   # Get current LAST_UPDATE from ISTAT API
   istat_last_update <- get_dataset_last_update(dataset_id)
 
@@ -327,7 +414,6 @@ check_data_update_needed <- function(dataset_id, cache_dir = "meta", verbose = T
 #' @return Invisible NULL
 #' @keywords internal
 update_data_download_log <- function(dataset_id, cache_dir = "meta") {
-
   # Get current LAST_UPDATE from ISTAT
   istat_last_update <- get_dataset_last_update(dataset_id)
 
@@ -355,6 +441,38 @@ update_data_download_log <- function(dataset_id, cache_dir = "meta") {
   saveRDS(download_log, log_file)
 
   invisible(NULL)
+}
+
+# 2. Overlap integration helper -----
+
+#' Integrate Downloaded Data with Existing Data
+#'
+#' Merges newly downloaded data with existing data, deduplicating on all
+#' dimension columns plus ObsDimension.
+#'
+#' @param existing_data data.table of previously downloaded data
+#' @param new_data data.table of newly downloaded data
+#'
+#' @return data.table with merged and deduplicated rows
+#' @keywords internal
+integrate_downloaded_data <- function(existing_data, new_data) {
+  if (!data.table::is.data.table(existing_data)) {
+    stop("existing_data must be a data.table")
+  }
+  if (!data.table::is.data.table(new_data)) {
+    stop("new_data must be a data.table")
+  }
+
+  # Combine both datasets
+  combined <- data.table::rbindlist(list(existing_data, new_data), fill = TRUE)
+
+  # Identify key columns for deduplication (all columns except ObsValue)
+  key_cols <- setdiff(names(combined), c("ObsValue", "OBS_VALUE"))
+
+  # Deduplicate: keep the latest (new_data) rows by placing them last
+  combined <- unique(combined, by = key_cols, fromLast = TRUE)
+
+  return(combined)
 }
 
 #' Download ISTAT Data Split by Frequency
@@ -389,10 +507,16 @@ update_data_download_log <- function(dataset_id, cache_dir = "meta") {
 #' job_vacancies <- download_istat_data_by_freq("534_50", start_time = "2024")
 #' monthly_data <- job_vacancies$M
 #' }
-download_istat_data_by_freq <- function(dataset_id, filter = NULL,
-                                         start_time = "", incremental = FALSE,
-                                         timeout = NULL, verbose = TRUE,
-                                         freq = NULL) {
+download_istat_data_by_freq <- function(
+  dataset_id,
+  filter = NULL,
+  start_time = "",
+  end_time = "",
+  incremental = FALSE,
+  timeout = NULL,
+  verbose = TRUE,
+  freq = NULL
+) {
   # Get default values from centralized configuration
   config <- get_istat_config()
 
@@ -407,11 +531,17 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
 
   # If specific frequency requested, download only that one (skip frequency detection)
   if (!is.null(freq)) {
-    if (!is.character(freq) || length(freq) != 1 || !freq %in% c("A", "Q", "M")) {
+    if (
+      !is.character(freq) || length(freq) != 1 || !freq %in% c("A", "Q", "M")
+    ) {
       stop("freq must be a single character: 'A', 'Q', or 'M'")
     }
 
-    istat_log(paste("Downloading single frequency:", freq, "for", dataset_id), "INFO", verbose)
+    istat_log(
+      paste("Downloading single frequency:", freq, "for", dataset_id),
+      "INFO",
+      verbose
+    )
 
     # Get dimension count to build correct filter
     dims <- get_dataset_dimensions(dataset_id)
@@ -424,34 +554,64 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
       paste0(freq, ".", sub("^[^.]*\\.?", "", filter))
     }
 
-    data <- download_istat_data(dataset_id, filter = freq_filter,
-                                start_time = start_time, incremental = incremental,
-                                timeout = timeout, verbose = verbose)
+    data <- download_istat_data(
+      dataset_id,
+      filter = freq_filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    )
     result <- list()
     result[[freq]] <- data
     return(result)
   }
 
   # Get available frequencies (when freq not specified)
-  istat_log(paste("Checking available frequencies for", dataset_id), "INFO", verbose)
+  istat_log(
+    paste("Checking available frequencies for", dataset_id),
+    "INFO",
+    verbose
+  )
   freqs <- get_available_frequencies(dataset_id)
 
   if (is.null(freqs) || length(freqs) == 0) {
     # Fallback to single download without frequency filter
-    istat_log("Could not determine frequencies, downloading all data", "WARNING", verbose)
-    data <- download_istat_data(dataset_id, filter = filter, start_time = start_time,
-                                 incremental = incremental, timeout = timeout,
-                                 verbose = verbose)
+    istat_log(
+      "Could not determine frequencies, downloading all data",
+      "WARNING",
+      verbose
+    )
+    data <- download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    )
     return(list(ALL = data))
   }
 
-  istat_log(paste("Found frequencies:", paste(freqs, collapse = ", ")), "INFO", verbose)
+  istat_log(
+    paste("Found frequencies:", paste(freqs, collapse = ", ")),
+    "INFO",
+    verbose
+  )
 
   if (length(freqs) == 1) {
     # Single frequency - regular download, no need to filter by freq
-    data <- download_istat_data(dataset_id, filter = filter, start_time = start_time,
-                                 incremental = incremental, timeout = timeout,
-                                 verbose = verbose)
+    data <- download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    )
     result <- list()
     result[[freqs]] <- data
     return(result)
@@ -460,7 +620,7 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
   # Get dimension count to build correct filter
   # Need to construct filter with correct number of dots
   dims <- get_dataset_dimensions(dataset_id)
-  n_dims <- if (!is.null(dims)) length(dims) else 8  # fallback to common count
+  n_dims <- if (!is.null(dims)) length(dims) else 8 # fallback to common count
 
   # Multiple frequencies - split downloads
   result <- list()
@@ -475,16 +635,36 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
       paste0(freq, ".", sub("^[^.]*\\.?", "", filter))
     }
 
-    istat_log(paste("Downloading", freq, "data for", dataset_id), "INFO", verbose)
+    istat_log(
+      paste("Downloading", freq, "data for", dataset_id),
+      "INFO",
+      verbose
+    )
 
-    data <- tryCatch({
-      download_istat_data(dataset_id, filter = freq_filter,
-                          start_time = start_time, incremental = incremental,
-                          timeout = timeout, verbose = verbose)
-    }, error = function(e) {
-      warning("Failed to download ", freq, " data for ", dataset_id, ": ", e$message)
-      NULL
-    })
+    data <- tryCatch(
+      {
+        download_istat_data(
+          dataset_id,
+          filter = freq_filter,
+          start_time = start_time,
+          end_time = end_time,
+          incremental = incremental,
+          timeout = timeout,
+          verbose = verbose
+        )
+      },
+      error = function(e) {
+        warning(
+          "Failed to download ",
+          freq,
+          " data for ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+        NULL
+      }
+    )
 
     if (!is.null(data) && nrow(data) > 0) {
       result[[freq]] <- data
@@ -496,8 +676,16 @@ download_istat_data_by_freq <- function(dataset_id, filter = NULL,
     return(NULL)
   }
 
-  istat_log(paste("Downloaded", length(result), "frequency dataset(s):",
-                  paste(names(result), collapse = ", ")), "INFO", verbose)
+  istat_log(
+    paste(
+      "Downloaded",
+      length(result),
+      "frequency dataset(s):",
+      paste(names(result), collapse = ", ")
+    ),
+    "INFO",
+    verbose
+  )
 
   return(result)
 }

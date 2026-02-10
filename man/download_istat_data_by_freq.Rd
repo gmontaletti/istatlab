@@ -8,6 +8,7 @@ download_istat_data_by_freq(
   dataset_id,
   filter = NULL,
   start_time = "",
+  end_time = "",
   incremental = FALSE,
   timeout = NULL,
   verbose = TRUE,
@@ -21,6 +22,10 @@ download_istat_data_by_freq(
 
 \item{start_time}{Character string specifying the start period (e.g., "2019").
 If empty, downloads all available data}
+
+\item{end_time}{Character string or Date specifying the end period (e.g., "2024",
+"2024-06", "2024-06-30"). If empty (default), no upper bound is applied.
+Accepts formats "YYYY", "YYYY-MM", or "YYYY-MM-DD".}
 
 \item{incremental}{Logical or Date/character. If FALSE (default), fetches all data.
 If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),

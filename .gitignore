@@ -76,3 +76,5 @@ src/*.dll
 # Super Claude Kit (generated at runtime)
 .claude/**
 CLAUDE.md
+/doc/
+/Meta/

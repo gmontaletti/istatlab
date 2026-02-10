@@ -9,6 +9,7 @@ build_istat_url(
   dataset_id = NULL,
   filter = "ALL",
   start_time = NULL,
+  end_time = NULL,
   dsd_ref = NULL,
   updated_after = NULL,
   lastNObservations = NULL
@@ -23,6 +24,8 @@ build_istat_url(
 \item{filter}{Character string specifying data filters (for data endpoint)}
 
 \item{start_time}{Character string specifying start period (for data endpoint)}
+
+\item{end_time}{Character string specifying end period (for data endpoint)}
 
 \item{dsd_ref}{Character string specifying data structure reference (for datastructure)}
 

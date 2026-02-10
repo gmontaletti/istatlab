@@ -8,13 +8,15 @@ download_istat_data(
   dataset_id,
   filter = NULL,
   start_time = "",
+  end_time = "",
   incremental = FALSE,
   timeout = NULL,
   verbose = TRUE,
   updated_after = NULL,
   return_result = FALSE,
   check_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = "meta",
+  existing_data = NULL
 )
 }
 \arguments{
@@ -24,6 +26,10 @@ download_istat_data(
 
 \item{start_time}{Character string specifying the start period (e.g., "2019").
 If empty, downloads all available data}
+
+\item{end_time}{Character string or Date specifying the end period (e.g., "2024",
+"2024-06", "2024-06-30"). If empty (default), no upper bound is applied.
+Accepts formats "YYYY", "YYYY-MM", or "YYYY-MM-DD".}
 
 \item{incremental}{Logical or Date/character. If FALSE (default), fetches all data.
 If a Date object or character string ("YYYY", "YYYY-MM", or "YYYY-MM-DD"),
@@ -46,6 +52,10 @@ with a message. Default is FALSE for backward compatibility.}
 
 \item{cache_dir}{Character string specifying directory for download log cache.
 Default is "meta"}
+
+\item{existing_data}{Optional data.table of previously downloaded data. When provided,
+the function determines the already-covered date range and downloads only
+non-overlapping periods, merging and deduplicating the result.}
 }
 \value{
 A data.table containing the downloaded data with an additional 'id' column,
@@ -66,6 +76,9 @@ data <- download_istat_data("534_50", start_time = "2019")
 
 # Download with specific filter
 data <- download_istat_data("534_50", filter = "M..", start_time = "2020")
+
+# Download data for a specific date interval
+data <- download_istat_data("534_50", start_time = "2020", end_time = "2023")
 
 # Download only data updated since a specific timestamp
 timestamp <- as.POSIXct("2025-12-10 14:30:00", tz = "UTC")
