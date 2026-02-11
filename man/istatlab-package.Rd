@@ -4,17 +4,17 @@
 \name{istatlab-package}
 \alias{istatlab-package}
 \alias{istatlab}
-\title{istatlab: Download and Process Italian Labour Market Data from ISTAT}
+\title{istatlab: Download and Process Italian Statistical Data from ISTAT}
 \description{
-A toolkit for downloading and processing Italian labour market and demographic data from ISTAT (Istituto Nazionale di Statistica). Supports both the SDMX API (esploradati.istat.it) for labour market data and static CSV downloads (demo.istat.it) for demographic data including population, births, deaths, migrations, and projections. Provides functions for data retrieval, metadata handling, caching, and data processing with automatic label application.
+A toolkit for downloading and processing Italian statistical data from ISTAT (Istituto Nazionale di Statistica). Supports both the SDMX API (esploradati.istat.it) for any published dataset and static CSV downloads (demo.istat.it) for demographic data including population, births, deaths, migrations, and projections. Provides functions for data retrieval, metadata handling, caching, and data processing with automatic label application.
 
 The istatlab package provides a toolkit for downloading and processing
-Italian labour market and demographic data from ISTAT (Istituto Nazionale
-di Statistica). It supports both the SDMX API (esploradati.istat.it) for
-labour market data and static CSV downloads (demo.istat.it) for demographic
-data including population, births, deaths, migrations, and projections.
+Italian statistical data from ISTAT (Istituto Nazionale di Statistica).
+It supports both the SDMX API (esploradati.istat.it) for any published
+dataset and static CSV downloads (demo.istat.it) for demographic data
+including population, births, deaths, migrations, and projections.
 }
-\section{Labour Market Data (SDMX API)}{
+\section{Statistical Data (SDMX API)}{
 
 \describe{
 \item{Data Download:}{

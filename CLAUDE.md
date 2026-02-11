@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**istatlab** is an R package for downloading, processing, analyzing, and visualizing Italian labour market data from ISTAT's SDMX API. The package is authored by Giampaolo Montaletti (giampaolo.montaletti@gmail.com, GitHub: gmontaletti).
+**istatlab** is an R package for downloading, processing, analyzing, and visualizing Italian statistical data from ISTAT's SDMX API and demo.istat.it. The package is authored by Giampaolo Montaletti (giampaolo.montaletti@gmail.com, GitHub: gmontaletti).
 
 ## Package Structure
 
@@ -95,7 +95,7 @@ devtools::run_examples()
 
 ### Important Notes
 - **NEVER modify the original `moneca()` function** (mentioned in global instructions)
-- Functions are designed for Italian labour market data but architecture supports extension
+- Functions are designed for Italian statistical data from ISTAT
 - API connectivity checking is built into download functions
 - Time series functions handle both quarterly and monthly data automatically
 

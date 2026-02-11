@@ -13,7 +13,7 @@ get_categorized_datasets(category = NULL)
 A list containing dataset IDs organized by category
 }
 \description{
-Returns organized dataset information grouped by labour market categories.
+Returns organized dataset information grouped by statistical categories.
 }
 \examples{
 \dontrun{

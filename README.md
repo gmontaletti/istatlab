@@ -5,7 +5,7 @@
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-**istatlab** is a comprehensive R package for downloading, processing, analyzing, and visualizing Italian labour market data from ISTAT (Istituto Nazionale di Statistica) through their SDMX API.
+**istatlab** is a comprehensive R package for downloading, processing, analyzing, and visualizing Italian statistical data from ISTAT (Istituto Nazionale di Statistica) through their SDMX API and the demo.istat.it portal.
 
 ## Features
 
@@ -45,7 +45,7 @@ processed_data <- apply_labels(data)
 
 # Create a time series plot
 create_time_series_plot(processed_data, 
-                       title = "Italian Labour Market Data",
+                       title = "Italian Statistical Data",
                        subtitle = "Source: ISTAT")
 ```
 
@@ -127,7 +127,7 @@ dashboard <- create_dashboard_plot(processed_employment,
 
 ## Dataset IDs
 
-Common ISTAT dataset IDs for labour market data:
+Common ISTAT dataset IDs for statistical data:
 
 - `150_908`: Monthly employment data
 - `150_915`: Quarterly employment statistics  
@@ -170,7 +170,7 @@ To cite istatlab in publications:
 citation("istatlab")
 ```
 
-Montaletti, G. (2026). istatlab: Download and Process Italian Labour Market Data from ISTAT. R package version 0.5.0. https://github.com/gmontaletti/istatlab
+Montaletti, G. (2026). istatlab: Download and Process Italian Statistical Data from ISTAT. R package version 0.5.0. https://github.com/gmontaletti/istatlab
 
 ## Author
 
@@ -180,5 +180,5 @@ GitHub: [gmontaletti](https://github.com/gmontaletti)
 
 ## Acknowledgments
 
-- ISTAT for providing comprehensive labour market data through their SDMX API
+- ISTAT for providing comprehensive statistical data through their SDMX API
 - The R community for excellent packages that make this work possible

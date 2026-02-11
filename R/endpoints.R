@@ -142,7 +142,7 @@ list_istat_endpoints <- function() {
 
 #' Get Dataset Information by Category
 #'
-#' Returns organized dataset information grouped by labour market categories.
+#' Returns organized dataset information grouped by statistical categories.
 #'
 #' @param category Optional character string to filter by category
 #'
