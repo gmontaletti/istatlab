@@ -248,6 +248,10 @@ apply_labels <- function(
 
 # Performance-optimized helper functions
 
+#' In-memory metadata cache environment
+#' @keywords internal
+.metadata_cache <- new.env(parent = emptyenv())
+
 #' Load Metadata from Cache
 #'
 #' Loads codelists and variable dimensions from the deduplicated cache structure.
@@ -260,9 +264,6 @@ apply_labels <- function(
 #'
 #' @return List with codelists (keyed by dataset) and var_dimensions
 #' @keywords internal
-# In-memory metadata cache environment
-.metadata_cache <- new.env(parent = emptyenv())
-
 load_metadata_cached <- function(
   codelists = NULL,
   var_dimensions = NULL,

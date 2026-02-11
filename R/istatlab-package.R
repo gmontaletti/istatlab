@@ -14,12 +14,13 @@
 #' @importFrom data.table tstrsplit
 #' @importFrom data.table copy
 #' @importFrom data.table %chin%
+#' @importFrom grDevices rgb
+#' @importFrom graphics legend lines polygon
+#' @importFrom stats coef lm median quantile sd setNames time ts window
+#' @importFrom utils globalVariables head tail
 #' @importFrom zoo as.yearqtr
 #' @importFrom parallel mclapply
 #' @importFrom parallel detectCores
-#' @importFrom stats setNames
-#' @importFrom utils globalVariables
-#' @importFrom utils tail
 ## usethis namespace: end
 
 # Suppress R CMD check notes for data.table syntax
@@ -51,6 +52,9 @@ utils::globalVariables(c(
   "var",
   "DATAFLOW",
   "..cols",
+  "..code_cols",
+  "valore",
+  "tempo",
   "year"
 ))
 

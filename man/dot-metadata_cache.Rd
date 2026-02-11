@@ -3,26 +3,14 @@
 \docType{data}
 \name{.metadata_cache}
 \alias{.metadata_cache}
-\title{Load Metadata from Cache}
+\title{In-memory metadata cache environment}
 \format{
 An object of class \code{environment} of length 0.
 }
 \usage{
 .metadata_cache
 }
-\arguments{
-\item{codelists}{Optional pre-loaded codelists. If NULL, loads from cache}
-
-\item{var_dimensions}{Optional pre-loaded variable dimensions. If NULL, loads from cache}
-
-\item{cache_dir}{Character string specifying cache directory}
-}
-\value{
-List with codelists (keyed by dataset) and var_dimensions
-}
 \description{
-Loads codelists and variable dimensions from the deduplicated cache structure.
-Codelists are stored by codelist ID (e.g., CL_FREQ) and reassembled per-dataset
-for backward compatibility with apply_labels().
+In-memory metadata cache environment
 }
 \keyword{internal}
