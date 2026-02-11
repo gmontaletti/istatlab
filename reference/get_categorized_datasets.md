@@ -1,7 +1,6 @@
 # Get Dataset Information by Category
 
-Returns organized dataset information grouped by labour market
-categories.
+Returns organized dataset information grouped by statistical categories.
 
 ## Usage
 

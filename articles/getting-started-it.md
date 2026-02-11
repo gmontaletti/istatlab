@@ -8,8 +8,8 @@ library(data.table)
 ## Introduzione
 
 Il pacchetto **istatlab** fornisce strumenti per scaricare, elaborare e
-analizzare i dati sul mercato del lavoro italiano dall’ISTAT (Istituto
-Nazionale di Statistica) attraverso la sua API SDMX.
+analizzare i dati statistici italiani dall’ISTAT (Istituto Nazionale di
+Statistica) attraverso la sua API SDMX.
 
 Questa vignette illustra il flusso di lavoro di base per il recupero e
 l’etichettatura dei dati ISTAT. Funzionalità avanzate come le previsioni

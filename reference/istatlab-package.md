@@ -1,21 +1,20 @@
-# istatlab: Download and Process Italian Labour Market Data from ISTAT
+# istatlab: Download and Process Italian Statistical Data from ISTAT
 
-A toolkit for downloading and processing Italian labour market and
-demographic data from ISTAT (Istituto Nazionale di Statistica). Supports
-both the SDMX API (esploradati.istat.it) for labour market data and
-static CSV downloads (demo.istat.it) for demographic data including
-population, births, deaths, migrations, and projections. Provides
-functions for data retrieval, metadata handling, caching, and data
-processing with automatic label application.
+A toolkit for downloading and processing Italian statistical data from
+ISTAT (Istituto Nazionale di Statistica). Supports both the SDMX API
+(esploradati.istat.it) for any published dataset and static CSV
+downloads (demo.istat.it) for demographic data including population,
+births, deaths, migrations, and projections. Provides functions for data
+retrieval, metadata handling, caching, and data processing with
+automatic label application.
 
 The istatlab package provides a toolkit for downloading and processing
-Italian labour market and demographic data from ISTAT (Istituto
-Nazionale di Statistica). It supports both the SDMX API
-(esploradati.istat.it) for labour market data and static CSV downloads
-(demo.istat.it) for demographic data including population, births,
-deaths, migrations, and projections.
+Italian statistical data from ISTAT (Istituto Nazionale di Statistica).
+It supports both the SDMX API (esploradati.istat.it) for any published
+dataset and static CSV downloads (demo.istat.it) for demographic data
+including population, births, deaths, migrations, and projections.
 
-## Labour Market Data (SDMX API)
+## Statistical Data (SDMX API)
 
 - Data Download::
 

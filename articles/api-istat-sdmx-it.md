@@ -934,7 +934,7 @@ if (risultato$success) {
 
 ### Dataset comuni
 
-Tabella dei dataset più utilizzati per il mercato del lavoro italiano:
+Tabella dei dataset più utilizzati per i dati statistici italiani:
 
 | Dataset ID | Descrizione                              | Frequenza           |
 |------------|------------------------------------------|---------------------|

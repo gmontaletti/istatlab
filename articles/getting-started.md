@@ -8,7 +8,7 @@ library(data.table)
 ## Introduction
 
 The **istatlab** package provides tools for downloading, processing, and
-analyzing Italian labour market data from ISTAT (Istituto Nazionale di
+analyzing Italian statistical data from ISTAT (Istituto Nazionale di
 Statistica) through its SDMX API.
 
 This vignette covers the basic workflow for retrieving and labeling
