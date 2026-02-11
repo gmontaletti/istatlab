@@ -1,15 +1,21 @@
 # istatlab: Download and Process Italian Labour Market Data from ISTAT
 
-A toolkit for downloading and processing Italian labour market data from
-ISTAT (Istituto Nazionale di Statistica) through their SDMX API. The
-package provides functions for data retrieval, metadata handling, and
-data processing with automatic label application.
+A toolkit for downloading and processing Italian labour market and
+demographic data from ISTAT (Istituto Nazionale di Statistica). Supports
+both the SDMX API (esploradati.istat.it) for labour market data and
+static CSV downloads (demo.istat.it) for demographic data including
+population, births, deaths, migrations, and projections. Provides
+functions for data retrieval, metadata handling, caching, and data
+processing with automatic label application.
 
 The istatlab package provides a toolkit for downloading and processing
-Italian labour market data from ISTAT (Istituto Nazionale di Statistica)
-through their SDMX API.
+Italian labour market and demographic data from ISTAT (Istituto
+Nazionale di Statistica). It supports both the SDMX API
+(esploradati.istat.it) for labour market data and static CSV downloads
+(demo.istat.it) for demographic data including population, births,
+deaths, migrations, and projections.
 
-## Main functions
+## Labour Market Data (SDMX API)
 
 - Data Download::
 
@@ -28,6 +34,26 @@ through their SDMX API.
   [`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md),
   [`filter_by_time()`](https://gmontaletti.github.io/istatlab/reference/filter_by_time.md),
   [`validate_istat_data()`](https://gmontaletti.github.io/istatlab/reference/validate_istat_data.md)
+
+## Demographic Data (demo.istat.it)
+
+- Dataset Discovery::
+
+  [`list_demo_datasets()`](https://gmontaletti.github.io/istatlab/reference/list_demo_datasets.md),
+  [`search_demo_datasets()`](https://gmontaletti.github.io/istatlab/reference/search_demo_datasets.md),
+  [`get_demo_dataset_info()`](https://gmontaletti.github.io/istatlab/reference/get_demo_dataset_info.md),
+  [`get_demo_categories()`](https://gmontaletti.github.io/istatlab/reference/get_demo_categories.md)
+
+- Data Download::
+
+  [`download_demo_data()`](https://gmontaletti.github.io/istatlab/reference/download_demo_data.md),
+  [`download_demo_data_multi()`](https://gmontaletti.github.io/istatlab/reference/download_demo_data_multi.md),
+  [`download_demo_data_batch()`](https://gmontaletti.github.io/istatlab/reference/download_demo_data_batch.md)
+
+- Cache Management::
+
+  [`demo_cache_status()`](https://gmontaletti.github.io/istatlab/reference/demo_cache_status.md),
+  [`clean_demo_cache()`](https://gmontaletti.github.io/istatlab/reference/clean_demo_cache.md)
 
 ## Package workflow
 

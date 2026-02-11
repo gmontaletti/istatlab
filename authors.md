@@ -11,13 +11,13 @@ Source:
 [`DESCRIPTION`](https://github.com/gmontaletti/istatlab/blob/main/DESCRIPTION)
 
 Montaletti G (2026). *istatlab: Download and Process Italian Labour
-Market Data from ISTAT*. R package version 0.3.2,
+Market Data from ISTAT*. R package version 0.4.0,
 <https://gmontaletti.github.io/istatlab/>.
 
     @Manual{,
       title = {istatlab: Download and Process Italian Labour Market Data from ISTAT},
       author = {Giampaolo Montaletti},
       year = {2026},
-      note = {R package version 0.3.2},
+      note = {R package version 0.4.0},
       url = {https://gmontaletti.github.io/istatlab/},
     }
