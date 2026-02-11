@@ -56,7 +56,9 @@ reference:
     contents:
       - download_istat_data
       - download_istat_data_by_freq
+      - download_istat_data_latest_edition
       - download_multiple_datasets
+      - build_sdmx_filter_key
       - istat_result
 
   - title: Metadata
@@ -68,6 +70,8 @@ reference:
       - get_dataset_dimensions
       - get_dataset_last_update
       - get_available_frequencies
+      - get_available_editions
+      - get_dataset_dimension_positions
       - get_categorized_datasets
       - get_dataset_category
       - fetch_registry_dimensions
@@ -91,6 +95,21 @@ reference:
       - filter_by_time
       - validate_istat_data
       - clean_variable_names
+
+  - title: Demographic Data (demo.istat.it)
+    desc: Download demographic data from demo.istat.it.
+    contents:
+      - list_demo_datasets
+      - search_demo_datasets
+      - get_demo_dataset_info
+      - get_demo_categories
+      - demo_registry
+      - download_demo_data
+      - download_demo_data_multi
+      - download_demo_data_batch
+      - demo_cache_status
+      - clean_demo_cache
+      - reset_demo_rate_limiter
 
   - title: Forecasting
     desc: Time series forecasting methods.
