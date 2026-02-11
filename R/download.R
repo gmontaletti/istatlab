@@ -686,3 +686,194 @@ download_istat_data_by_freq <- function(
 
   return(result)
 }
+
+#' Download ISTAT Data for the Latest Edition
+#'
+#' Downloads data for a dataset, filtering by the EDITION dimension. By default,
+#' auto-detects the latest available edition and downloads only that subset.
+#' This is useful for datasets that publish multiple editions (revisions) of the
+#' same indicators, where typically only the most recent edition is needed.
+#'
+#' @inheritParams download_istat_data
+#' @param edition Controls edition handling. If NULL (default), auto-detects and
+#'   downloads only the latest edition. If "all", downloads all editions (no
+#'   edition filter applied, equivalent to a regular download). If a specific
+#'   edition code (e.g., "G_2024_01"), downloads only that edition.
+#'
+#' @return A data.table containing the downloaded data with an additional 'id'
+#'   column, or NULL if the download fails. When the dataset has no EDITION
+#'   dimension, all data is returned without edition filtering.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Auto-detect and download only the latest edition
+#' data <- download_istat_data_latest_edition("150_908", start_time = "2020")
+#'
+#' # Download a specific edition
+#' data <- download_istat_data_latest_edition(
+#'   "150_908",
+#'   edition = "G_2024_01",
+#'   start_time = "2020"
+#' )
+#'
+#' # Download all editions (no edition filter)
+#' data <- download_istat_data_latest_edition("150_908", edition = "all")
+#' }
+download_istat_data_latest_edition <- function(
+  dataset_id,
+  filter = NULL,
+  start_time = "",
+  end_time = "",
+  edition = NULL,
+  incremental = FALSE,
+  timeout = NULL,
+  verbose = TRUE
+) {
+  # 1. Configuration and defaults -----
+  config <- get_istat_config()
+
+  if (is.null(timeout)) {
+    timeout <- config$defaults$timeout
+  }
+
+  # 2. Input validation -----
+  if (!is.character(dataset_id) || length(dataset_id) != 1) {
+    stop("dataset_id must be a single character string")
+  }
+
+  # 3. Edition == "all": fall back to regular download -----
+  if (!is.null(edition) && tolower(edition) == "all") {
+    istat_log(
+      paste("Downloading all editions for", dataset_id),
+      "INFO",
+      verbose
+    )
+    return(download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    ))
+  }
+
+  # 4. Retrieve dimension positions -----
+  dim_positions <- get_dataset_dimension_positions(dataset_id)
+
+  if (is.null(dim_positions)) {
+    warning(
+      "Could not retrieve dimension positions for ",
+      dataset_id,
+      ". Downloading all data."
+    )
+    return(download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    ))
+  }
+
+  # 5. Check for EDITION dimension -----
+  if (!"EDITION" %in% names(dim_positions)) {
+    istat_log(
+      "Dataset has no EDITION dimension, downloading all data",
+      "INFO",
+      verbose
+    )
+    return(download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    ))
+  }
+
+  edition_pos <- dim_positions[["EDITION"]]
+  n_dims <- length(dim_positions)
+
+  # 6. Specific edition requested -----
+  if (!is.null(edition)) {
+    istat_log(
+      paste("Downloading edition", edition, "for", dataset_id),
+      "INFO",
+      verbose
+    )
+
+    dim_values <- list()
+    dim_values[[as.character(edition_pos)]] <- edition
+
+    merged_filter <- merge_sdmx_filters(filter, n_dims, dim_values)
+
+    return(download_istat_data(
+      dataset_id,
+      filter = merged_filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    ))
+  }
+
+  # 7. Auto-detect latest edition -----
+  istat_log(
+    paste("Detecting latest edition for", dataset_id),
+    "INFO",
+    verbose
+  )
+
+  throttle()
+
+  editions <- get_available_editions(dataset_id, timeout)
+
+  if (is.null(editions) || length(editions) == 0) {
+    warning(
+      "Could not retrieve available editions for ",
+      dataset_id,
+      ". Downloading all data."
+    )
+    return(download_istat_data(
+      dataset_id,
+      filter = filter,
+      start_time = start_time,
+      end_time = end_time,
+      incremental = incremental,
+      timeout = timeout,
+      verbose = verbose
+    ))
+  }
+
+  latest <- determine_latest_edition(editions)
+  istat_log(
+    paste("Selected latest edition:", latest, "for", dataset_id),
+    "INFO",
+    verbose
+  )
+
+  dim_values <- list()
+  dim_values[[as.character(edition_pos)]] <- latest
+
+  merged_filter <- merge_sdmx_filters(filter, n_dims, dim_values)
+
+  throttle()
+
+  download_istat_data(
+    dataset_id,
+    filter = merged_filter,
+    start_time = start_time,
+    end_time = end_time,
+    incremental = incremental,
+    timeout = timeout,
+    verbose = verbose
+  )
+}

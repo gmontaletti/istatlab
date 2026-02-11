@@ -268,6 +268,194 @@ build_istat_url <- function(
   )
 }
 
+#' Build SDMX Positional Filter Key
+#'
+#' Constructs a dot-separated positional filter key for SDMX API queries.
+#' The ISTAT SDMX API uses positional filters where each dimension is separated
+#' by a dot. Empty positions act as wildcards (match all values). For example,
+#' a dataset with 8 dimensions and a filter key \code{"M......G_2024_01."} means
+#' dimension 1 is \code{"M"}, dimension 7 is \code{"G_2024_01"}, and all other
+#' dimensions are unrestricted.
+#'
+#' @param n_dims Integer. Total number of dimensions in the dataset.
+#'   Must be a positive integer.
+#' @param dim_values Named list mapping dimension positions (as character strings)
+#'   to filter values. Position numbering starts at 1. For example,
+#'   \code{list("1" = "M", "7" = "G_2024_01")} sets dimension 1 to \code{"M"}
+#'   and dimension 7 to \code{"G_2024_01"}.
+#'
+#' @return Character string containing the dot-separated filter key.
+#' @export
+#'
+#' @examples
+#' # Set dimension 1 to "M" and dimension 7 to "G_2024_01" in an 8-dimension dataset
+#' build_sdmx_filter_key(8, list("1" = "M", "7" = "G_2024_01"))
+#' # Returns: "M......G_2024_01."
+#'
+#' # Single dimension filter
+#' build_sdmx_filter_key(5, list("3" = "IT"))
+#' # Returns: "..IT.."
+#'
+#' # All wildcards (equivalent to "ALL")
+#' build_sdmx_filter_key(4, list())
+#' # Returns: "..."
+build_sdmx_filter_key <- function(n_dims, dim_values) {
+  # 1. Input validation -----
+  if (
+    !is.numeric(n_dims) ||
+      length(n_dims) != 1 ||
+      is.na(n_dims) ||
+      n_dims != as.integer(n_dims) ||
+      n_dims < 1
+  ) {
+    stop("n_dims must be a positive integer, got: ", deparse(n_dims))
+  }
+  n_dims <- as.integer(n_dims)
+
+  if (!is.list(dim_values)) {
+    stop("dim_values must be a named list, got: ", class(dim_values)[1])
+  }
+
+  # Empty list is valid (all wildcards)
+  if (length(dim_values) == 0) {
+    return(paste(rep("", n_dims), collapse = "."))
+  }
+
+  # Validate names are present and represent valid positions
+  positions <- names(dim_values)
+  if (is.null(positions) || any(positions == "")) {
+    stop("All elements of dim_values must be named with position numbers")
+  }
+
+  numeric_positions <- suppressWarnings(as.integer(positions))
+  if (any(is.na(numeric_positions))) {
+    stop(
+      "dim_values names must be integer position numbers, got: ",
+      paste(positions[is.na(numeric_positions)], collapse = ", ")
+    )
+  }
+
+  out_of_range <- numeric_positions < 1 | numeric_positions > n_dims
+  if (any(out_of_range)) {
+    stop(
+      "Position(s) out of range [1, ",
+      n_dims,
+      "]: ",
+      paste(numeric_positions[out_of_range], collapse = ", ")
+    )
+  }
+
+  # 2. Build filter key -----
+  parts <- rep("", n_dims)
+  for (i in seq_along(dim_values)) {
+    pos <- numeric_positions[i]
+    parts[pos] <- as.character(dim_values[[i]])
+  }
+
+  paste(parts, collapse = ".")
+}
+
+#' Merge Dimension Values into an Existing SDMX Filter
+#'
+#' Takes an existing SDMX filter string and fills in additional dimension values
+#' without overwriting positions already specified by the user. When the base
+#' filter is \code{NULL} or \code{"ALL"}, a new filter key is built from scratch
+#' using \code{\link{build_sdmx_filter_key}}.
+#'
+#' @param base_filter Character string with an existing dot-separated filter,
+#'   or \code{NULL} / \code{"ALL"} to indicate no existing filter.
+#' @param n_dims Integer. Total number of dimensions in the dataset.
+#' @param dim_values Named list mapping dimension positions (as character strings)
+#'   to filter values. Same format as in \code{\link{build_sdmx_filter_key}}.
+#'   Values are only inserted into positions that are empty (wildcard) in
+#'   \code{base_filter}; existing user-specified values are preserved.
+#'
+#' @return Character string containing the merged dot-separated filter key.
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' # Fill position 7 into an 8-dimension filter that has positions 1 and 3 set
+#' merge_sdmx_filters("M..IT.....", 8, list("7" = "G_2024_01"))
+#' # Returns: "M..IT....G_2024_01."
+#'
+#' # User-specified values are not overwritten
+#' merge_sdmx_filters("M..IT.....", 8, list("1" = "Q", "7" = "G_2024_01"))
+#' # Returns: "M..IT....G_2024_01." (position 1 keeps "M", not overwritten)
+#'
+#' # NULL base_filter builds from scratch
+#' merge_sdmx_filters(NULL, 8, list("1" = "M", "7" = "G_2024_01"))
+#' # Returns: "M......G_2024_01."
+#' }
+merge_sdmx_filters <- function(base_filter, n_dims, dim_values) {
+  # 1. Delegate to build_sdmx_filter_key when no base filter -----
+  if (is.null(base_filter) || base_filter == "ALL") {
+    return(build_sdmx_filter_key(n_dims, dim_values))
+  }
+
+  # 2. Validate n_dims -----
+  if (
+    !is.numeric(n_dims) ||
+      length(n_dims) != 1 ||
+      is.na(n_dims) ||
+      n_dims != as.integer(n_dims) ||
+      n_dims < 1
+  ) {
+    stop("n_dims must be a positive integer, got: ", deparse(n_dims))
+  }
+  n_dims <- as.integer(n_dims)
+
+  # 3. Split existing filter into parts -----
+  parts <- strsplit(base_filter, "\\.", perl = TRUE)[[1]]
+
+  # Trailing dots produce no entries from strsplit; pad to n_dims
+  if (length(parts) < n_dims) {
+    parts <- c(parts, rep("", n_dims - length(parts)))
+  }
+
+  # 4. Validate dim_values -----
+  if (!is.list(dim_values)) {
+    stop("dim_values must be a named list, got: ", class(dim_values)[1])
+  }
+
+  if (length(dim_values) == 0) {
+    return(paste(parts, collapse = "."))
+  }
+
+  positions <- names(dim_values)
+  if (is.null(positions) || any(positions == "")) {
+    stop("All elements of dim_values must be named with position numbers")
+  }
+
+  numeric_positions <- suppressWarnings(as.integer(positions))
+  if (any(is.na(numeric_positions))) {
+    stop(
+      "dim_values names must be integer position numbers, got: ",
+      paste(positions[is.na(numeric_positions)], collapse = ", ")
+    )
+  }
+
+  out_of_range <- numeric_positions < 1 | numeric_positions > n_dims
+  if (any(out_of_range)) {
+    stop(
+      "Position(s) out of range [1, ",
+      n_dims,
+      "]: ",
+      paste(numeric_positions[out_of_range], collapse = ", ")
+    )
+  }
+
+  # 5. Merge: fill only empty positions -----
+  for (i in seq_along(dim_values)) {
+    pos <- numeric_positions[i]
+    if (parts[pos] == "") {
+      parts[pos] <- as.character(dim_values[[i]])
+    }
+  }
+
+  paste(parts, collapse = ".")
+}
+
 #' Get Dataset Category
 #'
 #' Returns datasets belonging to a specific category for easier organization.

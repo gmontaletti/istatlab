@@ -485,6 +485,48 @@ process_time_dimension <- function(data) {
   return(data)
 }
 
+#' Parse Edition Date
+#'
+#' Converts ISTAT edition codes (e.g., "G_2024_01", "G_2023_12") to Date objects.
+#' Replaces G, M, and underscore characters with hyphens, pads short dates with
+#' "-01", and converts to Date.
+#'
+#' @param edition_code Character vector of ISTAT edition codes.
+#'
+#' @return A Date vector with the parsed dates.
+#' @keywords internal
+parse_edition_date <- function(edition_code) {
+  # 1. Replace G, M, _ with hyphens -----
+  cleaned <- gsub("[GM_]", "-", edition_code)
+
+  # 2. Collapse consecutive hyphens and strip leading hyphen -----
+  cleaned <- gsub("-+", "-", cleaned)
+  cleaned <- sub("^-", "", cleaned)
+
+  # 3. Pad short dates with day component -----
+  short <- nchar(cleaned) < 9
+  cleaned[short] <- paste0(cleaned[short], "-01")
+
+  # 4. Convert to Date -----
+  as.Date(cleaned)
+}
+
+#' Determine Latest Edition
+#'
+#' Identifies the edition code with the most recent date from a character vector
+#' of ISTAT edition codes. Uses parsed dates rather than alphabetical comparison
+#' to correctly handle edition ordering.
+#'
+#' @param editions Character vector of unique ISTAT edition codes.
+#'
+#' @return A single character string with the edition code corresponding to the
+#'   latest date.
+#' @keywords internal
+determine_latest_edition <- function(editions) {
+  parsed <- parse_edition_date(editions)
+  editions[which.max(parsed)]
+}
+
 #' Process Editions
 #'
 #' Handles multiple editions in ISTAT data by keeping only the latest edition.
@@ -499,11 +541,13 @@ process_time_dimension <- function(data) {
 process_editions <- function(data) {
   # Clean and convert edition dates
   data[, EDITION_new := gsub("[GM_]", "-", EDITION)]
+  data[, EDITION_new := gsub("-+", "-", EDITION_new)]
+  data[, EDITION_new := sub("^-", "", EDITION_new)]
   data[nchar(EDITION_new) < 9, EDITION_new := paste0(EDITION_new, "-01")]
   data[, EDITION_new := as.Date(EDITION_new)]
 
   # Keep only the latest edition
-  latest_edition <- max(data$EDITION)
+  latest_edition <- determine_latest_edition(unique(data$EDITION))
   data <- data[EDITION == latest_edition]
 
   return(data)

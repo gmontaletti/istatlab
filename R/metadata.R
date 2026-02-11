@@ -216,6 +216,94 @@ get_dataset_dimensions <- function(dataset_id) {
   )
 }
 
+#' Get Dataset Dimension Positions
+#'
+#' Retrieves the dimension names and their SDMX key positions for a specific
+#' ISTAT dataset. Positions indicate the order of dimensions in the SDMX key
+#' (1-based), which is needed for constructing data queries with positional
+#' filters.
+#'
+#' @param dataset_id Character string specifying the dataset ID
+#'
+#' @return A named integer vector mapping dimension IDs to their 1-based
+#'   positions (e.g., \code{c(FREQ = 1L, REF_AREA = 2L, EDITION = 7L)}),
+#'   or NULL if the dataset is not found or an error occurs
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Get dimension positions for a dataset
+#' positions <- get_dataset_dimension_positions("534_50")
+#' # Returns: c(ATECO_2007 = 1L, BASE_YEAR = 2L, CORREZ = 3L, ...)
+#'
+#' # Use positions to identify the FREQ dimension slot
+#' freq_pos <- positions["FREQ"]
+#' }
+get_dataset_dimension_positions <- function(dataset_id) {
+  if (!is.character(dataset_id) || length(dataset_id) != 1) {
+    stop("dataset_id must be a single character string")
+  }
+
+  tryCatch(
+    {
+      # Get metadata to find dsdRef
+      metadata <- download_metadata()
+      data.table::setDT(metadata)
+
+      dsd_ref <- metadata[id == dataset_id]$dsdRef
+
+      if (length(dsd_ref) == 0) {
+        warning("Dataset ID not found in metadata: ", dataset_id)
+        return(NULL)
+      }
+
+      # Fetch datastructure JSON
+      api_url <- build_istat_url("datastructure", dsd_ref = dsd_ref)
+      json_data <- http_get_json(api_url, timeout = 60, verbose = FALSE)
+
+      # Extract dimension positions
+      positions <- extract_dimension_positions_from_json(json_data)
+
+      if (length(positions) == 0) {
+        warning("No dimension position data found for dataset: ", dataset_id)
+        return(NULL)
+      }
+
+      return(positions)
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout|timed out", e$message, ignore.case = TRUE)) {
+        warning(
+          "Request for dataset dimension positions timed out. Dataset: ",
+          dataset_id,
+          ". Please try again later."
+        )
+      } else if (
+        grepl(
+          "resolve|connection|network|internet",
+          e$message,
+          ignore.case = TRUE
+        )
+      ) {
+        warning(
+          "Cannot connect to ISTAT API for dataset dimension positions. Dataset: ",
+          dataset_id,
+          ". Please check your internet connection. Error: ",
+          e$message
+        )
+      } else {
+        warning(
+          "Failed to get dataset dimension positions for ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+      }
+      return(NULL)
+    }
+  )
+}
+
 #' Download Codelists
 #'
 #' Downloads codelists for ISTAT datasets using a deduplicated cache structure.
@@ -705,6 +793,59 @@ extract_dimension_mapping_from_json <- function(json_data) {
   return(dimensions)
 }
 
+#' Extract Dimension Positions from JSON Response
+#'
+#' Internal function to extract dimension IDs and their 1-based key positions
+#' from the JSON datastructure response. SDMX positions are 0-based, so this
+#' function adds 1 to convert them. If a dimension does not declare a position,
+#' the iteration index is used as fallback.
+#'
+#' @param json_data Parsed JSON from datastructure endpoint (as list)
+#'
+#' @return Named integer vector mapping dimension IDs to their 1-based
+#'   positions (e.g., \code{c(FREQ = 1L, REF_AREA = 2L, EDITION = 7L)}).
+#'   Returns an empty named integer vector on error.
+#' @keywords internal
+extract_dimension_positions_from_json <- function(json_data) {
+  tryCatch(
+    {
+      # Navigate to dimensionList in the JSON structure
+      ds <- json_data$data$dataStructures[[1]]
+      if (is.null(ds)) {
+        return(stats::setNames(integer(0), character(0)))
+      }
+
+      dim_list <- ds$dataStructureComponents$dimensionList
+      if (is.null(dim_list) || is.null(dim_list$dimensions)) {
+        return(stats::setNames(integer(0), character(0)))
+      }
+
+      dims <- dim_list$dimensions
+      ids <- character(length(dims))
+      positions <- integer(length(dims))
+
+      for (i in seq_along(dims)) {
+        d <- dims[[i]]
+        ids[i] <- d$id
+
+        # Use declared position (0-based) if available, else iteration index
+        if (!is.null(d$position)) {
+          positions[i] <- as.integer(d$position) + 1L
+        } else {
+          positions[i] <- as.integer(i)
+        }
+      }
+
+      result <- stats::setNames(positions, ids)
+      return(result)
+    },
+    error = function(e) {
+      warning("Failed to parse dimension positions from JSON: ", e$message)
+      return(stats::setNames(integer(0), character(0)))
+    }
+  )
+}
+
 #' Extract Dimension to Codelist Mapping
 #'
 #' Internal function to extract dimension name to codelist reference mapping.
@@ -940,6 +1081,86 @@ get_available_frequencies <- function(dataset_id, timeout = 30) {
       } else {
         warning(
           "Failed to get available frequencies for ",
+          dataset_id,
+          ": ",
+          e$message
+        )
+      }
+      return(NULL)
+    }
+  )
+}
+
+#' Get Available Editions for Dataset
+#'
+#' Queries the availableconstraint endpoint to determine which edition codes
+#' are available for a dataset. Not all datasets have an EDITION dimension;
+#' for those that do not, this function returns NULL without warning.
+#'
+#' @param dataset_id Character string specifying dataset ID
+#' @param timeout Numeric timeout in seconds. Default 30
+#'
+#' @return Character vector of available edition codes
+#'   (e.g., \code{c("G_2024_01", "G_2023_12")}), or NULL if the dataset
+#'   does not have an EDITION dimension or the request fails
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Get available editions for a dataset
+#' editions <- get_available_editions("150_908")
+#' # Returns: c("G_2024_01", "G_2023_12", ...) or NULL
+#' }
+get_available_editions <- function(dataset_id, timeout = 30) {
+  if (!is.character(dataset_id) || length(dataset_id) != 1) {
+    stop("dataset_id must be a single character string")
+  }
+
+  config <- get_istat_config()
+  url <- build_istat_url("availableconstraint", dataset_id = dataset_id)
+
+  tryCatch(
+    {
+      # Request XML format (JSON returns empty data for this endpoint)
+      xml_content <- http_get_xml(url, timeout = timeout, verbose = FALSE)
+
+      # Parse XML to extract EDITION values
+      # Look for pattern: <common:KeyValue id="EDITION">...<common:Value>X</common:Value>...</common:KeyValue>
+      # Use (?s) flag to make . match newlines
+      edition_pattern <- '(?s)<common:KeyValue id="EDITION">(.*?)</common:KeyValue>'
+      edition_match <- regmatches(
+        xml_content,
+        regexpr(edition_pattern, xml_content, perl = TRUE)
+      )
+
+      if (length(edition_match) == 0 || nchar(edition_match) == 0) {
+        # EDITION dimension not present is a normal case - return NULL silently
+        return(NULL)
+      }
+
+      # Extract individual values
+      value_pattern <- '<common:Value>([^<]+)</common:Value>'
+      values <- regmatches(
+        edition_match,
+        gregexpr(value_pattern, edition_match, perl = TRUE)
+      )[[1]]
+
+      # Clean up the values - handle whitespace
+      editions <- gsub('<common:Value>|</common:Value>', '', values)
+      editions <- trimws(editions)
+
+      if (length(editions) == 0) {
+        return(NULL)
+      }
+
+      return(editions)
+    },
+    error = function(e) {
+      if (grepl("timeout|Timeout", e$message, ignore.case = TRUE)) {
+        warning("Request for available editions timed out for ", dataset_id)
+      } else {
+        warning(
+          "Failed to get available editions for ",
           dataset_id,
           ": ",
           e$message
