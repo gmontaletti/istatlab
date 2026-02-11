@@ -96,14 +96,171 @@ ridondanti attraverso un sistema di cache a più livelli.</p>
 scaricati in locale.</p>
 </div>
 <div class="section level2">
-<h2 id="il-sistema-di-cache-dei-metadati">2. Il sistema di cache dei metadati<a class="anchor" aria-label="anchor" href="#il-sistema-di-cache-dei-metadati"></a>
+<h2 id="limiti-e-blocchi-dellapi-istat">2. Limiti e blocchi dell’API ISTAT<a class="anchor" aria-label="anchor" href="#limiti-e-blocchi-dellapi-istat"></a>
+</h2>
+<p>L’API SDMX di ISTAT applica limiti di velocità per proteggere
+l’infrastruttura del server. Il superamento di questi limiti può
+comportare blocchi temporanei degli indirizzi IP. Il pacchetto istatlab
+implementa contromisure automatiche per rispettare questi limiti e
+gestire gli errori di rete.</p>
+<div class="section level3">
+<h3 id="comportamento-del-rate-limiting">2.1 Comportamento del rate limiting<a class="anchor" aria-label="anchor" href="#comportamento-del-rate-limiting"></a>
+</h3>
+<p>ISTAT impone un limite di circa 5 richieste al minuto. Quando questo
+limite viene superato, il server risponde con HTTP 429 (Too Many
+Requests). Dopo violazioni ripetute, il server può bloccare
+temporaneamente l’indirizzo IP per 24-48 ore.</p>
+<p>Il server può anche restituire HTTP 503 (Service Unavailable) quando
+è sovraccarico o durante manutenzioni.</p>
+</div>
+<div class="section level3">
+<h3 id="sistema-di-throttling">2.2 Sistema di throttling<a class="anchor" aria-label="anchor" href="#sistema-di-throttling"></a>
+</h3>
+<p>La funzione <code><a href="../reference/throttle.html">throttle()</a></code> in
+<code>R/http_transport.R</code> applica un ritardo minimo di 13 secondi
+tra le richieste consecutive. Questo corrisponde a circa 4.6 richieste
+al minuto, valore inferiore al limite di circa 5 richieste al minuto
+imposto da ISTAT.</p>
+<p>Il throttling utilizza un ambiente a livello di pacchetto
+(<code>.istat_rate_limiter</code>) per tracciare il timestamp
+dell’ultima richiesta. Ad ogni ritardo viene aggiunto un jitter casuale
+(+/- 10%) per evitare pattern di richieste sincronizzate.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Visualizzare la configurazione del rate limiting -----</span></span>
+<span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">config</span><span class="op">$</span><span class="va">rate_limit</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Il ritardo è applicato automaticamente tra chiamate -----</span></span>
+<span><span class="co"># Non è necessaria alcuna azione da parte dell'utente</span></span>
+<span><span class="va">data1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, start_time <span class="op">=</span> <span class="st">"2023"</span><span class="op">)</span></span>
+<span><span class="va">data2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"534_50"</span>, start_time <span class="op">=</span> <span class="st">"2023"</span><span class="op">)</span></span>
+<span><span class="co"># Il sistema attende automaticamente 13 secondi (+/- jitter) tra le due chiamate</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="retry-con-backoff-esponenziale">2.3 Retry con backoff esponenziale<a class="anchor" aria-label="anchor" href="#retry-con-backoff-esponenziale"></a>
+</h3>
+<p>La funzione <code><a href="../reference/http_get_with_retry.html">http_get_with_retry()</a></code> gestisce
+automaticamente i codici HTTP 429 e 503 con tentativi di retry. Vengono
+effettuati fino a 3 tentativi con backoff esponenziale:</p>
+<ul>
+<li>Primo retry: 60 secondi di attesa</li>
+<li>Secondo retry: 120 secondi di attesa</li>
+<li>Terzo retry: 240 secondi di attesa</li>
+</ul>
+<p>Il backoff massimo è limitato a 300 secondi. Se il server fornisce
+l’header <code>Retry-After</code>, il sistema lo rispetta. Ad ogni
+backoff viene aggiunto jitter casuale per evitare sincronizzazione.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. I retry sono gestiti automaticamente dal sistema -----</span></span>
+<span><span class="co"># L'utente non deve implementare logica di retry manuale</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, start_time <span class="op">=</span> <span class="st">"2020"</span><span class="op">)</span></span>
+<span><span class="co"># In caso di 429 o 503, il sistema ritenta fino a 3 volte</span></span>
+<span></span>
+<span><span class="co"># 2. Parametri di configurazione del backoff -----</span></span>
+<span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">rate_limit</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Max retries:"</span>, <span class="va">config</span><span class="op">$</span><span class="va">max_retries</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Initial backoff:"</span>, <span class="va">config</span><span class="op">$</span><span class="va">initial_backoff</span>, <span class="st">"secondi"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Backoff multiplier:"</span>, <span class="va">config</span><span class="op">$</span><span class="va">backoff_multiplier</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Max backoff:"</span>, <span class="va">config</span><span class="op">$</span><span class="va">max_backoff</span>, <span class="st">"secondi"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="rilevamento-del-ban">2.4 Rilevamento del ban<a class="anchor" aria-label="anchor" href="#rilevamento-del-ban"></a>
+</h3>
+<p>La funzione <code><a href="../reference/detect_ban.html">detect_ban()</a></code> monitora le risposte HTTP 429
+consecutive. Dopo 3 risposte 429 consecutive (threshold configurabile),
+il sistema emette un warning che indica un probabile ban dell’indirizzo
+IP e interrompe i tentativi di retry.</p>
+<p>Dopo un periodo di attesa di 24-48 ore, è possibile resettare lo
+stato del rate limiter con <code><a href="../reference/reset_rate_limiter.html">reset_rate_limiter()</a></code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Il rilevamento del ban è automatico -----</span></span>
+<span><span class="co"># Il sistema emette un warning dopo 3 risposte 429 consecutive</span></span>
+<span><span class="co"># Warning: "Your IP may be temporarily banned by ISTAT. Wait 24-48 hours."</span></span>
+<span></span>
+<span><span class="co"># 2. Reset del rate limiter dopo il periodo di ban -----</span></span>
+<span><span class="fu"><a href="../reference/reset_rate_limiter.html">reset_rate_limiter</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># Resetta il contatore di 429 consecutivi e il timestamp dell'ultima richiesta</span></span>
+<span></span>
+<span><span class="co"># 3. Configurazione della soglia di rilevamento -----</span></span>
+<span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">rate_limit</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Ban detection threshold:"</span>, <span class="va">config</span><span class="op">$</span><span class="va">ban_detection_threshold</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="esecuzione-sequenziale-nei-download-multipli">2.5 Esecuzione sequenziale nei download multipli<a class="anchor" aria-label="anchor" href="#esecuzione-sequenziale-nei-download-multipli"></a>
+</h3>
+<p>La funzione <code><a href="../reference/download_multiple_datasets.html">download_multiple_datasets()</a></code> forza
+l’esecuzione sequenziale dei download per garantire che il rate limiting
+sia rispettato. Il parametro <code>n_cores</code> è mantenuto per
+compatibilità con versioni precedenti, ma viene ignorato.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Download di dataset multipli con rate limiting -----</span></span>
+<span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"150_908"</span>, <span class="st">"534_50"</span>, <span class="st">"534_51"</span><span class="op">)</span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_multiple_datasets.html">download_multiple_datasets</a></span><span class="op">(</span><span class="va">dataset_ids</span>, start_time <span class="op">=</span> <span class="st">"2020"</span><span class="op">)</span></span>
+<span><span class="co"># I download avvengono in sequenza con throttling applicato</span></span>
+<span></span>
+<span><span class="co"># 2. Il parametro n_cores è ignorato -----</span></span>
+<span><span class="co"># Mantenuto per retrocompatibilità, ma l'esecuzione è sempre sequenziale</span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_multiple_datasets.html">download_multiple_datasets</a></span><span class="op">(</span><span class="va">dataset_ids</span>, n_cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co"># n_cores viene ignorato: esecuzione sequenziale con rate limiting</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="fallback-del-trasporto-http">2.6 Fallback del trasporto HTTP<a class="anchor" aria-label="anchor" href="#fallback-del-trasporto-http"></a>
+</h3>
+<p>La funzione <code><a href="../reference/http_get.html">http_get()</a></code> tenta prima di utilizzare
+<code><a href="https://httr.r-lib.org/reference/GET.html" class="external-link">httr::GET()</a></code>. Se fallisce, il sistema utilizza
+automaticamente curl di sistema come fallback. Questo fornisce
+resilienza contro problemi specifici delle librerie HTTP.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Il fallback è completamente trasparente -----</span></span>
+<span><span class="co"># L'utente non deve gestire manualmente il metodo HTTP</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, start_time <span class="op">=</span> <span class="st">"2023"</span><span class="op">)</span></span>
+<span><span class="co"># Il sistema seleziona automaticamente il metodo HTTP appropriato</span></span>
+<span></span>
+<span><span class="co"># 2. Il risultato include il metodo utilizzato -----</span></span>
+<span><span class="co"># Disponibile nei log interni per debugging</span></span>
+<span><span class="co"># Method: "httr" o "curl"</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="classificazione-degli-errori">2.7 Classificazione degli errori<a class="anchor" aria-label="anchor" href="#classificazione-degli-errori"></a>
+</h3>
+<p>Il sistema classifica gli errori API con exit code standardizzati
+(definiti in <code>R/error_handling.R</code>):</p>
+<ul>
+<li>
+<strong>Exit code 0</strong>: Operazione riuscita</li>
+<li>
+<strong>Exit code 1</strong>: Errore generico (connettività, HTTP,
+parsing)</li>
+<li>
+<strong>Exit code 2</strong>: Timeout di connessione</li>
+<li>
+<strong>Exit code 3</strong>: Rate limiting (HTTP 429)</li>
+</ul>
+<p>La funzione <code><a href="../reference/classify_api_error.html">classify_api_error()</a></code> categorizza gli errori
+per una gestione coerente:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Gli exit code sono gestiti internamente -----</span></span>
+<span><span class="co"># L'utente riceve messaggi di errore descrittivi</span></span>
+<span><span class="co"># Gli exit code sono disponibili negli oggetti istat_result</span></span>
+<span></span>
+<span><span class="co"># 2. Verifica manuale dello stato (avanzato) -----</span></span>
+<span><span class="co"># La maggior parte degli utenti non necessita di questo livello di dettaglio</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"INVALID_ID"</span><span class="op">)</span>,</span>
+<span>  error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># Il sistema classifica automaticamente il tipo di errore</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="il-sistema-di-cache-dei-metadati">3. Il sistema di cache dei metadati<a class="anchor" aria-label="anchor" href="#il-sistema-di-cache-dei-metadati"></a>
 </h2>
 <p>La funzione <code><a href="../reference/download_metadata.html">download_metadata()</a></code> scarica il catalogo
 completo dei dataset ISTAT e lo memorizza in
 <code>meta/flussi_istat.rds</code> con un TTL (time-to-live) di 14
 giorni. Alla prima chiamata, i dati vengono scaricati dall’API. Le
 chiamate successive leggono dalla cache locale fino alla scadenza.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Primo download: interroga l'API ISTAT -----</span></span>
 <span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_metadata.html">download_metadata</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co"># Scarica il catalogo e lo salva in meta/flussi_istat.rds</span></span>
@@ -119,7 +276,7 @@ chiamate successive leggono dalla cache locale fino alla scadenza.</p>
 <span>  <span class="va">data_download_log.rds</span>     <span class="co"># Registro timestamp download</span></span>
 <span>  <span class="va">codelist_metadata.rds</span>     <span class="co"># Metadati TTL codelist</span></span></code></pre>
 <p>Per visualizzare la configurazione della cache:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Configurazione generale -----</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">config</span><span class="op">$</span><span class="va">cache</span><span class="op">)</span></span>
@@ -129,7 +286,7 @@ chiamate successive leggono dalla cache locale fino alla scadenza.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Cache TTL:"</span>, <span class="va">cache_days</span>, <span class="st">"giorni"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="il-sistema-ttl-sfalsato-per-le-codelist">3. Il sistema TTL sfalsato per le codelist<a class="anchor" aria-label="anchor" href="#il-sistema-ttl-sfalsato-per-le-codelist"></a>
+<h2 id="il-sistema-ttl-sfalsato-per-le-codelist">4. Il sistema TTL sfalsato per le codelist<a class="anchor" aria-label="anchor" href="#il-sistema-ttl-sfalsato-per-le-codelist"></a>
 </h2>
 <p>Le codelist (classificazioni come ITTER107 per i territori o ATECO
 per le attività economiche) sono memorizzate separatamente. Se tutte le
@@ -137,7 +294,7 @@ codelist scadessero simultaneamente, si verificherebbe un sovraccarico
 dell’API. Il pacchetto utilizza un sistema di TTL sfalsato: ogni
 codelist ha una durata calcolata come
 <code>base_ttl + hash(codelist_id) % jitter_days</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Calcolare il TTL di una codelist specifica -----</span></span>
 <span><span class="va">ttl_days</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_codelist_ttl.html">compute_codelist_ttl</a></span><span class="op">(</span><span class="st">"CL_ITTER107"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"TTL per CL_ITTER107:"</span>, <span class="va">ttl_days</span>, <span class="st">"giorni"</span><span class="op">)</span><span class="op">)</span></span>
@@ -149,7 +306,7 @@ codelist ha una durata calcolata come
 <span><span class="co"># 3. Aggiornare solo le codelist scadute -----</span></span>
 <span><span class="fu"><a href="../reference/refresh_expired_codelists.html">refresh_expired_codelists</a></span><span class="op">(</span><span class="st">"150_908"</span><span class="op">)</span></span></code></pre></div>
 <p>Configurazione del sistema TTL:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Visualizzare i parametri TTL -----</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">base_ttl</span> <span class="op">&lt;-</span> <span class="va">config</span><span class="op">$</span><span class="va">cache</span><span class="op">$</span><span class="va">codelist_base_ttl_days</span>  <span class="co"># 14 giorni</span></span>
@@ -163,7 +320,7 @@ codelist ha una durata calcolata come
 evitando picchi di carico sull’API.</p>
 </div>
 <div class="section level2">
-<h2 id="verificare-gli-aggiornamenti-prima-del-download">4. Verificare gli aggiornamenti prima del download<a class="anchor" aria-label="anchor" href="#verificare-gli-aggiornamenti-prima-del-download"></a>
+<h2 id="verificare-gli-aggiornamenti-prima-del-download">5. Verificare gli aggiornamenti prima del download<a class="anchor" aria-label="anchor" href="#verificare-gli-aggiornamenti-prima-del-download"></a>
 </h2>
 <p>Prima di scaricare un dataset, è possibile verificare se ISTAT ha
 pubblicato aggiornamenti dall’ultimo download. La funzione
@@ -171,7 +328,7 @@ pubblicato aggiornamenti dall’ultimo download. La funzione
 <code>LAST_UPDATE</code> fornito dall’API. Il parametro
 <code>check_update = TRUE</code> confronta questo timestamp con il
 registro dei download locali.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Verificare manualmente il timestamp di aggiornamento -----</span></span>
 <span><span class="va">last_update</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_dataset_last_update.html">get_dataset_last_update</a></span><span class="op">(</span><span class="st">"150_908"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">last_update</span><span class="op">)</span></span>
@@ -180,7 +337,7 @@ registro dei download locali.</p>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, start_time <span class="op">=</span> <span class="st">"2023"</span>, check_update <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co"># Se i dati non sono cambiati, restituisce NULL con messaggio informativo</span></span></code></pre></div>
 <p>Workflow completo:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Prima esecuzione: scarica e registra il timestamp -----</span></span>
 <span><span class="va">data_iniziale</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>,</span>
 <span>                                      start_time <span class="op">=</span> <span class="st">"2023"</span>,</span>
@@ -200,14 +357,14 @@ registro dei download locali.</p>
 necessarie.</p>
 </div>
 <div class="section level2">
-<h2 id="download-incrementale-per-periodo-temporale">5. Download incrementale per periodo temporale<a class="anchor" aria-label="anchor" href="#download-incrementale-per-periodo-temporale"></a>
+<h2 id="download-incrementale-per-periodo-temporale">6. Download incrementale per periodo temporale<a class="anchor" aria-label="anchor" href="#download-incrementale-per-periodo-temporale"></a>
 </h2>
 <p>Il parametro <code>incremental</code> consente di scaricare solo i
 dati da una data specifica in poi. Accetta oggetti Date o stringhe di
 carattere nei formati “YYYY”, “YYYY-MM”, “YYYY-MM-DD”. Questo è utile
 per aggiornamenti periodici che necessitano solo dei dati più
 recenti.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Download incrementale con anno -----</span></span>
 <span><span class="va">data_2024</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, incremental <span class="op">=</span> <span class="st">"2024"</span><span class="op">)</span></span>
 <span><span class="co"># Scarica solo i dati dal 2024 in poi</span></span>
@@ -224,7 +381,7 @@ recenti.</p>
 <span>                             incremental <span class="op">=</span> <span class="st">"2024"</span><span class="op">)</span></span>
 <span><span class="co"># Scarica solo dal 2024, start_time viene ignorato</span></span></code></pre></div>
 <p>Caso d’uso tipico per job di aggiornamento regolare:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Script di aggiornamento mensile -----</span></span>
 <span><span class="va">anno_corrente</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"%Y"</span><span class="op">)</span></span>
 <span><span class="va">data_nuovi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, incremental <span class="op">=</span> <span class="va">anno_corrente</span><span class="op">)</span></span>
@@ -236,13 +393,13 @@ recenti.</p>
 <span><span class="co"># Scarica solo se ci sono aggiornamenti dal periodo specificato</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="integrazione-con-dati-esistenti">6. Integrazione con dati esistenti<a class="anchor" aria-label="anchor" href="#integrazione-con-dati-esistenti"></a>
+<h2 id="integrazione-con-dati-esistenti">7. Integrazione con dati esistenti<a class="anchor" aria-label="anchor" href="#integrazione-con-dati-esistenti"></a>
 </h2>
 <p>Il parametro <code>existing_data</code> consente di integrare nuovi
 download con dati già scaricati, gestendo automaticamente la
 deduplicazione dei periodi sovrapposti. Questo è utile quando si
 costruiscono serie storiche incrementali.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Download iniziale di dati storici -----</span></span>
 <span><span class="va">data_2023</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>,</span>
 <span>                                  start_time <span class="op">=</span> <span class="st">"2023"</span>,</span>
@@ -260,7 +417,7 @@ costruiscono serie storiche incrementali.</p>
 <span><span class="co"># La deduplicazione avviene sulle colonne chiave dimensionali</span></span>
 <span><span class="co"># Mantiene le righe più recenti in caso di sovrapposizione</span></span></code></pre></div>
 <p>Workflow per aggiornamenti periodici:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Caricamento dati esistenti -----</span></span>
 <span><span class="co"># data_storico &lt;- readRDS("data/serie_150_908.rds")</span></span>
 <span></span>
@@ -276,13 +433,13 @@ costruiscono serie storiche incrementali.</p>
 rileva duplicati sulle colonne chiave dimensionali.</p>
 </div>
 <div class="section level2">
-<h2 id="download-in-batch-efficiente">7. Download in batch efficiente<a class="anchor" aria-label="anchor" href="#download-in-batch-efficiente"></a>
+<h2 id="download-in-batch-efficiente">8. Download in batch efficiente<a class="anchor" aria-label="anchor" href="#download-in-batch-efficiente"></a>
 </h2>
 <p>Per scaricare più dataset simultaneamente,
 <code><a href="../reference/download_multiple_datasets.html">download_multiple_datasets()</a></code> utilizza l’esecuzione
 parallela con <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>. I core disponibili sono
 configurabili.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Download batch di dataset correlati -----</span></span>
 <span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"534_50"</span>, <span class="st">"534_51"</span>, <span class="st">"534_52"</span><span class="op">)</span></span>
 <span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_multiple_datasets.html">download_multiple_datasets</a></span><span class="op">(</span><span class="va">dataset_ids</span>,</span>
@@ -299,7 +456,7 @@ configurabili.</p>
 <span>                                            updated_after <span class="op">=</span> <span class="va">timestamp_riferimento</span><span class="op">)</span></span>
 <span><span class="co"># Scarica solo i dataset modificati dopo il timestamp</span></span></code></pre></div>
 <p>Gestione degli errori:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Download batch con gestione errori -----</span></span>
 <span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"150_908"</span>, <span class="st">"INVALID_ID"</span>, <span class="st">"534_50"</span><span class="op">)</span></span>
 <span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_multiple_datasets.html">download_multiple_datasets</a></span><span class="op">(</span><span class="va">dataset_ids</span><span class="op">)</span></span>
@@ -317,7 +474,7 @@ configurabili.</p>
 dataset indipendenti.</p>
 </div>
 <div class="section level2">
-<h2 id="frequenze-e-download-mirato">8. Frequenze e download mirato<a class="anchor" aria-label="anchor" href="#frequenze-e-download-mirato"></a>
+<h2 id="frequenze-e-download-mirato">9. Frequenze e download mirato<a class="anchor" aria-label="anchor" href="#frequenze-e-download-mirato"></a>
 </h2>
 <p>I dataset ISTAT possono contenere dati con frequenze diverse
 (annuale, trimestrale, mensile). La funzione
@@ -325,7 +482,7 @@ dataset indipendenti.</p>
 presenti. La funzione <code><a href="../reference/download_istat_data_by_freq.html">download_istat_data_by_freq()</a></code> può
 scaricare automaticamente tutte le frequenze separatamente o filtrare
 per una frequenza specifica.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Identificare le frequenze disponibili -----</span></span>
 <span><span class="va">freq_disponibili</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_available_frequencies.html">get_available_frequencies</a></span><span class="op">(</span><span class="st">"151_914"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">freq_disponibili</span><span class="op">)</span>  <span class="co"># es. c("A", "Q", "M")</span></span>
@@ -345,7 +502,7 @@ per una frequenza specifica.</p>
 <span>                                            freq <span class="op">=</span> <span class="st">"Q"</span><span class="op">)</span></span>
 <span><span class="co"># Restituisce solo i dati trimestrali</span></span></code></pre></div>
 <p>Considerazioni sull’efficienza:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Quando usare freq parameter -----</span></span>
 <span><span class="co"># Se serve solo una frequenza, specificare freq riduce i dati scaricati</span></span>
 <span><span class="va">data_mensile</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data_by_freq.html">download_istat_data_by_freq</a></span><span class="op">(</span><span class="st">"151_914"</span>, freq <span class="op">=</span> <span class="st">"M"</span><span class="op">)</span></span>
@@ -360,12 +517,12 @@ per una frequenza specifica.</p>
 <span><span class="co"># Più efficiente se non serve separazione per frequenza</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="gestione-della-directory-cache">9. Gestione della directory cache<a class="anchor" aria-label="anchor" href="#gestione-della-directory-cache"></a>
+<h2 id="gestione-della-directory-cache">10. Gestione della directory cache<a class="anchor" aria-label="anchor" href="#gestione-della-directory-cache"></a>
 </h2>
 <p>La directory cache predefinita è <code>meta/</code> nella directory
 di lavoro corrente. È possibile specificare directory alternative con il
 parametro <code>cache_dir</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Directory cache predefinita -----</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">default_cache</span> <span class="op">&lt;-</span> <span class="va">config</span><span class="op">$</span><span class="va">cache</span><span class="op">$</span><span class="va">metadata_file</span></span>
@@ -378,7 +535,7 @@ parametro <code>cache_dir</code>.</p>
 <span><span class="co"># 3. Metadata con cache personalizzata -----</span></span>
 <span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_metadata.html">download_metadata</a></span><span class="op">(</span>cache_dir <span class="op">=</span> <span class="st">"/percorso/alternativo/meta"</span><span class="op">)</span></span></code></pre></div>
 <p>Portabilità e versionamento:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Portabilità tra macchine -----</span></span>
 <span><span class="co"># La directory meta/ può essere copiata tra sistemi</span></span>
 <span><span class="co"># system("cp -r meta/ /altro/progetto/meta/")</span></span>
@@ -405,10 +562,10 @@ specifiche di organizzazione</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="riepilogo-e-best-practice">10. Riepilogo e best practice<a class="anchor" aria-label="anchor" href="#riepilogo-e-best-practice"></a>
+<h2 id="riepilogo-e-best-practice">11. Riepilogo e best practice<a class="anchor" aria-label="anchor" href="#riepilogo-e-best-practice"></a>
 </h2>
 <p>Albero decisionale per la gestione dei download:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Primo download di un dataset -----</span></span>
 <span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_metadata.html">download_metadata</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"150_908"</span>, start_time <span class="op">=</span> <span class="st">"2020"</span><span class="op">)</span></span>
@@ -432,7 +589,7 @@ specifiche di organizzazione</li>
 <span>                                                  freq <span class="op">=</span> <span class="st">"Q"</span>,</span>
 <span>                                                  start_time <span class="op">=</span> <span class="st">"2020"</span><span class="op">)</span></span></code></pre></div>
 <p>Workflow consigliato per pipeline produttive:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Setup iniziale del progetto -----</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"data"</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"meta"</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
