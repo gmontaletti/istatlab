@@ -67,7 +67,7 @@ detect_ban <- function(consecutive_429s, threshold) {
       consecutive_429s,
       " consecutive HTTP 429 responses. ",
       "Your IP may be temporarily banned by ISTAT. ",
-      "Wait 12-24 hours before retrying.",
+      "Wait 24-48 hours before retrying.",
       call. = FALSE
     )
     return(TRUE)
