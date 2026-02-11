@@ -1,3 +1,22 @@
+# istatlab 0.5.0
+
+## New Features
+
+* New `download_istat_data_latest_edition()` function for edition-aware dataset downloading. Detects the EDITION dimension at the API level and downloads only the latest edition via SDMX key filtering, reducing bandwidth usage.
+* New `get_available_editions()` function to query available editions for a dataset from the availableconstraint endpoint.
+* New `get_dataset_dimension_positions()` function to retrieve ordered dimension positions for a dataset.
+* New `build_sdmx_filter_key()` function for constructing positional SDMX filter keys programmatically.
+* Added `parse_edition_date()` and `determine_latest_edition()` internal helpers for edition date parsing.
+
+## Bug Fixes
+
+* Fixed `process_editions()` to use date-based comparison instead of alphabetical string comparison when determining the latest edition.
+* Fixed edition date parsing to handle double-hyphen artifacts from G/M prefix replacement.
+
+## Documentation
+
+* Updated pkgdown reference index with edition-aware download functions and demographic data functions.
+
 # istatlab 0.3.2
 
 ## New Features
