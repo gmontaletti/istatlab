@@ -89,6 +89,23 @@ get_istat_config <- function() {
       ban_detection_threshold = 3 # consecutive 429s = likely ban
     ),
 
+    # demo.istat.it configuration (demographic data, static CSV-in-ZIP files)
+    demo = list(
+      base_url = "https://demo.istat.it/data",
+      cache_dir = "demo_data",
+      cache_max_age_days = 30
+    ),
+
+    # Rate limiting for demo.istat.it (lighter than SDMX)
+    demo_rate_limit = list(
+      delay = 2,
+      jitter_fraction = 0.1,
+      max_retries = 2,
+      initial_backoff = 10,
+      backoff_multiplier = 2,
+      max_backoff = 60
+    ),
+
     # Cache file configuration
     cache = list(
       codelists_file = "codelists.rds",

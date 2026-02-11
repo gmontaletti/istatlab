@@ -6,13 +6,15 @@
 \alias{istatlab}
 \title{istatlab: Download and Process Italian Labour Market Data from ISTAT}
 \description{
-A toolkit for downloading and processing Italian labour market data from ISTAT (Istituto Nazionale di Statistica) through their SDMX API. The package provides functions for data retrieval, metadata handling, and data processing with automatic label application.
+A toolkit for downloading and processing Italian labour market and demographic data from ISTAT (Istituto Nazionale di Statistica). Supports both the SDMX API (esploradati.istat.it) for labour market data and static CSV downloads (demo.istat.it) for demographic data including population, births, deaths, migrations, and projections. Provides functions for data retrieval, metadata handling, caching, and data processing with automatic label application.
 
 The istatlab package provides a toolkit for downloading and processing
-Italian labour market data from ISTAT (Istituto Nazionale di Statistica)
-through their SDMX API.
+Italian labour market and demographic data from ISTAT (Istituto Nazionale
+di Statistica). It supports both the SDMX API (esploradati.istat.it) for
+labour market data and static CSV downloads (demo.istat.it) for demographic
+data including population, births, deaths, migrations, and projections.
 }
-\section{Main functions}{
+\section{Labour Market Data (SDMX API)}{
 
 \describe{
 \item{Data Download:}{
@@ -26,6 +28,23 @@ through their SDMX API.
 \item{Data Processing:}{
 \code{\link{apply_labels}()}, \code{\link{filter_by_time}()},
 \code{\link{validate_istat_data}()}
+}
+}
+}
+
+\section{Demographic Data (demo.istat.it)}{
+
+\describe{
+\item{Dataset Discovery:}{
+\code{\link{list_demo_datasets}()}, \code{\link{search_demo_datasets}()},
+\code{\link{get_demo_dataset_info}()}, \code{\link{get_demo_categories}()}
+}
+\item{Data Download:}{
+\code{\link{download_demo_data}()}, \code{\link{download_demo_data_multi}()},
+\code{\link{download_demo_data_batch}()}
+}
+\item{Cache Management:}{
+\code{\link{demo_cache_status}()}, \code{\link{clean_demo_cache}()}
 }
 }
 }
