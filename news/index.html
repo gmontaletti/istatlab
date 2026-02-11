@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,26 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="istatlab-050">istatlab 0.5.0<a class="anchor" aria-label="anchor" href="#istatlab-050"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-5-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-5-0"></a></h3>
+<ul><li>New <code><a href="../reference/download_istat_data_latest_edition.html">download_istat_data_latest_edition()</a></code> function for edition-aware dataset downloading. Detects the EDITION dimension at the API level and downloads only the latest edition via SDMX key filtering, reducing bandwidth usage.</li>
+<li>New <code><a href="../reference/get_available_editions.html">get_available_editions()</a></code> function to query available editions for a dataset from the availableconstraint endpoint.</li>
+<li>New <code><a href="../reference/get_dataset_dimension_positions.html">get_dataset_dimension_positions()</a></code> function to retrieve ordered dimension positions for a dataset.</li>
+<li>New <code><a href="../reference/build_sdmx_filter_key.html">build_sdmx_filter_key()</a></code> function for constructing positional SDMX filter keys programmatically.</li>
+<li>Added <code><a href="../reference/parse_edition_date.html">parse_edition_date()</a></code> and <code><a href="../reference/determine_latest_edition.html">determine_latest_edition()</a></code> internal helpers for edition date parsing.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-5-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-0"></a></h3>
+<ul><li>Fixed <code><a href="../reference/process_editions.html">process_editions()</a></code> to use date-based comparison instead of alphabetical string comparison when determining the latest edition.</li>
+<li>Fixed edition date parsing to handle double-hyphen artifacts from G/M prefix replacement.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-5-0"></a></h3>
+<ul><li>Updated pkgdown reference index with edition-aware download functions and demographic data functions.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="istatlab-032">istatlab 0.3.2<a class="anchor" aria-label="anchor" href="#istatlab-032"></a></h2>
 <div class="section level3">
