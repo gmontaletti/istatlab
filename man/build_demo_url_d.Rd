@@ -2,7 +2,7 @@
 % Please edit documentation in R/demo_url_builder.R
 \name{build_demo_url_d}
 \alias{build_demo_url_d}
-\title{Build Demo URL for Pattern D (Category-Level)}
+\title{Build Demo URL for Pattern D (Datatype-Geolevel)}
 \usage{
 build_demo_url_d(info, data_type, geo_level, base_url)
 }
@@ -11,7 +11,8 @@ build_demo_url_d(info, data_type, geo_level, base_url)
 
 \item{data_type}{Character string specifying the forecast data category.}
 
-\item{geo_level}{Character string specifying the geographic resolution.}
+\item{geo_level}{Character string specifying the geographic resolution.
+May be \code{NULL} for datasets that have no geographic segmentation.}
 
 \item{base_url}{Character string with the demo.istat.it base URL.}
 }
@@ -20,17 +21,26 @@ Character string containing the constructed URL.
 }
 \description{
 Constructs URLs of the form
-\code{{base_url}/previsioni/{DataType}-{GeoLevel}.zip}, used by forecast
-datasets that publish static files keyed by data category and geographic
-resolution rather than by year.
+\code{{base_url}/{base_path}/{DataType}-{GeoLevel}{ext}} or
+\code{{base_url}/{base_path}/{DataType}{ext}} (when no geo_level applies),
+used by forecast and reconstruction datasets that publish static files keyed
+by data category and optional geographic resolution.
 }
 \examples{
 \dontrun{
+# With geo_level:
 # Returns: "https://demo.istat.it/data/previsioni/Previsioni-Popolazione_per_eta-Regioni.zip"
 registry <- get_demo_registry()
-info <- registry[registry$code == "prev", ][1L, ]
+info <- registry[registry$code == "PPR", ][1L, ]
 build_demo_url_d(info, data_type = "Previsioni-Popolazione_per_eta",
                  geo_level = "Regioni",
+                 base_url = get_istat_config()$demo$base_url)
+
+# Without geo_level:
+# Returns: "https://demo.istat.it/data/previsionifamiliari/Famiglie_per_tipologia_familiare.csv.zip"
+info <- registry[registry$code == "PRF", ][1L, ]
+build_demo_url_d(info, data_type = "Famiglie_per_tipologia_familiare",
+                 geo_level = NULL,
                  base_url = get_istat_config()$demo$base_url)
 }
 

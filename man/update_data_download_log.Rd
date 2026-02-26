@@ -17,4 +17,3 @@ Invisible NULL
 \description{
 Records the download timestamp and ISTAT's LAST_UPDATE for a dataset.
 }
-\keyword{internal}

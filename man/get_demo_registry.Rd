@@ -11,7 +11,9 @@ A \code{data.table} with one row per dataset and the following
 columns:
 \describe{
 \item{code}{Short registry code (e.g., \code{"D7B"}, \code{"POS"})}
-\item{url_pattern}{Download URL pattern identifier: \code{"A"}, \code{"B"}, \code{"C"}, or \code{"D"}}
+\item{url_pattern}{Download URL pattern identifier: \code{"A"}, \code{"A1"},
+\code{"B"}, \code{"C"}, \code{"D"}, \code{"E"}, \code{"F"}, \code{"G"},
+or \code{NA} for interactive-only datasets}
 \item{base_path}{URL path segment used in the download URL}
 \item{file_code}{Code used in filenames (may differ from \code{code})}
 \item{category}{Thematic category string}
@@ -24,6 +26,13 @@ columns:
 \item{types}{Comma-separated data types (Pattern C only, \code{NA} otherwise)}
 \item{data_types}{Comma-separated data types (Pattern D only, \code{NA} otherwise)}
 \item{geo_levels}{Comma-separated geographic levels (Pattern D only, \code{NA} otherwise)}
+\item{subtypes}{Comma-separated subtypes (Pattern E only, \code{NA} otherwise)}
+\item{downloadable}{Logical flag: \code{TRUE} if bulk download is available,
+\code{FALSE} for interactive-only datasets}
+\item{file_extension}{File extension for Pattern D downloads (\code{".zip"} or
+\code{".csv.zip"}), \code{NA} for other patterns}
+\item{static_filename}{Exact filename for Pattern F downloads, \code{NA} for
+other patterns}
 }
 }
 \description{

@@ -20,7 +20,9 @@ NULL
 #'   columns:
 #'   \describe{
 #'     \item{code}{Short registry code (e.g., \code{"D7B"}, \code{"POS"})}
-#'     \item{url_pattern}{Download URL pattern identifier: \code{"A"}, \code{"B"}, \code{"C"}, or \code{"D"}}
+#'     \item{url_pattern}{Download URL pattern identifier: \code{"A"}, \code{"A1"},
+#'       \code{"B"}, \code{"C"}, \code{"D"}, \code{"E"}, \code{"F"}, \code{"G"},
+#'       or \code{NA} for interactive-only datasets}
 #'     \item{base_path}{URL path segment used in the download URL}
 #'     \item{file_code}{Code used in filenames (may differ from \code{code})}
 #'     \item{category}{Thematic category string}
@@ -33,116 +35,221 @@ NULL
 #'     \item{types}{Comma-separated data types (Pattern C only, \code{NA} otherwise)}
 #'     \item{data_types}{Comma-separated data types (Pattern D only, \code{NA} otherwise)}
 #'     \item{geo_levels}{Comma-separated geographic levels (Pattern D only, \code{NA} otherwise)}
+#'     \item{subtypes}{Comma-separated subtypes (Pattern E only, \code{NA} otherwise)}
+#'     \item{downloadable}{Logical flag: \code{TRUE} if bulk download is available,
+#'       \code{FALSE} for interactive-only datasets}
+#'     \item{file_extension}{File extension for Pattern D downloads (\code{".zip"} or
+#'       \code{".csv.zip"}), \code{NA} for other patterns}
+#'     \item{static_filename}{Exact filename for Pattern F downloads, \code{NA} for
+#'       other patterns}
 #'   }
 #' @keywords internal
 get_demo_registry <- function() {
   # 1a. Pattern A datasets (year-indexed) -----
   pattern_a <- data.table::data.table(
-    code = c(
-      "D7B",
-      "P02",
-      "P03",
-      "RBD",
-      "R91",
-      "AIR",
-      "FE1",
-      "FE3",
-      "ISM",
-      "RIC",
-      "R92",
-      "SSC",
-      "MA1",
-      "MA2",
-      "MA3",
-      "MA4",
-      "NU1",
-      "UC1",
-      "UC2",
-      "UC3",
-      "UC4"
-    ),
+    code = c("D7B", "RBD"),
     url_pattern = "A",
-    base_path = c(
-      "d7b",
-      "p02",
-      "p03",
-      "rbd",
-      "r91",
-      "air",
-      "fe1",
-      "fe3",
-      "ism",
-      "ric",
-      "r92",
-      "ssc",
-      "ma1",
-      "ma2",
-      "ma3",
-      "ma4",
-      "nu1",
-      "uc1",
-      "uc2",
-      "uc3",
-      "uc4"
-    ),
-    file_code = c(
-      "D7B",
-      "P02",
-      "P03",
-      "RBD",
-      "R91",
-      "AIR",
-      "FE1",
-      "FE3",
-      "ISM",
-      "RIC",
-      "R92",
-      "SSC",
-      "MA1",
-      "MA2",
-      "MA3",
-      "MA4",
-      "NU1",
-      "UC1",
-      "UC2",
-      "UC3",
-      "UC4"
-    ),
-    category = c(
-      "dinamica",
-      "dinamica",
-      "dinamica",
-      "dinamica",
-      "dinamica",
-      "dinamica",
-      "natalita",
-      "natalita",
-      "mortalita",
-      "popolazione",
-      "popolazione",
-      "popolazione",
-      "matrimoni",
-      "matrimoni",
-      "matrimoni",
-      "matrimoni",
-      "matrimoni",
-      "unioni_civili",
-      "unioni_civili",
-      "unioni_civili",
-      "unioni_civili"
-    ),
+    base_path = c("d7b", "ricostruzione"),
+    file_code = c("D7B", "RBD-Dataset-"),
+    category = c("dinamica", "popolazione"),
     description_it = c(
       "Bilancio demografico mensile",
+      "Bilancio demografico ricostruito 2002-2019"
+    ),
+    description_en = c(
+      "Monthly demographic balance",
+      "Reconstructed demographic balance 2001-2018"
+    ),
+    year_start = c(2019L, 2001L),
+    year_end = c(NA_integer_, 2018L),
+    downloadable = TRUE
+  )
+
+  # 1b. Pattern A1 datasets (year+locale) -----
+  pattern_a1 <- data.table::data.table(
+    code = "AIR",
+    url_pattern = "A1",
+    base_path = "aire",
+    file_code = "AIRE",
+    category = "dinamica",
+    description_it = "Italiani residenti all'estero (AIRE)",
+    description_en = "Italians residing abroad (AIRE registry)",
+    year_start = 2022L,
+    year_end = NA_integer_,
+    downloadable = TRUE
+  )
+
+  # 1c. Pattern B datasets (territory-indexed) -----
+  pattern_b <- data.table::data.table(
+    code = c("POS", "STR", "P02", "P03"),
+    url_pattern = "B",
+    base_path = c("posas", "strasa", "p2", "p3"),
+    file_code = c("POSAS", "STRASA", "P2", "P3"),
+    category = c("popolazione", "popolazione", "dinamica", "dinamica"),
+    description_it = c(
+      "Popolazione residente per eta' e sesso",
+      "Popolazione straniera residente per eta' e sesso",
       "Bilancio demografico annuale",
-      "Bilancio demografico stranieri",
-      "Bilancio demografico ricostruito 2002-2019",
+      "Bilancio demografico stranieri"
+    ),
+    description_en = c(
+      "Resident population by age and sex",
+      "Foreign resident population by age and sex",
+      "Annual demographic balance",
+      "Foreign population demographic balance"
+    ),
+    year_start = c(2019L, 2019L, 2019L, 2019L),
+    year_end = NA_integer_,
+    territories = "Comuni,Province,Regioni,Ripartizioni",
+    downloadable = TRUE
+  )
+
+  # 1d. Pattern C datasets (level+type+year) -----
+  pattern_c <- data.table::data.table(
+    code = "TVM",
+    url_pattern = "C",
+    base_path = "tvm",
+    file_code = NA_character_,
+    category = "indicatori",
+    description_it = "Tavole di mortalita'",
+    description_en = "Life tables (mortality tables)",
+    year_start = 1974L,
+    year_end = NA_integer_,
+    levels = "provinciali,regionali,ripartizione",
+    types = "completi,ridotti",
+    downloadable = TRUE
+  )
+
+  # 1e. Pattern D datasets (datatype-geolevel) -----
+  pattern_d <- data.table::data.table(
+    code = c("PPR", "PPC", "RIC", "PRF"),
+    url_pattern = "D",
+    base_path = c(
+      "previsioni",
+      "previsionicomunali",
+      "ricostruzione",
+      "previsionifamiliari"
+    ),
+    file_code = NA_character_,
+    category = c("previsioni", "previsioni", "popolazione", "previsioni"),
+    description_it = c(
+      "Previsioni della popolazione residente",
+      "Previsioni della popolazione comunale",
+      "Popolazione residente ricostruita 2002-2019",
+      "Previsioni delle famiglie"
+    ),
+    description_en = c(
+      "Resident population projections",
+      "Municipal population projections",
+      "Reconstructed resident population 2002-2019",
+      "Household projections"
+    ),
+    year_start = NA_integer_,
+    year_end = NA_integer_,
+    data_types = c(
+      "Previsioni-Popolazione_per_eta,Componenti_del_bilancio_demografico,Indicatori",
+      "Previsioni_comunali_popolazione_per_eta,Componenti_del_bilancio_demografico,Tassi_generici_del_movimento_demografico,Principali_indicatori_strutturali",
+      "PopolazioneEta-SingolaArea,PopolazioneEta-Territorio",
+      "Famiglie_per_tipologia_familiare,Popolazione_prevista_per_posizione_familiare,Numero_medio_di_componenti_familiari"
+    ),
+    geo_levels = c(
+      "Ripartizioni,Regioni",
+      "Province",
+      "Italia-Ripartizioni,Regioni,Province,Comuni",
+      NA_character_
+    ),
+    file_extension = c(".zip", ".csv.zip", ".zip", ".csv.zip"),
+    downloadable = TRUE
+  )
+
+  # 1f. Pattern E datasets (subtype+year) -----
+  pattern_e <- data.table::data.table(
+    code = "RCS",
+    url_pattern = "E",
+    base_path = "rcs",
+    file_code = "Dati_RCS",
+    category = "popolazione",
+    description_it = "Popolazione residente per cittadinanza",
+    description_en = "Resident population by citizenship",
+    year_start = 2002L,
+    year_end = NA_integer_,
+    subtypes = "nascita,cittadinanza",
+    downloadable = TRUE
+  )
+
+  # 1g. Pattern F datasets (static file) -----
+  pattern_f <- data.table::data.table(
+    code = "TVA",
+    url_pattern = "F",
+    base_path = "tva",
+    file_code = NA_character_,
+    category = "indicatori",
+    description_it = "Tavole attuariali di mortalita'",
+    description_en = "Actuarial mortality tables",
+    year_start = NA_integer_,
+    year_end = NA_integer_,
+    static_filename = "tavole attuariali.zip",
+    downloadable = TRUE
+  )
+
+  # 1h. Pattern G datasets (year-indexed CSV, no ZIP) -----
+  pattern_g <- data.table::data.table(
+    code = "ISM",
+    url_pattern = "G",
+    base_path = "ism",
+    file_code = "Decessi-Tassi-Anno_",
+    category = "mortalita",
+    description_it = "Cancellati per decesso",
+    description_en = "Deaths (cancelled due to death)",
+    year_start = 2011L,
+    year_end = NA_integer_,
+    downloadable = TRUE
+  )
+
+  # 1i. Interactive-only datasets (no bulk download) -----
+  interactive_only <- data.table::data.table(
+    code = c(
+      "R91",
+      "R92",
+      "FE1",
+      "FE3",
+      "SSC",
+      "MA1",
+      "MA2",
+      "MA3",
+      "MA4",
+      "NU1",
+      "UC1",
+      "UC2",
+      "UC3",
+      "UC4",
+      "PFL"
+    ),
+    url_pattern = NA_character_,
+    base_path = NA_character_,
+    file_code = NA_character_,
+    category = c(
+      "dinamica",
+      "popolazione",
+      "natalita",
+      "natalita",
+      "popolazione",
+      "matrimoni",
+      "matrimoni",
+      "matrimoni",
+      "matrimoni",
+      "matrimoni",
+      "unioni_civili",
+      "unioni_civili",
+      "unioni_civili",
+      "unioni_civili",
+      "previsioni"
+    ),
+    description_it = c(
       "Bilancio demografico 1991-2001",
-      "Italiani residenti all'estero (AIRE)",
+      "Popolazione residente 1992-2001",
       "Indicatori di fecondita'",
       "Nati per comune",
-      "Cancellati per decesso",
-      "Popolazione residente ricostruita 2002-2019",
-      "Popolazione residente 1992-2001",
       "Popolazione semi-supercentenaria (105+ anni)",
       "Matrimoni - indicatori di nuzialita'",
       "Matrimoni - caratteristiche degli sposi",
@@ -152,20 +259,14 @@ get_demo_registry <- function() {
       "Unioni civili - principali indicatori",
       "Unioni civili - caratteristiche",
       "Unioni civili - cittadinanza",
-      "Unioni civili - serie storiche"
+      "Unioni civili - serie storiche",
+      "Previsioni delle forze di lavoro"
     ),
     description_en = c(
-      "Monthly demographic balance",
-      "Annual demographic balance",
-      "Foreign population demographic balance",
-      "Reconstructed demographic balance 2002-2019",
       "Demographic balance 1991-2001",
-      "Italians residing abroad (AIRE registry)",
+      "Resident population 1992-2001",
       "Fertility indicators",
       "Births by municipality",
-      "Deaths (cancelled due to death)",
-      "Reconstructed resident population 2002-2019",
-      "Resident population 1992-2001",
       "Semi-supercentenarian population (105+ years)",
       "Marriages - nuptiality indicators",
       "Marriages - characteristics of spouses",
@@ -175,130 +276,27 @@ get_demo_registry <- function() {
       "Civil unions - main indicators",
       "Civil unions - characteristics",
       "Civil unions - citizenship",
-      "Civil unions - historical time series"
-    ),
-    year_start = c(
-      2019L,
-      2002L,
-      2002L,
-      2002L,
-      1991L,
-      2012L,
-      2002L,
-      2002L,
-      2011L,
-      2002L,
-      1992L,
-      2009L,
-      2004L,
-      2004L,
-      2004L,
-      2004L,
-      2004L,
-      2016L,
-      2016L,
-      2016L,
-      2016L
-    ),
-    year_end = NA_integer_,
-    territories = NA_character_,
-    levels = NA_character_,
-    types = NA_character_,
-    data_types = NA_character_,
-    geo_levels = NA_character_
-  )
-
-  # 1b. Pattern B datasets (territory-indexed) -----
-  pattern_b <- data.table::data.table(
-    code = c("POS", "STR", "RCS"),
-    url_pattern = "B",
-    base_path = c("posas", "stras", "rcist"),
-    file_code = c("POSAS", "STRAS", "RCIST"),
-    category = "popolazione",
-    description_it = c(
-      "Popolazione residente per eta' e sesso",
-      "Popolazione straniera residente per eta' e sesso",
-      "Popolazione residente per cittadinanza"
-    ),
-    description_en = c(
-      "Resident population by age and sex",
-      "Foreign resident population by age and sex",
-      "Resident population by citizenship"
-    ),
-    year_start = c(2002L, 2003L, 2003L),
-    year_end = NA_integer_,
-    territories = "Comuni,Province,Regioni,Ripartizioni,Italia",
-    levels = NA_character_,
-    types = NA_character_,
-    data_types = NA_character_,
-    geo_levels = NA_character_
-  )
-
-  # 1c. Pattern C datasets (type+level) -----
-  pattern_c <- data.table::data.table(
-    code = c("TVM", "TVA"),
-    url_pattern = "C",
-    base_path = c("tvm", "tva"),
-    file_code = NA_character_,
-    category = "indicatori",
-    description_it = c(
-      "Tavole di mortalita'",
-      "Tavole attuariali di mortalita'"
-    ),
-    description_en = c(
-      "Life tables (mortality tables)",
-      "Actuarial mortality tables"
-    ),
-    year_start = c(1974L, 1974L),
-    year_end = NA_integer_,
-    territories = NA_character_,
-    levels = "comunali,provinciali,regionali",
-    types = "completi,sintetici",
-    data_types = NA_character_,
-    geo_levels = NA_character_
-  )
-
-  # 1d. Pattern D datasets (category-level) -----
-  pattern_d <- data.table::data.table(
-    code = c("PPR", "PRF", "PPC", "PFL"),
-    url_pattern = "D",
-    base_path = "previsioni",
-    file_code = NA_character_,
-    category = "previsioni",
-    description_it = c(
-      "Previsioni della popolazione residente",
-      "Previsioni delle famiglie",
-      "Previsioni della popolazione comunale",
-      "Previsioni delle forze di lavoro"
-    ),
-    description_en = c(
-      "Resident population projections",
-      "Household projections",
-      "Municipal population projections",
+      "Civil unions - historical time series",
       "Labour force projections"
     ),
     year_start = NA_integer_,
     year_end = NA_integer_,
-    territories = NA_character_,
-    levels = NA_character_,
-    types = NA_character_,
-    data_types = c(
-      "Previsioni-Popolazione_per_eta,Previsioni-Indicatori_demografici",
-      "Previsioni-Famiglie,Previsioni-Nuclei_familiari",
-      "Previsioni-Popolazione_comunale",
-      "Previsioni-Forze_lavoro"
-    ),
-    geo_levels = c(
-      "Regioni,Italia",
-      "Regioni,Italia",
-      "Italia",
-      "Italia"
-    )
+    downloadable = FALSE
   )
 
-  # 1e. Combine all patterns -----
+  # 1j. Combine all patterns -----
   registry <- data.table::rbindlist(
-    list(pattern_a, pattern_b, pattern_c, pattern_d),
+    list(
+      pattern_a,
+      pattern_a1,
+      pattern_b,
+      pattern_c,
+      pattern_d,
+      pattern_e,
+      pattern_f,
+      pattern_g,
+      interactive_only
+    ),
     use.names = TRUE,
     fill = TRUE
   )
@@ -319,7 +317,8 @@ get_demo_registry <- function() {
 #'   Use \code{\link{get_demo_categories}} to see valid categories.
 #'
 #' @return A \code{data.table} with columns: \code{code}, \code{category},
-#'   \code{description_it}, \code{description_en}, \code{url_pattern}.
+#'   \code{description_it}, \code{description_en}, \code{url_pattern},
+#'   \code{downloadable}.
 #' @export
 #'
 #' @examples
@@ -361,7 +360,8 @@ list_demo_datasets <- function(category = NULL) {
     "category",
     "description_it",
     "description_en",
-    "url_pattern"
+    "url_pattern",
+    "downloadable"
   )
   registry[, ..cols]
 }
@@ -382,7 +382,7 @@ list_demo_datasets <- function(category = NULL) {
 #'
 #' @return A \code{data.table} with matching rows, containing columns:
 #'   \code{code}, \code{category}, \code{description_it},
-#'   \code{description_en}, \code{url_pattern}.
+#'   \code{description_en}, \code{url_pattern}, \code{downloadable}.
 #' @export
 #'
 #' @examples
@@ -434,7 +434,8 @@ search_demo_datasets <- function(
     "category",
     "description_it",
     "description_en",
-    "url_pattern"
+    "url_pattern",
+    "downloadable"
   )
   result[, ..cols]
 }

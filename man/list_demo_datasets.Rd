@@ -14,7 +14,8 @@ Use \code{\link{get_demo_categories}} to see valid categories.}
 }
 \value{
 A \code{data.table} with columns: \code{code}, \code{category},
-\code{description_it}, \code{description_en}, \code{url_pattern}.
+\code{description_it}, \code{description_en}, \code{url_pattern},
+\code{downloadable}.
 }
 \description{
 Returns a summary table of all available demographic datasets from

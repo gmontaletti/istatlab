@@ -12,7 +12,9 @@ download_istat_data_by_freq(
   incremental = FALSE,
   timeout = NULL,
   verbose = TRUE,
-  freq = NULL
+  freq = NULL,
+  check_update = FALSE,
+  cache_dir = "meta"
 )
 }
 \arguments{
@@ -39,11 +41,20 @@ Takes precedence over start_time if both are provided.}
 \item{freq}{Character string specifying a single frequency to download (A, Q, or M).
 If NULL (default), downloads all available frequencies. When specified, only
 the requested frequency is downloaded, avoiding unnecessary API calls.}
+
+\item{check_update}{Logical indicating whether to check ISTAT's LAST_UPDATE timestamp
+before downloading. If TRUE and data hasn't changed since last download, returns NULL
+with a message. The check is performed once at the top level; internal calls to
+\code{download_istat_data} always use \code{check_update = FALSE}. Default is FALSE.}
+
+\item{cache_dir}{Character string specifying directory for download log cache.
+Default is "meta".}
 }
 \value{
 Named list of data.tables by frequency (e.g., list(A = dt, Q = dt)).
 Each element contains data for a single frequency. If the dataset has only
-one frequency, returns a list with a single element.
+one frequency, returns a list with a single element. Returns NULL if
+\code{check_update = TRUE} and data is unchanged since last download.
 }
 \description{
 Downloads data for a dataset, automatically splitting by frequency if
@@ -65,5 +76,16 @@ annual_only <- download_istat_data_by_freq("151_914", start_time = "2020", freq 
 # Single-frequency dataset
 job_vacancies <- download_istat_data_by_freq("534_50", start_time = "2024")
 monthly_data <- job_vacancies$M
+
+# Check if data has been updated before downloading
+data_list <- download_istat_data_by_freq("151_914", check_update = TRUE)
+# Returns NULL with message if data unchanged since last download
+
+# Use a custom cache directory
+data_list <- download_istat_data_by_freq(
+  "151_914",
+  check_update = TRUE,
+  cache_dir = "my_cache"
+)
 }
 }

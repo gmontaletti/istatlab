@@ -16,9 +16,10 @@
 #' the CSV content from the downloaded ZIP archive.
 #'
 #' @param code Character string identifying the dataset in the demo registry
-#'   (e.g., \code{"D7B"}, \code{"POS"}, \code{"TVM"}, \code{"PPR"}). Use
-#'   \code{\link{list_demo_datasets}} to see available codes.
-#' @param year Integer year for the data file. Required for patterns A, B, and C.
+#'   (e.g., \code{"D7B"}, \code{"POS"}, \code{"TVM"}, \code{"PPR"},
+#'   \code{"RCS"}). Use \code{\link{list_demo_datasets}} to see available codes.
+#' @param year Integer year for the data file. Required for patterns A, B, C,
+#'   and E.
 #' @param territory Character string specifying geographic territory (Pattern B
 #'   only, e.g., \code{"Comuni"}, \code{"Province"}, \code{"Regioni"}).
 #' @param level Character string specifying geographic aggregation level
@@ -29,6 +30,8 @@
 #'   (Pattern D only).
 #' @param geo_level Character string specifying geographic resolution
 #'   (Pattern D only, e.g., \code{"Regioni"}, \code{"Italia"}).
+#' @param subtype Character string specifying the data subtype (Pattern E only,
+#'   e.g., \code{"nascita"}, \code{"cittadinanza"}).
 #' @param cache_dir Character string specifying directory for cached files.
 #'   If \code{NULL} (default), uses the value from
 #'   \code{get_istat_config()$demo$cache_dir}.
@@ -51,8 +54,20 @@
 #' # Download mortality tables
 #' dt <- download_demo_data("TVM", year = 2024, level = "regionali", type = "completi")
 #'
+#' # Download population by citizenship (subtype)
+#' dt <- download_demo_data("RCS", year = 2025, subtype = "cittadinanza")
+#'
+#' # Download actuarial mortality tables (Pattern F, static file)
+#' dt <- download_demo_data("TVA")
+#'
+#' # Download deaths data (Pattern G, plain CSV)
+#' dt <- download_demo_data("ISM", year = 2024)
+#'
 #' # Force re-download
 #' dt <- download_demo_data("D7B", year = 2024, force_download = TRUE)
+#'
+#' # Interactive-only datasets will error with a portal link
+#' # download_demo_data("MA1")  # Error: use interactive portal
 #' }
 download_demo_data <- function(
   code,
@@ -62,6 +77,7 @@ download_demo_data <- function(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -72,6 +88,18 @@ download_demo_data <- function(
   }
 
   dataset_info <- get_demo_dataset_info(code)
+
+  # 1a2. Check if dataset is downloadable -----
+  if (isFALSE(dataset_info$downloadable)) {
+    stop(
+      "Dataset '",
+      code,
+      "' is available only through the interactive portal at ",
+      "https://demo.istat.it/app/?i=",
+      code,
+      "&l=it. Use list_demo_datasets() to find downloadable datasets."
+    )
+  }
 
   # 1b. Resolve cache directory -----
   if (is.null(cache_dir)) {
@@ -86,7 +114,8 @@ download_demo_data <- function(
     level = level,
     type = type,
     data_type = data_type,
-    geo_level = geo_level
+    geo_level = geo_level,
+    subtype = subtype
   )
 
   filename <- get_demo_filename(
@@ -96,7 +125,8 @@ download_demo_data <- function(
     level = level,
     type = type,
     data_type = data_type,
-    geo_level = geo_level
+    geo_level = geo_level,
+    subtype = subtype
   )
 
   cache_path <- get_demo_cache_path(
@@ -165,11 +195,20 @@ download_demo_data <- function(
     )
   }
 
-  # 1h. Extract CSV from ZIP -----
-  dt <- extract_demo_csv(zip_path = cache_path, verbose = verbose)
+  # 1h. Read data (plain CSV or ZIP extraction) -----
+  is_plain_csv <- grepl("\\.csv$", filename) &&
+    !grepl("\\.csv\\.zip$", filename)
+
+  if (is_plain_csv) {
+    # Pattern G: plain CSV file, read directly with encoding fallback
+    dt <- .read_demo_csv(cache_path, filename, verbose)
+  } else {
+    # All other patterns: extract CSV from ZIP archive
+    dt <- extract_demo_csv(zip_path = cache_path, verbose = verbose)
+  }
 
   istat_log(
-    paste0("Extracted ", nrow(dt), " rows from ", filename),
+    paste0("Loaded ", nrow(dt), " rows from ", filename),
     "INFO",
     verbose
   )
@@ -195,6 +234,8 @@ download_demo_data <- function(
 #'   (Pattern C only).
 #' @param type Character string specifying data completeness type (Pattern C
 #'   only).
+#' @param subtype Character string specifying the data subtype (Pattern E only,
+#'   e.g., \code{"nascita"}, \code{"cittadinanza"}).
 #' @param cache_dir Character string specifying directory for cached files.
 #'   If \code{NULL}, uses the config default.
 #' @param force_download Logical indicating whether to bypass cache.
@@ -211,6 +252,10 @@ download_demo_data <- function(
 #' \dontrun{
 #' # Download 3 years of demographic balance
 #' dt <- download_demo_data_multi("D7B", years = 2022:2024)
+#'
+#' # Download multiple years of population by citizenship
+#' dt <- download_demo_data_multi("RCS", years = 2020:2025,
+#'                                subtype = "cittadinanza")
 #' }
 download_demo_data_multi <- function(
   code,
@@ -218,6 +263,7 @@ download_demo_data_multi <- function(
   territory = NULL,
   level = NULL,
   type = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -225,6 +271,19 @@ download_demo_data_multi <- function(
   # 2a. Input validation -----
   if (!is.character(code) || length(code) != 1L || nchar(code) == 0L) {
     stop("'code' must be a non-empty single character string.")
+  }
+
+  dataset_info <- get_demo_dataset_info(code)
+
+  if (isFALSE(dataset_info$downloadable)) {
+    stop(
+      "Dataset '",
+      code,
+      "' is available only through the interactive portal at ",
+      "https://demo.istat.it/app/?i=",
+      code,
+      "&l=it. Use list_demo_datasets() to find downloadable datasets."
+    )
   }
 
   if (!is.numeric(years) || length(years) == 0L) {
@@ -258,6 +317,7 @@ download_demo_data_multi <- function(
           territory = territory,
           level = level,
           type = type,
+          subtype = subtype,
           cache_dir = cache_dir,
           force_download = force_download,
           verbose = verbose
@@ -340,7 +400,7 @@ download_demo_data_multi <- function(
 #' as warnings and the remaining successful results are still returned.
 #'
 #' @param codes Character vector of dataset codes to download.
-#' @param year Integer year for the data file (patterns A, B, C).
+#' @param year Integer year for the data file (patterns A, B, C, E).
 #' @param territory Character string specifying geographic territory (Pattern B
 #'   only).
 #' @param level Character string specifying geographic aggregation level
@@ -351,6 +411,8 @@ download_demo_data_multi <- function(
 #'   (Pattern D only).
 #' @param geo_level Character string specifying geographic resolution
 #'   (Pattern D only).
+#' @param subtype Character string specifying the data subtype (Pattern E only,
+#'   e.g., \code{"nascita"}, \code{"cittadinanza"}).
 #' @param cache_dir Character string specifying directory for cached files.
 #'   If \code{NULL}, uses the config default.
 #' @param force_download Logical indicating whether to bypass cache.
@@ -376,6 +438,7 @@ download_demo_data_batch <- function(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -417,6 +480,7 @@ download_demo_data_batch <- function(
           type = type,
           data_type = data_type,
           geo_level = geo_level,
+          subtype = subtype,
           cache_dir = cache_dir,
           force_download = force_download,
           verbose = verbose

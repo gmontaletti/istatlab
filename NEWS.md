@@ -1,3 +1,37 @@
+# istatlab 0.6.0
+
+## Breaking Changes
+
+* **Demo registry overhaul**: ISTAT restructured the demo.istat.it portal. URL patterns for most datasets changed. The registry now reflects the current portal structure with 8 URL patterns (A, A1, B, C, D, E, F, G) covering 15 downloadable datasets and 15 interactive-only datasets.
+
+## New Features
+
+* New URL patterns for the restructured demo.istat.it portal:
+  - **Pattern A1**: Year+locale URLs for AIR (AIRE registry) dataset.
+  - **Pattern F**: Static file download for TVA (actuarial mortality tables).
+  - **Pattern G**: Plain CSV download (no ZIP) for ISM (deaths by municipality).
+* `download_demo_data()` now handles plain CSV files (Pattern G) in addition to ZIP archives.
+* Non-downloadable (interactive-only) datasets return informative errors pointing to the portal URL.
+* `list_demo_datasets()` and `search_demo_datasets()` include a `downloadable` column.
+* Pattern D now supports per-dataset `base_path`, `file_extension`, and optional `geo_level`, enabling PPR, PPC, RIC, and PRF datasets with their distinct URL structures.
+
+## Bug Fixes
+
+* Fixed STR (foreign resident population) download: base_path changed from `stras` to `strasa`, file_code from `STRAS` to `STRASA`.
+* Fixed RCS (population by citizenship): moved from Pattern B to Pattern E (subtype-indexed) to match new `rcs/Dati_RCS_{subtype}_{year}.zip` URL structure.
+* Fixed P02 and P03: moved from Pattern A to Pattern B (territory-indexed) with updated paths.
+* Fixed TVM: updated levels (removed `comunali`, added `ripartizione`) and types (renamed `sintetici` to `ridotti`).
+* Fixed PPR: updated data_types and geo_levels to match current portal.
+* Fixed TVA: changed from Pattern C to Pattern F (single static file).
+* Fixed RBD: updated base_path to `ricostruzione` and file_code to `RBD-Dataset-`.
+* Fixed AIR: updated base_path to `aire` and file_code to `AIRE`, year range to 2022-present.
+
+## Internal
+
+* 15 datasets marked as interactive-only (R91, R92, FE1, FE3, SSC, MA1-MA4, NU1, UC1-UC4, PFL) — no longer offer bulk CSV downloads.
+* Test suite expanded from ~60 to 143 demo-specific tests covering all 8 URL patterns.
+* Fixed `switch()` partial argument match NOTE in `build_demo_url()`.
+
 # istatlab 0.5.0
 
 ## New Features

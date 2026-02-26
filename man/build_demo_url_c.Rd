@@ -2,7 +2,7 @@
 % Please edit documentation in R/demo_url_builder.R
 \name{build_demo_url_c}
 \alias{build_demo_url_c}
-\title{Build Demo URL for Pattern C (Type and Level)}
+\title{Build Demo URL for Pattern C (Level, Type, and Year)}
 \usage{
 build_demo_url_c(info, year, level, type, base_url)
 }
@@ -29,7 +29,7 @@ that publish files segmented by geographic level and data type.
 \dontrun{
 # Returns: "https://demo.istat.it/data/tvm/datiregionalicompleti2024.zip"
 registry <- get_demo_registry()
-info <- registry[registry$code == "tvm", ][1L, ]
+info <- registry[registry$code == "TVM", ][1L, ]
 build_demo_url_c(info, year = 2024, level = "regionali",
                  type = "completi", base_url = get_istat_config()$demo$base_url)
 }

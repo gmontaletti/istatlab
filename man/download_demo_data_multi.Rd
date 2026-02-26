@@ -10,6 +10,7 @@ download_demo_data_multi(
   territory = NULL,
   level = NULL,
   type = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -29,6 +30,9 @@ only).}
 
 \item{type}{Character string specifying data completeness type (Pattern C
 only).}
+
+\item{subtype}{Character string specifying the data subtype (Pattern E only,
+e.g., \code{"nascita"}, \code{"cittadinanza"}).}
 
 \item{cache_dir}{Character string specifying directory for cached files.
 If \code{NULL}, uses the config default.}
@@ -54,5 +58,9 @@ the remaining successful results are still returned.
 \dontrun{
 # Download 3 years of demographic balance
 dt <- download_demo_data_multi("D7B", years = 2022:2024)
+
+# Download multiple years of population by citizenship
+dt <- download_demo_data_multi("RCS", years = 2020:2025,
+                               subtype = "cittadinanza")
 }
 }

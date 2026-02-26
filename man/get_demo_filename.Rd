@@ -11,13 +11,14 @@ get_demo_filename(
   level = NULL,
   type = NULL,
   data_type = NULL,
-  geo_level = NULL
+  geo_level = NULL,
+  subtype = NULL
 )
 }
 \arguments{
 \item{code}{Character string identifying the dataset in the demo registry.}
 
-\item{year}{Integer year for the data file (patterns A, B, C).}
+\item{year}{Integer year for the data file (patterns A, A1, B, C, E, G).}
 
 \item{territory}{Character string specifying geographic territory (Pattern B).}
 
@@ -28,6 +29,8 @@ get_demo_filename(
 \item{data_type}{Character string specifying forecast category (Pattern D).}
 
 \item{geo_level}{Character string specifying geographic resolution (Pattern D).}
+
+\item{subtype}{Character string specifying data subtype (Pattern E).}
 }
 \value{
 Character string containing the filename (e.g., \code{"D7B2024.csv.zip"}).
@@ -38,11 +41,20 @@ This is useful for computing cache paths without constructing the full URL.
 }
 \examples{
 \dontrun{
-get_demo_filename("d7b", year = 2024)
+get_demo_filename("D7B", year = 2024)
 # "D7B2024.csv.zip"
 
-get_demo_filename("posas", year = 2025, territory = "Comuni")
+get_demo_filename("POS", year = 2025, territory = "Comuni")
 # "POSAS_2025_it_Comuni.zip"
+
+get_demo_filename("RCS", year = 2025, subtype = "cittadinanza")
+# "Dati_RCS_cittadinanza_2025.zip"
+
+get_demo_filename("TVA")
+# "tavole\%20attuariali.zip"
+
+get_demo_filename("ISM", year = 2020)
+# "Decessi-Tassi-Anno_2020.csv"
 }
 
 }

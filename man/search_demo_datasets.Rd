@@ -22,7 +22,7 @@ case-insensitive. Default is \code{TRUE}.}
 \value{
 A \code{data.table} with matching rows, containing columns:
 \code{code}, \code{category}, \code{description_it},
-\code{description_en}, \code{url_pattern}.
+\code{description_en}, \code{url_pattern}, \code{downloadable}.
 }
 \description{
 Searches the demo.istat.it dataset registry by matching a keyword against

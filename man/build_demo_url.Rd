@@ -11,14 +11,16 @@ build_demo_url(
   level = NULL,
   type = NULL,
   data_type = NULL,
-  geo_level = NULL
+  geo_level = NULL,
+  subtype = NULL
 )
 }
 \arguments{
 \item{code}{Character string identifying the dataset in the demo registry
-(e.g., \code{"d7b"}, \code{"posas"}, \code{"tvm"}, \code{"prev"}).}
+(e.g., \code{"D7B"}, \code{"POS"}, \code{"TVM"}, \code{"PPR"}).}
 
-\item{year}{Integer year for the data file. Required for patterns A, B, and C.}
+\item{year}{Integer year for the data file. Required for patterns A, A1, B,
+C, E, and G.}
 
 \item{territory}{Character string specifying geographic territory (Pattern B only).
 Valid values are defined per dataset in the demo registry.}
@@ -33,7 +35,12 @@ Valid values are defined per dataset in the demo registry.}
 only). Valid values are defined per dataset in the demo registry.}
 
 \item{geo_level}{Character string specifying geographic resolution (Pattern D
-only). Valid values are defined per dataset in the demo registry.}
+only). Valid values are defined per dataset in the demo registry. May be
+\code{NULL} for datasets without geographic levels.}
+
+\item{subtype}{Character string specifying the data subtype (Pattern E only,
+e.g., \code{"nascita"}, \code{"cittadinanza"}). Valid values are defined
+per dataset in the demo registry.}
 }
 \value{
 Character string containing the full download URL.
@@ -41,23 +48,48 @@ Character string containing the full download URL.
 \description{
 Constructs the download URL for a given demographic dataset by looking up its
 code in the demo registry and dispatching to the appropriate pattern builder.
-The four URL patterns correspond to different file-naming conventions used on
-demo.istat.it.
+The URL patterns correspond to different file-naming conventions used on
+demo.istat.it:
+\itemize{
+\item \strong{Pattern A}: Year-indexed CSV ZIP (\code{{base_url}/{base_path}/{file_code}{year}.csv.zip})
+\item \strong{Pattern A1}: Year+locale CSV ZIP (\code{{base_url}/{base_path}/{file_code}_{year}_it.csv.zip})
+\item \strong{Pattern B}: Territory-indexed ZIP (\code{{base_url}/{base_path}/{file_code}_{year}_it_{territory}.zip})
+\item \strong{Pattern C}: Level+type+year ZIP (\code{{base_url}/{base_path}/dati{level}{type}{year}.zip})
+\item \strong{Pattern D}: Datatype-geolevel (\code{{base_url}/{base_path}/{data_type}-{geo_level}{ext}})
+\item \strong{Pattern E}: Subtype+year ZIP (\code{{base_url}/{base_path}/{file_code}_{subtype}_{year}.zip})
+\item \strong{Pattern F}: Static file (\code{{base_url}/{base_path}/{static_filename}})
+\item \strong{Pattern G}: Year-indexed plain CSV (\code{{base_url}/{base_path}/{file_code}{year}.csv})
+}
 }
 \examples{
 \dontrun{
 # Pattern A (year-indexed)
-build_demo_url("d7b", year = 2024)
+build_demo_url("D7B", year = 2024)
+
+# Pattern A1 (year+locale)
+build_demo_url("AIR", year = 2023)
 
 # Pattern B (territory-indexed)
-build_demo_url("posas", year = 2025, territory = "Comuni")
+build_demo_url("POS", year = 2025, territory = "Comuni")
 
-# Pattern C (type+level)
-build_demo_url("tvm", year = 2024, level = "regionali", type = "completi")
+# Pattern C (level+type+year)
+build_demo_url("TVM", year = 2024, level = "regionali", type = "completi")
 
-# Pattern D (category-level)
-build_demo_url("prev", data_type = "Previsioni-Popolazione_per_eta",
+# Pattern D (datatype-geolevel)
+build_demo_url("PPR", data_type = "Previsioni-Popolazione_per_eta",
                geo_level = "Regioni")
+
+# Pattern D without geo_level
+build_demo_url("PRF", data_type = "Famiglie_per_tipologia_familiare")
+
+# Pattern E (subtype-indexed)
+build_demo_url("RCS", year = 2025, subtype = "cittadinanza")
+
+# Pattern F (static file)
+build_demo_url("TVA")
+
+# Pattern G (year-indexed CSV)
+build_demo_url("ISM", year = 2020)
 }
 
 }

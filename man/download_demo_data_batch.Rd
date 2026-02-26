@@ -12,6 +12,7 @@ download_demo_data_batch(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -20,7 +21,7 @@ download_demo_data_batch(
 \arguments{
 \item{codes}{Character vector of dataset codes to download.}
 
-\item{year}{Integer year for the data file (patterns A, B, C).}
+\item{year}{Integer year for the data file (patterns A, B, C, E).}
 
 \item{territory}{Character string specifying geographic territory (Pattern B
 only).}
@@ -36,6 +37,9 @@ only).}
 
 \item{geo_level}{Character string specifying geographic resolution
 (Pattern D only).}
+
+\item{subtype}{Character string specifying the data subtype (Pattern E only,
+e.g., \code{"nascita"}, \code{"cittadinanza"}).}
 
 \item{cache_dir}{Character string specifying directory for cached files.
 If \code{NULL}, uses the config default.}

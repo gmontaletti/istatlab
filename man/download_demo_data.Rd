@@ -12,6 +12,7 @@ download_demo_data(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -19,10 +20,11 @@ download_demo_data(
 }
 \arguments{
 \item{code}{Character string identifying the dataset in the demo registry
-(e.g., \code{"D7B"}, \code{"POS"}, \code{"TVM"}, \code{"PPR"}). Use
-\code{\link{list_demo_datasets}} to see available codes.}
+(e.g., \code{"D7B"}, \code{"POS"}, \code{"TVM"}, \code{"PPR"},
+\code{"RCS"}). Use \code{\link{list_demo_datasets}} to see available codes.}
 
-\item{year}{Integer year for the data file. Required for patterns A, B, and C.}
+\item{year}{Integer year for the data file. Required for patterns A, B, C,
+and E.}
 
 \item{territory}{Character string specifying geographic territory (Pattern B
 only, e.g., \code{"Comuni"}, \code{"Province"}, \code{"Regioni"}).}
@@ -38,6 +40,9 @@ only, e.g., \code{"completi"}, \code{"sintetici"}).}
 
 \item{geo_level}{Character string specifying geographic resolution
 (Pattern D only, e.g., \code{"Regioni"}, \code{"Italia"}).}
+
+\item{subtype}{Character string specifying the data subtype (Pattern E only,
+e.g., \code{"nascita"}, \code{"cittadinanza"}).}
 
 \item{cache_dir}{Character string specifying directory for cached files.
 If \code{NULL} (default), uses the value from
@@ -74,7 +79,19 @@ dt <- download_demo_data("POS", year = 2025, territory = "Comuni")
 # Download mortality tables
 dt <- download_demo_data("TVM", year = 2024, level = "regionali", type = "completi")
 
+# Download population by citizenship (subtype)
+dt <- download_demo_data("RCS", year = 2025, subtype = "cittadinanza")
+
+# Download actuarial mortality tables (Pattern F, static file)
+dt <- download_demo_data("TVA")
+
+# Download deaths data (Pattern G, plain CSV)
+dt <- download_demo_data("ISM", year = 2024)
+
 # Force re-download
 dt <- download_demo_data("D7B", year = 2024, force_download = TRUE)
+
+# Interactive-only datasets will error with a portal link
+# download_demo_data("MA1")  # Error: use interactive portal
 }
 }
