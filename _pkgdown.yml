@@ -59,6 +59,7 @@ reference:
       - download_istat_data_latest_edition
       - download_multiple_datasets
       - build_sdmx_filter_key
+      - update_data_download_log
       - istat_result
 
   - title: Metadata
