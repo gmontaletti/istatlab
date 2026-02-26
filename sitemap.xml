@@ -45,12 +45,10 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/determine_latest_edition.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-build_v1_query_params.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-build_v2_query_params.html</loc></url>
-<url><loc>https://gmontaletti.github.io/istatlab/reference/dot-download_binary_curl.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-download_binary_httr.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-extract_localized_text.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-metadata_cache.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-parse_hvd_dataflows.html</loc></url>
-<url><loc>https://gmontaletti.github.io/istatlab/reference/dot-parse_response_headers.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/dot-read_demo_csv.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/download_codelists.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/download_demo_data.html</loc></url>
@@ -97,7 +95,6 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_download_binary.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_download_binary_with_retry.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get.html</loc></url>
-<url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_curl.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_httr.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_json.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/http_get_with_retry.html</loc></url>
@@ -120,7 +117,6 @@
 <url><loc>https://gmontaletti.github.io/istatlab/reference/is_timeout_error.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_config.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_fetch_data_csv.html</loc></url>
-<url><loc>https://gmontaletti.github.io/istatlab/reference/istat_fetch_with_curl.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_http_get.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_log.html</loc></url>
 <url><loc>https://gmontaletti.github.io/istatlab/reference/istat_result.html</loc></url>

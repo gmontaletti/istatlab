@@ -1,7 +1,7 @@
 # Check Endpoint HTTP Status
 
-Lightweight connectivity check using curl R package. Fetches only
-response headers (status code) without downloading body.
+Lightweight connectivity check using httr. Fetches only response headers
+(status code) without downloading body.
 
 ## Usage
 

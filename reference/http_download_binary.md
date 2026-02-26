@@ -1,7 +1,9 @@
 # Download Binary File to Disk
 
 Core transport function for downloading binary files (ZIP archives) from
-demo.istat.it. Uses httr as the primary method with curl as fallback.
+demo.istat.it. Uses httr with
+[`httr::write_disk()`](https://httr.r-lib.org/reference/write_disk.html)
+to write binary data directly to disk.
 
 ## Usage
 
@@ -49,7 +51,7 @@ A list with components:
 
 - method:
 
-  Character indicating which method succeeded ("httr" or "curl")
+  Character `"httr"`
 
 - file_size:
 
@@ -60,5 +62,4 @@ A list with components:
 Unlike
 [`http_get()`](https://gmontaletti.github.io/istatlab/reference/http_get.md)
 which returns text content for SDMX responses, this function writes
-binary data directly to disk using
-[`httr::write_disk()`](https://httr.r-lib.org/reference/write_disk.html).
+binary data directly to disk.

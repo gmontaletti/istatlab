@@ -284,10 +284,7 @@
   [`http_get()`](https://gmontaletti.github.io/istatlab/reference/http_get.md) +
   [`process_api_response()`](https://gmontaletti.github.io/istatlab/reference/process_api_response.md)
   instead
-- [`istat_fetch_with_curl()`](https://gmontaletti.github.io/istatlab/reference/istat_fetch_with_curl.md):
-  Use
-  [`http_get_curl()`](https://gmontaletti.github.io/istatlab/reference/http_get_curl.md)
-  instead
+- `istat_fetch_with_curl()`: Use `http_get_curl()` instead
 
 These deprecated functions remain functional but will be removed in
 version 1.0.0.

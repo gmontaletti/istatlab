@@ -1,7 +1,7 @@
-# HTTP GET Request with Fallback
+# HTTP GET Request
 
-Performs HTTP GET request using httr with system curl fallback. This is
-the single point for all HTTP operations.
+Performs HTTP GET request using httr. This is the single point for all
+HTTP operations.
 
 ## Usage
 
@@ -39,6 +39,6 @@ A list with components:
 
 - error: Error message if failed (or NULL)
 
-- method: Character indicating which method succeeded ("httr" or "curl")
+- method: Character `"httr"`
 
 - headers: Response headers list (when available)

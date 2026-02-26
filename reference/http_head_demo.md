@@ -46,8 +46,5 @@ A list with components:
 
 ## Details
 
-Uses
-[`curl::curl_fetch_memory()`](https://jeroen.r-universe.dev/curl/reference/curl_fetch.html)
-with `nobody = TRUE` (same pattern as
-[`check_endpoint_status()`](https://gmontaletti.github.io/istatlab/reference/check_endpoint_status.md)
-in endpoints.R).
+Uses [`httr::HEAD()`](https://httr.r-lib.org/reference/HEAD.html) for
+the HTTP request.

@@ -2,8 +2,7 @@
 
 Performs HTTP POST request using httr. Mirrors
 [`http_get()`](https://gmontaletti.github.io/istatlab/reference/http_get.md)
-but for POST requests with a body payload. No curl fallback is provided
-for POST.
+but for POST requests with a body payload.
 
 ## Usage
 
@@ -58,6 +57,6 @@ A list with components:
 
 - error: Error message if failed (or NULL)
 
-- method: Character `"httr"` (POST uses httr only)
+- method: Character `"httr"`
 
 - headers: Response headers list (when available)
