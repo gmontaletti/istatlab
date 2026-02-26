@@ -16,6 +16,7 @@ download_demo_data(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -27,13 +28,13 @@ download_demo_data(
 - code:
 
   Character string identifying the dataset in the demo registry (e.g.,
-  `"D7B"`, `"POS"`, `"TVM"`, `"PPR"`). Use
+  `"D7B"`, `"POS"`, `"TVM"`, `"PPR"`, `"RCS"`). Use
   [`list_demo_datasets`](https://gmontaletti.github.io/istatlab/reference/list_demo_datasets.md)
   to see available codes.
 
 - year:
 
-  Integer year for the data file. Required for patterns A, B, and C.
+  Integer year for the data file. Required for patterns A, B, C, and E.
 
 - territory:
 
@@ -58,6 +59,11 @@ download_demo_data(
 
   Character string specifying geographic resolution (Pattern D only,
   e.g., `"Regioni"`, `"Italia"`).
+
+- subtype:
+
+  Character string specifying the data subtype (Pattern E only, e.g.,
+  `"nascita"`, `"cittadinanza"`).
 
 - cache_dir:
 
@@ -96,7 +102,19 @@ dt <- download_demo_data("POS", year = 2025, territory = "Comuni")
 # Download mortality tables
 dt <- download_demo_data("TVM", year = 2024, level = "regionali", type = "completi")
 
+# Download population by citizenship (subtype)
+dt <- download_demo_data("RCS", year = 2025, subtype = "cittadinanza")
+
+# Download actuarial mortality tables (Pattern F, static file)
+dt <- download_demo_data("TVA")
+
+# Download deaths data (Pattern G, plain CSV)
+dt <- download_demo_data("ISM", year = 2024)
+
 # Force re-download
 dt <- download_demo_data("D7B", year = 2024, force_download = TRUE)
+
+# Interactive-only datasets will error with a portal link
+# download_demo_data("MA1")  # Error: use interactive portal
 } # }
 ```

@@ -11,13 +11,13 @@ Source:
 [`DESCRIPTION`](https://github.com/gmontaletti/istatlab/blob/main/DESCRIPTION)
 
 Montaletti G (2026). *istatlab: Download and Process Italian Statistical
-Data from ISTAT*. R package version 0.5.0,
+Data from ISTAT*. R package version 0.6.0,
 <https://gmontaletti.github.io/istatlab/>.
 
     @Manual{,
       title = {istatlab: Download and Process Italian Statistical Data from ISTAT},
       author = {Giampaolo Montaletti},
       year = {2026},
-      note = {R package version 0.5.0},
+      note = {R package version 0.6.0},
       url = {https://gmontaletti.github.io/istatlab/},
     }

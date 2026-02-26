@@ -33,6 +33,8 @@ Download data from ISTAT SDMX API.
   : Download Multiple Datasets
 - [`build_sdmx_filter_key()`](https://gmontaletti.github.io/istatlab/reference/build_sdmx_filter_key.md)
   : Build SDMX Positional Filter Key
+- [`update_data_download_log()`](https://gmontaletti.github.io/istatlab/reference/update_data_download_log.md)
+  : Update Data Download Log
 - [`istat_result`](https://gmontaletti.github.io/istatlab/reference/istat_result.md)
   : ISTAT Download Result Structure
 

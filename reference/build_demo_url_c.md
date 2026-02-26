@@ -1,4 +1,4 @@
-# Build Demo URL for Pattern C (Type and Level)
+# Build Demo URL for Pattern C (Level, Type, and Year)
 
 Constructs URLs of the form
 `{base_url}/{base_path}/dati{level}{type}{year}.zip`, used by datasets
@@ -42,7 +42,7 @@ Character string containing the constructed URL.
 if (FALSE) { # \dontrun{
 # Returns: "https://demo.istat.it/data/tvm/datiregionalicompleti2024.zip"
 registry <- get_demo_registry()
-info <- registry[registry$code == "tvm", ][1L, ]
+info <- registry[registry$code == "TVM", ][1L, ]
 build_demo_url_c(info, year = 2024, level = "regionali",
                  type = "completi", base_url = get_istat_config()$demo$base_url)
 } # }

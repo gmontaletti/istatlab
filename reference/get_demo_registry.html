@@ -11,7 +11,7 @@ hard-coded entries that mirror the portal's file structure."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,9 @@ columns:</p><dl><dt>code</dt>
 <dd><p>Short registry code (e.g., <code>"D7B"</code>, <code>"POS"</code>)</p></dd>
 
 <dt>url_pattern</dt>
-<dd><p>Download URL pattern identifier: <code>"A"</code>, <code>"B"</code>, <code>"C"</code>, or <code>"D"</code></p></dd>
+<dd><p>Download URL pattern identifier: <code>"A"</code>, <code>"A1"</code>,
+<code>"B"</code>, <code>"C"</code>, <code>"D"</code>, <code>"E"</code>, <code>"F"</code>, <code>"G"</code>,
+or <code>NA</code> for interactive-only datasets</p></dd>
 
 <dt>base_path</dt>
 <dd><p>URL path segment used in the download URL</p></dd>
@@ -103,6 +105,21 @@ columns:</p><dl><dt>code</dt>
 
 <dt>geo_levels</dt>
 <dd><p>Comma-separated geographic levels (Pattern D only, <code>NA</code> otherwise)</p></dd>
+
+<dt>subtypes</dt>
+<dd><p>Comma-separated subtypes (Pattern E only, <code>NA</code> otherwise)</p></dd>
+
+<dt>downloadable</dt>
+<dd><p>Logical flag: <code>TRUE</code> if bulk download is available,
+<code>FALSE</code> for interactive-only datasets</p></dd>
+
+<dt>file_extension</dt>
+<dd><p>File extension for Pattern D downloads (<code>".zip"</code> or
+<code>".csv.zip"</code>), <code>NA</code> for other patterns</p></dd>
+
+<dt>static_filename</dt>
+<dd><p>Exact filename for Pattern F downloads, <code>NA</code> for
+other patterns</p></dd>
 
 
 </dl></div>

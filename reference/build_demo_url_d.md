@@ -1,9 +1,10 @@
-# Build Demo URL for Pattern D (Category-Level)
+# Build Demo URL for Pattern D (Datatype-Geolevel)
 
 Constructs URLs of the form
-`{base_url}/previsioni/{DataType}-{GeoLevel}.zip`, used by forecast
-datasets that publish static files keyed by data category and geographic
-resolution rather than by year.
+`{base_url}/{base_path}/{DataType}-{GeoLevel}{ext}` or
+`{base_url}/{base_path}/{DataType}{ext}` (when no geo_level applies),
+used by forecast and reconstruction datasets that publish static files
+keyed by data category and optional geographic resolution.
 
 ## Usage
 
@@ -23,7 +24,8 @@ build_demo_url_d(info, data_type, geo_level, base_url)
 
 - geo_level:
 
-  Character string specifying the geographic resolution.
+  Character string specifying the geographic resolution. May be `NULL`
+  for datasets that have no geographic segmentation.
 
 - base_url:
 
@@ -37,11 +39,19 @@ Character string containing the constructed URL.
 
 ``` r
 if (FALSE) { # \dontrun{
+# With geo_level:
 # Returns: "https://demo.istat.it/data/previsioni/Previsioni-Popolazione_per_eta-Regioni.zip"
 registry <- get_demo_registry()
-info <- registry[registry$code == "prev", ][1L, ]
+info <- registry[registry$code == "PPR", ][1L, ]
 build_demo_url_d(info, data_type = "Previsioni-Popolazione_per_eta",
                  geo_level = "Regioni",
+                 base_url = get_istat_config()$demo$base_url)
+
+# Without geo_level:
+# Returns: "https://demo.istat.it/data/previsionifamiliari/Famiglie_per_tipologia_familiare.csv.zip"
+info <- registry[registry$code == "PRF", ][1L, ]
+build_demo_url_d(info, data_type = "Famiglie_per_tipologia_familiare",
+                 geo_level = NULL,
                  base_url = get_istat_config()$demo$base_url)
 } # }
 ```

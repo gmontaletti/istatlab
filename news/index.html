@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,48 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="istatlab-060">istatlab 0.6.0<a class="anchor" aria-label="anchor" href="#istatlab-060"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-6-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h3>
+<ul><li>
+<strong>Demo registry overhaul</strong>: ISTAT restructured the demo.istat.it portal. URL patterns for most datasets changed. The registry now reflects the current portal structure with 8 URL patterns (A, A1, B, C, D, E, F, G) covering 15 downloadable datasets and 15 interactive-only datasets.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-6-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h3>
+<ul><li>New URL patterns for the restructured demo.istat.it portal:
+<ul><li>
+<strong>Pattern A1</strong>: Year+locale URLs for AIR (AIRE registry) dataset.</li>
+<li>
+<strong>Pattern F</strong>: Static file download for TVA (actuarial mortality tables).</li>
+<li>
+<strong>Pattern G</strong>: Plain CSV download (no ZIP) for ISM (deaths by municipality).</li>
+</ul></li>
+<li>
+<code><a href="../reference/download_demo_data.html">download_demo_data()</a></code> now handles plain CSV files (Pattern G) in addition to ZIP archives.</li>
+<li>Non-downloadable (interactive-only) datasets return informative errors pointing to the portal URL.</li>
+<li>
+<code><a href="../reference/list_demo_datasets.html">list_demo_datasets()</a></code> and <code><a href="../reference/search_demo_datasets.html">search_demo_datasets()</a></code> include a <code>downloadable</code> column.</li>
+<li>Pattern D now supports per-dataset <code>base_path</code>, <code>file_extension</code>, and optional <code>geo_level</code>, enabling PPR, PPC, RIC, and PRF datasets with their distinct URL structures.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-6-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-0"></a></h3>
+<ul><li>Fixed STR (foreign resident population) download: base_path changed from <code>stras</code> to <code>strasa</code>, file_code from <code>STRAS</code> to <code>STRASA</code>.</li>
+<li>Fixed RCS (population by citizenship): moved from Pattern B to Pattern E (subtype-indexed) to match new <code>rcs/Dati_RCS_{subtype}_{year}.zip</code> URL structure.</li>
+<li>Fixed P02 and P03: moved from Pattern A to Pattern B (territory-indexed) with updated paths.</li>
+<li>Fixed TVM: updated levels (removed <code>comunali</code>, added <code>ripartizione</code>) and types (renamed <code>sintetici</code> to <code>ridotti</code>).</li>
+<li>Fixed PPR: updated data_types and geo_levels to match current portal.</li>
+<li>Fixed TVA: changed from Pattern C to Pattern F (single static file).</li>
+<li>Fixed RBD: updated base_path to <code>ricostruzione</code> and file_code to <code>RBD-Dataset-</code>.</li>
+<li>Fixed AIR: updated base_path to <code>aire</code> and file_code to <code>AIRE</code>, year range to 2022-present.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-6-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-6-0"></a></h3>
+<ul><li>15 datasets marked as interactive-only (R91, R92, FE1, FE3, SSC, MA1-MA4, NU1, UC1-UC4, PFL) — no longer offer bulk CSV downloads.</li>
+<li>Test suite expanded from ~60 to 143 demo-specific tests covering all 8 URL patterns.</li>
+<li>Fixed <code><a href="https://rdrr.io/r/base/switch.html" class="external-link">switch()</a></code> partial argument match NOTE in <code><a href="../reference/build_demo_url.html">build_demo_url()</a></code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="istatlab-050">istatlab 0.5.0<a class="anchor" aria-label="anchor" href="#istatlab-050"></a></h2>
 <div class="section level3">

@@ -14,6 +14,7 @@ download_demo_data_multi(
   territory = NULL,
   level = NULL,
   type = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -44,6 +45,11 @@ download_demo_data_multi(
 
   Character string specifying data completeness type (Pattern C only).
 
+- subtype:
+
+  Character string specifying the data subtype (Pattern E only, e.g.,
+  `"nascita"`, `"cittadinanza"`).
+
 - cache_dir:
 
   Character string specifying directory for cached files. If `NULL`,
@@ -69,5 +75,9 @@ empty `data.table` if all years fail.
 if (FALSE) { # \dontrun{
 # Download 3 years of demographic balance
 dt <- download_demo_data_multi("D7B", years = 2022:2024)
+
+# Download multiple years of population by citizenship
+dt <- download_demo_data_multi("RCS", years = 2020:2025,
+                               subtype = "cittadinanza")
 } # }
 ```

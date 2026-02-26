@@ -16,6 +16,7 @@ download_demo_data_batch(
   type = NULL,
   data_type = NULL,
   geo_level = NULL,
+  subtype = NULL,
   cache_dir = NULL,
   force_download = FALSE,
   verbose = TRUE
@@ -30,7 +31,7 @@ download_demo_data_batch(
 
 - year:
 
-  Integer year for the data file (patterns A, B, C).
+  Integer year for the data file (patterns A, B, C, E).
 
 - territory:
 
@@ -52,6 +53,11 @@ download_demo_data_batch(
 - geo_level:
 
   Character string specifying geographic resolution (Pattern D only).
+
+- subtype:
+
+  Character string specifying the data subtype (Pattern E only, e.g.,
+  `"nascita"`, `"cittadinanza"`).
 
 - cache_dir:
 

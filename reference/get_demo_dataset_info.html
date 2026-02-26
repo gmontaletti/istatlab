@@ -11,7 +11,7 @@ types, etc.)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,17 +82,17 @@ requested dataset.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      code url_pattern base_path file_code category               description_it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;char&gt;      &lt;char&gt;    &lt;char&gt;    &lt;char&gt;   &lt;char&gt;                       &lt;char&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1:    D7B           A       d7b       D7B dinamica Bilancio demografico mensile</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 description_en year_start year_end territories levels  types</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                         &lt;char&gt;      &lt;int&gt;    &lt;int&gt;      &lt;char&gt; &lt;char&gt; &lt;char&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1: Monthly demographic balance       2019       NA        &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    data_types geo_levels</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        &lt;char&gt;     &lt;char&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1:       &lt;NA&gt;       &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 description_en year_start year_end downloadable territories</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         &lt;char&gt;      &lt;int&gt;    &lt;int&gt;       &lt;lgcl&gt;      &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: Monthly demographic balance       2019       NA         TRUE        &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    levels  types data_types geo_levels file_extension subtypes static_filename</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;char&gt; &lt;char&gt;     &lt;char&gt;     &lt;char&gt;         &lt;char&gt;   &lt;char&gt;          &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:   &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Get info for resident population by age and sex</span></span></span>
 <span class="r-in"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="fu">get_demo_dataset_info</span><span class="op">(</span><span class="st">"POS"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">territories</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Comuni,Province,Regioni,Ripartizioni,Italia"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Comuni,Province,Regioni,Ripartizioni"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

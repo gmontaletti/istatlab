@@ -9,7 +9,7 @@ demo.istat.it, optionally filtered by thematic category."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,8 @@ Use <code><a href="get_demo_categories.html">get_demo_categories</a></code> to s
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>data.table</code> with columns: <code>code</code>, <code>category</code>,
-<code>description_it</code>, <code>description_en</code>, <code>url_pattern</code>.</p>
+<code>description_it</code>, <code>description_en</code>, <code>url_pattern</code>,
+<code>downloadable</code>.</p>
     </div>
 
     <div class="section level2">
@@ -81,71 +82,71 @@ Use <code><a href="get_demo_categories.html">get_demo_categories</a></code> to s
 <span class="r-out co"><span class="r-pr">#&gt;</span>       code      category                                   description_it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;char&gt;        &lt;char&gt;                                           &lt;char&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1:    D7B      dinamica                     Bilancio demografico mensile</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  2:    P02      dinamica                     Bilancio demografico annuale</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  3:    P03      dinamica                   Bilancio demografico stranieri</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  4:    RBD      dinamica       Bilancio demografico ricostruito 2002-2019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  5:    R91      dinamica                   Bilancio demografico 1991-2001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  6:    AIR      dinamica             Italiani residenti all'estero (AIRE)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  7:    FE1      natalita                         Indicatori di fecondita'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  8:    FE3      natalita                                  Nati per comune</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9:    ISM     mortalita                           Cancellati per decesso</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10:    RIC   popolazione      Popolazione residente ricostruita 2002-2019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11:    R92   popolazione                  Popolazione residente 1992-2001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12:    SSC   popolazione     Popolazione semi-supercentenaria (105+ anni)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13:    MA1     matrimoni             Matrimoni - indicatori di nuzialita'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14:    MA2     matrimoni          Matrimoni - caratteristiche degli sposi</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15:    MA3     matrimoni           Matrimoni per cittadinanza degli sposi</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16:    MA4     matrimoni                       Matrimoni - serie storiche</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17:    NU1     matrimoni                       Tavole di primo-nuzialita'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18:    UC1 unioni_civili            Unioni civili - principali indicatori</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19:    UC2 unioni_civili                  Unioni civili - caratteristiche</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20:    UC3 unioni_civili                     Unioni civili - cittadinanza</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21:    UC4 unioni_civili                   Unioni civili - serie storiche</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22:    POS   popolazione           Popolazione residente per eta' e sesso</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23:    STR   popolazione Popolazione straniera residente per eta' e sesso</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24:    RCS   popolazione           Popolazione residente per cittadinanza</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25:    TVM    indicatori                             Tavole di mortalita'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26:    TVA    indicatori                  Tavole attuariali di mortalita'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27:    PPR    previsioni           Previsioni della popolazione residente</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28:    PRF    previsioni                        Previsioni delle famiglie</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29:    PPC    previsioni            Previsioni della popolazione comunale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2:    RBD   popolazione       Bilancio demografico ricostruito 2002-2019</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  3:    AIR      dinamica             Italiani residenti all'estero (AIRE)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4:    POS   popolazione           Popolazione residente per eta' e sesso</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  5:    STR   popolazione Popolazione straniera residente per eta' e sesso</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  6:    P02      dinamica                     Bilancio demografico annuale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  7:    P03      dinamica                   Bilancio demografico stranieri</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  8:    TVM    indicatori                             Tavole di mortalita'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9:    PPR    previsioni           Previsioni della popolazione residente</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10:    PPC    previsioni            Previsioni della popolazione comunale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11:    RIC   popolazione      Popolazione residente ricostruita 2002-2019</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12:    PRF    previsioni                        Previsioni delle famiglie</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13:    RCS   popolazione           Popolazione residente per cittadinanza</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14:    TVA    indicatori                  Tavole attuariali di mortalita'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15:    ISM     mortalita                           Cancellati per decesso</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16:    R91      dinamica                   Bilancio demografico 1991-2001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17:    R92   popolazione                  Popolazione residente 1992-2001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18:    FE1      natalita                         Indicatori di fecondita'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19:    FE3      natalita                                  Nati per comune</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20:    SSC   popolazione     Popolazione semi-supercentenaria (105+ anni)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21:    MA1     matrimoni             Matrimoni - indicatori di nuzialita'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22:    MA2     matrimoni          Matrimoni - caratteristiche degli sposi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23:    MA3     matrimoni           Matrimoni per cittadinanza degli sposi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24:    MA4     matrimoni                       Matrimoni - serie storiche</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 25:    NU1     matrimoni                       Tavole di primo-nuzialita'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26:    UC1 unioni_civili            Unioni civili - principali indicatori</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 27:    UC2 unioni_civili                  Unioni civili - caratteristiche</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 28:    UC3 unioni_civili                     Unioni civili - cittadinanza</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 29:    UC4 unioni_civili                   Unioni civili - serie storiche</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 30:    PFL    previsioni                 Previsioni delle forze di lavoro</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       code      category                                   description_it</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;char&gt;        &lt;char&gt;                                           &lt;char&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                    description_en url_pattern</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            &lt;char&gt;      &lt;char&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  1:                   Monthly demographic balance           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  2:                    Annual demographic balance           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  3:        Foreign population demographic balance           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  4:   Reconstructed demographic balance 2002-2019           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  5:                 Demographic balance 1991-2001           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  6:      Italians residing abroad (AIRE registry)           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  7:                          Fertility indicators           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  8:                        Births by municipality           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9:               Deaths (cancelled due to death)           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10:   Reconstructed resident population 2002-2019           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11:                 Resident population 1992-2001           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12: Semi-supercentenarian population (105+ years)           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13:             Marriages - nuptiality indicators           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14:        Marriages - characteristics of spouses           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15:           Marriages by citizenship of spouses           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16:            Marriages - historical time series           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17:                       First-nuptiality tables           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18:                Civil unions - main indicators           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19:                Civil unions - characteristics           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20:                    Civil unions - citizenship           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21:         Civil unions - historical time series           A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22:            Resident population by age and sex           B</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23:    Foreign resident population by age and sex           B</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24:            Resident population by citizenship           B</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25:                Life tables (mortality tables)           C</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26:                    Actuarial mortality tables           C</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27:               Resident population projections           D</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28:                         Household projections           D</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29:              Municipal population projections           D</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30:                      Labour force projections           D</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                    description_en url_pattern</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            &lt;char&gt;      &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                    description_en url_pattern downloadable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                            &lt;char&gt;      &lt;char&gt;       &lt;lgcl&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1:                   Monthly demographic balance           A         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2:   Reconstructed demographic balance 2001-2018           A         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  3:      Italians residing abroad (AIRE registry)          A1         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4:            Resident population by age and sex           B         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  5:    Foreign resident population by age and sex           B         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  6:                    Annual demographic balance           B         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  7:        Foreign population demographic balance           B         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  8:                Life tables (mortality tables)           C         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9:               Resident population projections           D         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10:              Municipal population projections           D         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11:   Reconstructed resident population 2002-2019           D         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12:                         Household projections           D         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13:            Resident population by citizenship           E         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14:                    Actuarial mortality tables           F         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15:               Deaths (cancelled due to death)           G         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16:                 Demographic balance 1991-2001        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17:                 Resident population 1992-2001        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18:                          Fertility indicators        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19:                        Births by municipality        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20: Semi-supercentenarian population (105+ years)        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21:             Marriages - nuptiality indicators        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22:        Marriages - characteristics of spouses        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23:           Marriages by citizenship of spouses        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24:            Marriages - historical time series        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 25:                       First-nuptiality tables        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26:                Civil unions - main indicators        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 27:                Civil unions - characteristics        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 28:                    Civil unions - citizenship        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 29:         Civil unions - historical time series        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30:                      Labour force projections        &lt;NA&gt;        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                    description_en url_pattern downloadable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                            &lt;char&gt;      &lt;char&gt;       &lt;lgcl&gt;</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># List only population datasets</span></span></span>
 <span class="r-in"><span><span class="va">pop_datasets</span> <span class="op">&lt;-</span> <span class="fu">list_demo_datasets</span><span class="op">(</span>category <span class="op">=</span> <span class="st">"popolazione"</span><span class="op">)</span></span></span>

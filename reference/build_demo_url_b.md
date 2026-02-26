@@ -38,7 +38,7 @@ Character string containing the constructed URL.
 if (FALSE) { # \dontrun{
 # Returns: "https://demo.istat.it/data/posas/POSAS_2025_it_Comuni.zip"
 registry <- get_demo_registry()
-info <- registry[registry$code == "posas", ][1L, ]
+info <- registry[registry$code == "POS", ][1L, ]
 build_demo_url_b(info, year = 2025, territory = "Comuni",
                  base_url = get_istat_config()$demo$base_url)
 } # }

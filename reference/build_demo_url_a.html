@@ -11,7 +11,7 @@ that publish one ZIP file per year with the year appended to the file code."></h
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +85,7 @@ that publish one ZIP file per year with the year appended to the file code.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># Returns: "https://demo.istat.it/data/d7b/D7B2024.csv.zip"</span></span></span>
 <span class="r-in"><span><span class="va">registry</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_demo_registry.html">get_demo_registry</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="va">registry</span><span class="op">[</span><span class="va">registry</span><span class="op">$</span><span class="va">code</span> <span class="op">==</span> <span class="st">"d7b"</span>, <span class="op">]</span><span class="op">[</span><span class="fl">1L</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="va">registry</span><span class="op">[</span><span class="va">registry</span><span class="op">$</span><span class="va">code</span> <span class="op">==</span> <span class="st">"D7B"</span>, <span class="op">]</span><span class="op">[</span><span class="fl">1L</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="fu">build_demo_url_a</span><span class="op">(</span><span class="va">info</span>, year <span class="op">=</span> <span class="fl">2024</span>,</span></span>
 <span class="r-in"><span>                 base_url <span class="op">=</span> <span class="fu"><a href="get_istat_config.html">get_istat_config</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">demo</span><span class="op">$</span><span class="va">base_url</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

@@ -14,7 +14,8 @@ get_demo_filename(
   level = NULL,
   type = NULL,
   data_type = NULL,
-  geo_level = NULL
+  geo_level = NULL,
+  subtype = NULL
 )
 ```
 
@@ -26,7 +27,7 @@ get_demo_filename(
 
 - year:
 
-  Integer year for the data file (patterns A, B, C).
+  Integer year for the data file (patterns A, A1, B, C, E, G).
 
 - territory:
 
@@ -48,6 +49,10 @@ get_demo_filename(
 
   Character string specifying geographic resolution (Pattern D).
 
+- subtype:
+
+  Character string specifying data subtype (Pattern E).
+
 ## Value
 
 Character string containing the filename (e.g., `"D7B2024.csv.zip"`).
@@ -56,10 +61,19 @@ Character string containing the filename (e.g., `"D7B2024.csv.zip"`).
 
 ``` r
 if (FALSE) { # \dontrun{
-get_demo_filename("d7b", year = 2024)
+get_demo_filename("D7B", year = 2024)
 # "D7B2024.csv.zip"
 
-get_demo_filename("posas", year = 2025, territory = "Comuni")
+get_demo_filename("POS", year = 2025, territory = "Comuni")
 # "POSAS_2025_it_Comuni.zip"
+
+get_demo_filename("RCS", year = 2025, subtype = "cittadinanza")
+# "Dati_RCS_cittadinanza_2025.zip"
+
+get_demo_filename("TVA")
+# "tavole%20attuariali.zip"
+
+get_demo_filename("ISM", year = 2020)
+# "Decessi-Tassi-Anno_2020.csv"
 } # }
 ```

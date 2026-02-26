@@ -20,7 +20,8 @@ A `data.table` with one row per dataset and the following columns:
 
 - url_pattern:
 
-  Download URL pattern identifier: `"A"`, `"B"`, `"C"`, or `"D"`
+  Download URL pattern identifier: `"A"`, `"A1"`, `"B"`, `"C"`, `"D"`,
+  `"E"`, `"F"`, `"G"`, or `NA` for interactive-only datasets
 
 - base_path:
 
@@ -69,3 +70,21 @@ A `data.table` with one row per dataset and the following columns:
 - geo_levels:
 
   Comma-separated geographic levels (Pattern D only, `NA` otherwise)
+
+- subtypes:
+
+  Comma-separated subtypes (Pattern E only, `NA` otherwise)
+
+- downloadable:
+
+  Logical flag: `TRUE` if bulk download is available, `FALSE` for
+  interactive-only datasets
+
+- file_extension:
+
+  File extension for Pattern D downloads (`".zip"` or `".csv.zip"`),
+  `NA` for other patterns
+
+- static_filename:
+
+  Exact filename for Pattern F downloads, `NA` for other patterns

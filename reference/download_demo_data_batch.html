@@ -11,7 +11,7 @@ as warnings and the remaining successful results are still returned."></head><bo
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,6 +64,7 @@ as warnings and the remaining successful results are still returned.</p>
 <span>  type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  data_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  geo_level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  subtype <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  force_download <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -79,7 +80,7 @@ as warnings and the remaining successful results are still returned.</p>
 
 
 <dt id="arg-year">year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>
-<dd><p>Integer year for the data file (patterns A, B, C).</p></dd>
+<dd><p>Integer year for the data file (patterns A, B, C, E).</p></dd>
 
 
 <dt id="arg-territory">territory<a class="anchor" aria-label="anchor" href="#arg-territory"></a></dt>
@@ -105,6 +106,11 @@ only).</p></dd>
 <dt id="arg-geo-level">geo_level<a class="anchor" aria-label="anchor" href="#arg-geo-level"></a></dt>
 <dd><p>Character string specifying geographic resolution
 (Pattern D only).</p></dd>
+
+
+<dt id="arg-subtype">subtype<a class="anchor" aria-label="anchor" href="#arg-subtype"></a></dt>
+<dd><p>Character string specifying the data subtype (Pattern E only,
+e.g., <code>"nascita"</code>, <code>"cittadinanza"</code>).</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
