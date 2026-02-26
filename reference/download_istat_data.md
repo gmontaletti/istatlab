@@ -19,7 +19,8 @@ download_istat_data(
   return_result = FALSE,
   check_update = FALSE,
   cache_dir = "meta",
-  existing_data = NULL
+  existing_data = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 )
 ```
 
@@ -88,6 +89,12 @@ download_istat_data(
   Optional data.table of previously downloaded data. When provided, the
   function determines the already-covered date range and downloads only
   non-overlapping periods, merging and deduplicating the result.
+
+- api:
+
+  Character string specifying the API surface to use. One of `"legacy"`
+  (default), `"hvd_v1"`, or `"hvd_v2"`. Can be set session-wide via
+  `options(istatlab.default_api = "hvd_v1")`.
 
 ## Value
 

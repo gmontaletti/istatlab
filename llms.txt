@@ -9,6 +9,8 @@ portal.
 
 - **Data Download**: Streamlined access to ISTAT’s SDMX API with
   automatic retry and error handling
+- **HVD API Support**: Access ISTAT’s High Value Datasets through HVD v1
+  (SDMX 2.1) and v2 (SDMX 3.0) endpoints
 - **Metadata Management**: Comprehensive metadata handling including
   codelists and dimensions
 - **Data Processing**: Automatic labeling, time formatting, and data
@@ -53,6 +55,25 @@ create_time_series_plot(processed_data,
                        subtitle = "Source: ISTAT")
 ```
 
+## HVD Quick Start
+
+``` r
+library(istatlab)
+
+# Check HVD endpoint connectivity
+test_hvd_connectivity()
+
+# Download data directly from HVD v1
+data <- download_hvd_data("534_50", version = "v1", start_time = "2024")
+
+# Or use existing functions with the api parameter
+data <- download_istat_data("534_50", start_time = "2024", api = "hvd_v1")
+
+# Set HVD as default API for the session
+options(istatlab.default_api = "hvd_v1")
+data <- download_istat_data("534_50", start_time = "2024")
+```
+
 ## Main Functions
 
 ### Data Download
@@ -63,6 +84,17 @@ create_time_series_plot(processed_data,
   Download multiple datasets in parallel
 - [`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md):
   Check API endpoint connectivity
+
+### HVD (High Value Datasets)
+
+- [`download_hvd_data()`](https://gmontaletti.github.io/istatlab/reference/download_hvd_data.md):
+  Download data directly from HVD endpoints
+- [`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md):
+  List available HVD dataflows
+- [`test_hvd_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_hvd_connectivity.md):
+  Check HVD endpoint accessibility
+- [`get_hvd_info()`](https://gmontaletti.github.io/istatlab/reference/get_hvd_info.md):
+  Get HVD API version information
 
 ### Metadata Management
 
@@ -191,7 +223,7 @@ citation("istatlab")
 ```
 
 Montaletti, G. (2026). istatlab: Download and Process Italian
-Statistical Data from ISTAT. R package version 0.6.0.
+Statistical Data from ISTAT. R package version 0.7.0.
 <https://github.com/gmontaletti/istatlab>
 
 ## Author
@@ -245,6 +277,21 @@ Download data from ISTAT SDMX API.
   : Update Data Download Log
 - [`istat_result`](https://gmontaletti.github.io/istatlab/reference/istat_result.md)
   : ISTAT Download Result Structure
+
+## HVD (High Value Datasets)
+
+Access ISTAT’s High Value Datasets API (HVD v1/v2).
+
+- [`download_hvd_data()`](https://gmontaletti.github.io/istatlab/reference/download_hvd_data.md)
+  : Download Data from ISTAT HVD API
+- [`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md)
+  : List Available HVD Dataflows
+- [`test_hvd_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_hvd_connectivity.md)
+  : Test HVD Endpoint Connectivity
+- [`get_hvd_info()`](https://gmontaletti.github.io/istatlab/reference/get_hvd_info.md)
+  : Get HVD API Information
+- [`validate_api_surface()`](https://gmontaletti.github.io/istatlab/reference/validate_api_surface.md)
+  : Validate API Surface Identifier
 
 ## Metadata
 

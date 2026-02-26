@@ -54,6 +54,23 @@ including population, births, deaths, migrations, and projections.
   [`demo_cache_status()`](https://gmontaletti.github.io/istatlab/reference/demo_cache_status.md),
   [`clean_demo_cache()`](https://gmontaletti.github.io/istatlab/reference/clean_demo_cache.md)
 
+## HVD (High Value Datasets)
+
+- Data Download::
+
+  [`download_hvd_data()`](https://gmontaletti.github.io/istatlab/reference/download_hvd_data.md),
+  [`download_istat_data`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md)`(api = "hvd_v1")`
+
+- Metadata::
+
+  [`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md),
+  [`test_hvd_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_hvd_connectivity.md),
+  [`get_hvd_info()`](https://gmontaletti.github.io/istatlab/reference/get_hvd_info.md)
+
+- Configuration::
+
+  [`validate_api_surface()`](https://gmontaletti.github.io/istatlab/reference/validate_api_surface.md)
+
 ## Package workflow
 
 A typical workflow with istatlab involves:

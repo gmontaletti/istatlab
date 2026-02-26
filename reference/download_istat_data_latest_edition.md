@@ -17,7 +17,8 @@ download_istat_data_latest_edition(
   edition = NULL,
   incremental = FALSE,
   timeout = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  api = getOption("istatlab.default_api", "legacy")
 )
 ```
 
@@ -66,6 +67,12 @@ download_istat_data_latest_edition(
 - verbose:
 
   Logical indicating whether to print status messages. Default is TRUE
+
+- api:
+
+  Character string specifying the API surface to use. One of `"legacy"`
+  (default), `"hvd_v1"`, or `"hvd_v2"`. Can be set session-wide via
+  `options(istatlab.default_api = "hvd_v1")`.
 
 ## Value
 

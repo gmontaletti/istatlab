@@ -18,7 +18,8 @@ download_istat_data_by_freq(
   verbose = TRUE,
   freq = NULL,
   check_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = "meta",
+  api = getOption("istatlab.default_api", "legacy")
 )
 ```
 
@@ -79,6 +80,12 @@ download_istat_data_by_freq(
 
   Character string specifying directory for download log cache. Default
   is "meta".
+
+- api:
+
+  Character string specifying the API surface to use. One of `"legacy"`
+  (default), `"hvd_v1"`, or `"hvd_v2"`. Can be set session-wide via
+  `options(istatlab.default_api = "hvd_v1")`.
 
 ## Value
 

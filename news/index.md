@@ -1,5 +1,74 @@
 # Changelog
 
+## istatlab 0.7.0
+
+### New Features
+
+- **HVD API integration**: Added support for ISTAT’s High Value Datasets
+  (HVD) endpoints at `esploradati.istat.it/hvd`, covering both HVD v1
+  (SDMX 2.1) and HVD v2 (SDMX 3.0) APIs.
+- New
+  [`download_hvd_data()`](https://gmontaletti.github.io/istatlab/reference/download_hvd_data.md)
+  function for direct access to HVD endpoints with version selection
+  (`"v1"` or `"v2"`).
+- New `api` parameter in
+  [`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md),
+  [`download_multiple_datasets()`](https://gmontaletti.github.io/istatlab/reference/download_multiple_datasets.md),
+  [`download_istat_data_by_freq()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data_by_freq.md),
+  and
+  [`download_istat_data_latest_edition()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data_latest_edition.md)
+  to route requests through HVD instead of the legacy API. Defaults to
+  `"legacy"` for backward compatibility. Session-wide override via
+  `options(istatlab.default_api = "hvd_v1")`.
+- New
+  [`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md)
+  function to list available HVD dataflows.
+- New
+  [`test_hvd_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_hvd_connectivity.md)
+  function to check HVD endpoint accessibility.
+- New
+  [`get_hvd_info()`](https://gmontaletti.github.io/istatlab/reference/get_hvd_info.md)
+  function returning HVD API capabilities and version information.
+- New
+  [`validate_api_surface()`](https://gmontaletti.github.io/istatlab/reference/validate_api_surface.md)
+  function for validating API surface selection.
+
+### HTTP Transport
+
+- Added HTTP POST support to the transport layer:
+  [`http_post()`](https://gmontaletti.github.io/istatlab/reference/http_post.md),
+  [`http_post_with_retry()`](https://gmontaletti.github.io/istatlab/reference/http_post_with_retry.md),
+  and
+  [`http_post_json()`](https://gmontaletti.github.io/istatlab/reference/http_post_json.md).
+  POST support is required by HVD for large queries exceeding URL length
+  limits.
+
+### SDMX 3.0 Support
+
+- New
+  [`build_sdmx3_filters()`](https://gmontaletti.github.io/istatlab/reference/build_sdmx3_filters.md)
+  function to translate time period filters from
+  `startPeriod`/`endPeriod` to SDMX 3.0 `c[TIME_PERIOD]=ge:..+le:..`
+  syntax.
+- HVD v2 URL builders handle the full SDMX 3.0 path structure with
+  `context`, `agencyId`, `resourceId`, and `version` parameters.
+- HVD v2 is marked as experimental; v1 is recommended for production
+  use.
+
+### Internal
+
+- New files: `R/hvd_config.R`, `R/hvd_download.R`, `R/hvd_metadata.R`.
+- HVD configuration added to
+  [`get_istat_config()`](https://gmontaletti.github.io/istatlab/reference/get_istat_config.md)
+  with base URLs and endpoint registry.
+- Extended
+  [`list_istat_endpoints()`](https://gmontaletti.github.io/istatlab/reference/list_istat_endpoints.md)
+  and
+  [`test_endpoint_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_endpoint_connectivity.md)
+  to include HVD endpoints.
+- Test suite expanded with 169 new tests across 3 test files
+  (test-hvd-config.R, test-hvd-download.R, test-http-post.R).
+
 ## istatlab 0.6.0
 
 ### Breaking Changes

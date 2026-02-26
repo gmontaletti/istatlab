@@ -9,7 +9,7 @@ SDMX API for a specified dataset. Uses centralized configuration for default val
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +65,8 @@ SDMX API for a specified dataset. Uses centralized configuration for default val
 <span>  return_result <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  check_update <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="st">"meta"</span>,</span>
-<span>  existing_data <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  existing_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  api <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"istatlab.default_api"</span>, <span class="st">"legacy"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -132,6 +133,12 @@ Default is "meta"</p></dd>
 <dd><p>Optional data.table of previously downloaded data. When provided,
 the function determines the already-covered date range and downloads only
 non-overlapping periods, merging and deduplicating the result.</p></dd>
+
+
+<dt id="arg-api">api<a class="anchor" aria-label="anchor" href="#arg-api"></a></dt>
+<dd><p>Character string specifying the API surface to use. One of
+<code>"legacy"</code> (default), <code>"hvd_v1"</code>, or <code>"hvd_v2"</code>. Can be set
+session-wide via <code>options(istatlab.default_api = "hvd_v1")</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

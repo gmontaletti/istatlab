@@ -11,7 +11,7 @@ to detect available frequencies, then makes separate downloads for each."></head
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,8 @@ to detect available frequencies, then makes separate downloads for each.</p>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  freq <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  check_update <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cache_dir <span class="op">=</span> <span class="st">"meta"</span></span>
+<span>  cache_dir <span class="op">=</span> <span class="st">"meta"</span>,</span>
+<span>  api <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"istatlab.default_api"</span>, <span class="st">"legacy"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -124,6 +125,12 @@ with a message. The check is performed once at the top level; internal calls to
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
 <dd><p>Character string specifying directory for download log cache.
 Default is "meta".</p></dd>
+
+
+<dt id="arg-api">api<a class="anchor" aria-label="anchor" href="#arg-api"></a></dt>
+<dd><p>Character string specifying the API surface to use. One of
+<code>"legacy"</code> (default), <code>"hvd_v1"</code>, or <code>"hvd_v2"</code>. Can be set
+session-wide via <code>options(istatlab.default_api = "hvd_v1")</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

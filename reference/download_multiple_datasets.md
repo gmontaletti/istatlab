@@ -13,7 +13,8 @@ download_multiple_datasets(
   incremental = FALSE,
   n_cores = parallel::detectCores() - 1,
   verbose = TRUE,
-  updated_after = NULL
+  updated_after = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 )
 ```
 
@@ -52,6 +53,12 @@ download_multiple_datasets(
 
   POSIXct timestamp. If provided, only data updated since this time will
   be retrieved for all datasets. Used for incremental update detection.
+
+- api:
+
+  Character string specifying the API surface to use. One of `"legacy"`
+  (default), `"hvd_v1"`, or `"hvd_v2"`. Can be set session-wide via
+  `options(istatlab.default_api = "hvd_v1")`.
 
 ## Value
 

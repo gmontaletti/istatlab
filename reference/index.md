@@ -38,6 +38,21 @@ Download data from ISTAT SDMX API.
 - [`istat_result`](https://gmontaletti.github.io/istatlab/reference/istat_result.md)
   : ISTAT Download Result Structure
 
+## HVD (High Value Datasets)
+
+Access ISTAT’s High Value Datasets API (HVD v1/v2).
+
+- [`download_hvd_data()`](https://gmontaletti.github.io/istatlab/reference/download_hvd_data.md)
+  : Download Data from ISTAT HVD API
+- [`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md)
+  : List Available HVD Dataflows
+- [`test_hvd_connectivity()`](https://gmontaletti.github.io/istatlab/reference/test_hvd_connectivity.md)
+  : Test HVD Endpoint Connectivity
+- [`get_hvd_info()`](https://gmontaletti.github.io/istatlab/reference/get_hvd_info.md)
+  : Get HVD API Information
+- [`validate_api_surface()`](https://gmontaletti.github.io/istatlab/reference/validate_api_surface.md)
+  : Validate API Surface Identifier
+
 ## Metadata
 
 Manage dataset metadata, search, and explore structure.
