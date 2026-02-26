@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,37 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="istatlab-070">istatlab 0.7.0<a class="anchor" aria-label="anchor" href="#istatlab-070"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-7-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h3>
+<ul><li>
+<strong>HVD API integration</strong>: Added support for ISTAT’s High Value Datasets (HVD) endpoints at <code>esploradati.istat.it/hvd</code>, covering both HVD v1 (SDMX 2.1) and HVD v2 (SDMX 3.0) APIs.</li>
+<li>New <code><a href="../reference/download_hvd_data.html">download_hvd_data()</a></code> function for direct access to HVD endpoints with version selection (<code>"v1"</code> or <code>"v2"</code>).</li>
+<li>New <code>api</code> parameter in <code><a href="../reference/download_istat_data.html">download_istat_data()</a></code>, <code><a href="../reference/download_multiple_datasets.html">download_multiple_datasets()</a></code>, <code><a href="../reference/download_istat_data_by_freq.html">download_istat_data_by_freq()</a></code>, and <code><a href="../reference/download_istat_data_latest_edition.html">download_istat_data_latest_edition()</a></code> to route requests through HVD instead of the legacy API. Defaults to <code>"legacy"</code> for backward compatibility. Session-wide override via <code>options(istatlab.default_api = "hvd_v1")</code>.</li>
+<li>New <code><a href="../reference/list_hvd_dataflows.html">list_hvd_dataflows()</a></code> function to list available HVD dataflows.</li>
+<li>New <code><a href="../reference/test_hvd_connectivity.html">test_hvd_connectivity()</a></code> function to check HVD endpoint accessibility.</li>
+<li>New <code><a href="../reference/get_hvd_info.html">get_hvd_info()</a></code> function returning HVD API capabilities and version information.</li>
+<li>New <code><a href="../reference/validate_api_surface.html">validate_api_surface()</a></code> function for validating API surface selection.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="http-transport-0-7-0">HTTP Transport<a class="anchor" aria-label="anchor" href="#http-transport-0-7-0"></a></h3>
+<ul><li>Added HTTP POST support to the transport layer: <code><a href="../reference/http_post.html">http_post()</a></code>, <code><a href="../reference/http_post_with_retry.html">http_post_with_retry()</a></code>, and <code><a href="../reference/http_post_json.html">http_post_json()</a></code>. POST support is required by HVD for large queries exceeding URL length limits.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="sdmx-support-0-7-0">SDMX 3.0 Support<a class="anchor" aria-label="anchor" href="#sdmx-support-0-7-0"></a></h3>
+<ul><li>New <code><a href="../reference/build_sdmx3_filters.html">build_sdmx3_filters()</a></code> function to translate time period filters from <code>startPeriod</code>/<code>endPeriod</code> to SDMX 3.0 <code>c[TIME_PERIOD]=ge:..+le:..</code> syntax.</li>
+<li>HVD v2 URL builders handle the full SDMX 3.0 path structure with <code>context</code>, <code>agencyId</code>, <code>resourceId</code>, and <code>version</code> parameters.</li>
+<li>HVD v2 is marked as experimental; v1 is recommended for production use.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-7-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-7-0"></a></h3>
+<ul><li>New files: <code>R/hvd_config.R</code>, <code>R/hvd_download.R</code>, <code>R/hvd_metadata.R</code>.</li>
+<li>HVD configuration added to <code><a href="../reference/get_istat_config.html">get_istat_config()</a></code> with base URLs and endpoint registry.</li>
+<li>Extended <code><a href="../reference/list_istat_endpoints.html">list_istat_endpoints()</a></code> and <code><a href="../reference/test_endpoint_connectivity.html">test_endpoint_connectivity()</a></code> to include HVD endpoints.</li>
+<li>Test suite expanded with 169 new tests across 3 test files (test-hvd-config.R, test-hvd-download.R, test-http-post.R).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="istatlab-060">istatlab 0.6.0<a class="anchor" aria-label="anchor" href="#istatlab-060"></a></h2>
 <div class="section level3">

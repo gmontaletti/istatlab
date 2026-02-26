@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,8 @@
 <li>
 <strong>Data Download</strong>: Streamlined access to ISTAT’s SDMX API with automatic retry and error handling</li>
 <li>
+<strong>HVD API Support</strong>: Access ISTAT’s High Value Datasets through HVD v1 (SDMX 2.1) and v2 (SDMX 3.0) endpoints</li>
+<li>
 <strong>Metadata Management</strong>: Comprehensive metadata handling including codelists and dimensions</li>
 <li>
 <strong>Data Processing</strong>: Automatic labeling, time formatting, and data validation</li>
@@ -116,6 +118,25 @@
 <span>                       subtitle <span class="op">=</span> <span class="st">"Source: ISTAT"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="hvd-quick-start">HVD Quick Start<a class="anchor" aria-label="anchor" href="#hvd-quick-start"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gmontaletti.github.io/istatlab/">istatlab</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Check HVD endpoint connectivity</span></span>
+<span><span class="fu"><a href="reference/test_hvd_connectivity.html">test_hvd_connectivity</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Download data directly from HVD v1</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/download_hvd_data.html">download_hvd_data</a></span><span class="op">(</span><span class="st">"534_50"</span>, version <span class="op">=</span> <span class="st">"v1"</span>, start_time <span class="op">=</span> <span class="st">"2024"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or use existing functions with the api parameter</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"534_50"</span>, start_time <span class="op">=</span> <span class="st">"2024"</span>, api <span class="op">=</span> <span class="st">"hvd_v1"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Set HVD as default API for the session</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>istatlab.default_api <span class="op">=</span> <span class="st">"hvd_v1"</span><span class="op">)</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/download_istat_data.html">download_istat_data</a></span><span class="op">(</span><span class="st">"534_50"</span>, start_time <span class="op">=</span> <span class="st">"2024"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
 </h2>
 <div class="section level3">
@@ -128,6 +149,20 @@
 <code><a href="reference/download_multiple_datasets.html">download_multiple_datasets()</a></code>: Download multiple datasets in parallel</li>
 <li>
 <code><a href="reference/test_endpoint_connectivity.html">test_endpoint_connectivity()</a></code>: Check API endpoint connectivity</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="hvd-high-value-datasets">HVD (High Value Datasets)<a class="anchor" aria-label="anchor" href="#hvd-high-value-datasets"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/download_hvd_data.html">download_hvd_data()</a></code>: Download data directly from HVD endpoints</li>
+<li>
+<code><a href="reference/list_hvd_dataflows.html">list_hvd_dataflows()</a></code>: List available HVD dataflows</li>
+<li>
+<code><a href="reference/test_hvd_connectivity.html">test_hvd_connectivity()</a></code>: Check HVD endpoint accessibility</li>
+<li>
+<code><a href="reference/get_hvd_info.html">get_hvd_info()</a></code>: Get HVD API version information</li>
 </ul>
 </div>
 <div class="section level3">
@@ -200,7 +235,7 @@
 <div class="section level2">
 <h2 id="workflow-example">Workflow Example<a class="anchor" aria-label="anchor" href="#workflow-example"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gmontaletti.github.io/istatlab/">istatlab</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Explore available datasets</span></span>
@@ -284,9 +319,9 @@
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p>To cite istatlab in publications:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"istatlab"</span><span class="op">)</span></span></code></pre></div>
-<p>Montaletti, G. (2026). istatlab: Download and Process Italian Statistical Data from ISTAT. R package version 0.6.0. <a href="https://github.com/gmontaletti/istatlab" class="external-link uri">https://github.com/gmontaletti/istatlab</a></p>
+<p>Montaletti, G. (2026). istatlab: Download and Process Italian Statistical Data from ISTAT. R package version 0.7.0. <a href="https://github.com/gmontaletti/istatlab" class="external-link uri">https://github.com/gmontaletti/istatlab</a></p>
 </div>
 <div class="section level2">
 <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a>

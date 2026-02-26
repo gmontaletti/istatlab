@@ -9,7 +9,7 @@ Uses centralized configuration for default values."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,8 @@ Uses centralized configuration for default values.</p>
 <span>  incremental <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  n_cores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  updated_after <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  updated_after <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  api <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"istatlab.default_api"</span>, <span class="st">"legacy"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +99,12 @@ Default is parallel::detectCores() - 1</p></dd>
 <dt id="arg-updated-after">updated_after<a class="anchor" aria-label="anchor" href="#arg-updated-after"></a></dt>
 <dd><p>POSIXct timestamp. If provided, only data updated since this time
 will be retrieved for all datasets. Used for incremental update detection.</p></dd>
+
+
+<dt id="arg-api">api<a class="anchor" aria-label="anchor" href="#arg-api"></a></dt>
+<dd><p>Character string specifying the API surface to use. One of
+<code>"legacy"</code> (default), <code>"hvd_v1"</code>, or <code>"hvd_v2"</code>. Can be set
+session-wide via <code>options(istatlab.default_api = "hvd_v1")</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

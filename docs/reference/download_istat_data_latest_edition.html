@@ -13,7 +13,7 @@ same indicators, where typically only the most recent edition is needed."></head
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,8 @@ same indicators, where typically only the most recent edition is needed.</p>
 <span>  edition <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  incremental <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  api <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"istatlab.default_api"</span>, <span class="st">"legacy"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -114,6 +115,12 @@ Takes precedence over start_time if both are provided.</p></dd>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical indicating whether to print status messages. Default is TRUE</p></dd>
+
+
+<dt id="arg-api">api<a class="anchor" aria-label="anchor" href="#arg-api"></a></dt>
+<dd><p>Character string specifying the API surface to use. One of
+<code>"legacy"</code> (default), <code>"hvd_v1"</code>, or <code>"hvd_v2"</code>. Can be set
+session-wide via <code>options(istatlab.default_api = "hvd_v1")</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
