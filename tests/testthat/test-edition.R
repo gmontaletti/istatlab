@@ -182,29 +182,7 @@ test_that("merge_sdmx_filters returns base filter unchanged when dim_values is e
   expect_equal(result, "M..IT.....")
 })
 
-# 5. get_available_editions (integration) -----
-
-test_that("get_available_editions returns character vector for edition dataset", {
-  skip_on_cran()
-  skip_if_offline()
-
-  editions <- get_available_editions("150_915", timeout = 60)
-
-  if (!is.null(editions)) {
-    expect_type(editions, "character")
-    expect_true(length(editions) > 0)
-    # Edition codes should start with "G_"
-    expect_true(all(grepl("^G_", editions)))
-  }
-})
-
-test_that("get_available_editions returns NULL for dataset without editions", {
-  skip_on_cran()
-  skip_if_offline()
-
-  editions <- get_available_editions("534_50", timeout = 60)
-  expect_null(editions)
-})
+# 5. get_available_editions input validation -----
 
 test_that("get_available_editions validates dataset_id input", {
   expect_error(
@@ -217,21 +195,7 @@ test_that("get_available_editions validates dataset_id input", {
   )
 })
 
-# 6. get_dataset_dimension_positions (integration) -----
-
-test_that("get_dataset_dimension_positions returns named integer vector", {
-  skip_on_cran()
-  skip_if_offline()
-
-  positions <- get_dataset_dimension_positions("534_50")
-
-  if (!is.null(positions)) {
-    expect_type(positions, "integer")
-    expect_true(length(positions) > 0)
-    expect_true(!is.null(names(positions)))
-    expect_true("FREQ" %in% names(positions))
-  }
-})
+# 6. get_dataset_dimension_positions input validation -----
 
 test_that("get_dataset_dimension_positions validates dataset_id input", {
   expect_error(

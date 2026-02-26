@@ -28,7 +28,6 @@ demo.istat.it URLs. Used primarily for update detection via the
 \code{Content-Length}.
 }
 \details{
-Uses \code{curl::curl_fetch_memory()} with \code{nobody = TRUE}
-(same pattern as \code{check_endpoint_status()} in endpoints.R).
+Uses \code{httr::HEAD()} for the HTTP request.
 }
 \keyword{internal}

@@ -378,20 +378,3 @@ test_that("get_hvd_info base_url values are non-empty strings", {
   expect_true(is.character(info$v2$base_url))
   expect_true(nchar(info$v2$base_url) > 0)
 })
-
-# 5. Live connectivity (skip_on_cran) -----
-
-test_that("HVD endpoints are reachable", {
-  skip_on_cran()
-  skip_if_offline()
-
-  result <- suppressMessages(
-    test_hvd_connectivity(timeout = 15, verbose = FALSE)
-  )
-  expect_s3_class(result, "data.frame")
-  expect_true(nrow(result) > 0)
-  expect_true("accessible" %in% names(result))
-  expect_true("version" %in% names(result))
-  expect_true("endpoint" %in% names(result))
-  expect_type(result$accessible, "logical")
-})

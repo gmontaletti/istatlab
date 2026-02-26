@@ -329,3 +329,90 @@ test_that("get_hvd_accept_header is case-insensitive for format", {
   header <- get_hvd_accept_header("hvd_v1", "CSV")
   expect_equal(header, "application/vnd.sdmx.data+csv;version=1.0.0")
 })
+
+# 6. get_hvd_accept_header structure type tests -----
+
+test_that("default type='data' preserves backward compatibility", {
+  header_default <- get_hvd_accept_header("hvd_v1", "json")
+  header_explicit <- get_hvd_accept_header("hvd_v1", "json", type = "data")
+  expect_identical(header_default, header_explicit)
+})
+
+test_that("v1 structure json returns correct SDMX 2.1 structure header", {
+  header <- get_hvd_accept_header("hvd_v1", "json", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+json;version=1.0.0"
+  )
+})
+
+test_that("v2 structure json returns correct SDMX 3.0 structure header", {
+  header <- get_hvd_accept_header("hvd_v2", "json", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+json;version=2.0.0"
+  )
+})
+
+test_that("v1 structure csv returns correct structure CSV header", {
+  header <- get_hvd_accept_header("hvd_v1", "csv", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+csv;version=1.0.0"
+  )
+})
+
+test_that("v2 structure csv returns correct structure CSV header", {
+  header <- get_hvd_accept_header("hvd_v2", "csv", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+csv;version=2.0.0"
+  )
+})
+
+test_that("v1 structure xml returns correct structure XML header", {
+  header <- get_hvd_accept_header("hvd_v1", "xml", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+xml;version=1.0.0"
+  )
+})
+
+test_that("v2 structure xml returns correct structure XML header", {
+  header <- get_hvd_accept_header("hvd_v2", "xml", type = "structure")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+xml;version=2.0.0"
+  )
+})
+
+test_that("data type does not use structure media type", {
+  header <- get_hvd_accept_header("hvd_v1", "json", type = "data")
+  expect_false(grepl("structure\\+json", header))
+  expect_true(grepl("data\\+json", header))
+})
+
+test_that("structure type does not use data media type", {
+  header <- get_hvd_accept_header("hvd_v1", "json", type = "structure")
+  expect_false(grepl("data\\+json", header))
+  expect_true(grepl("structure\\+json", header))
+})
+
+test_that("get_hvd_accept_header errors on invalid type", {
+  expect_error(
+    get_hvd_accept_header("hvd_v1", "json", type = "metadata"),
+    "Unknown type"
+  )
+  expect_error(
+    get_hvd_accept_header("hvd_v1", "json", type = "query"),
+    "Unknown type"
+  )
+})
+
+test_that("get_hvd_accept_header is case-insensitive for type", {
+  header <- get_hvd_accept_header("hvd_v1", "json", type = "STRUCTURE")
+  expect_equal(
+    header,
+    "application/vnd.sdmx.structure+json;version=1.0.0"
+  )
+})

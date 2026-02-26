@@ -2,7 +2,7 @@
 % Please edit documentation in R/http_transport.R
 \name{http_get}
 \alias{http_get}
-\title{HTTP GET Request with Fallback}
+\title{HTTP GET Request}
 \usage{
 http_get(url, timeout = 120, accept = NULL, verbose = TRUE)
 }
@@ -22,12 +22,12 @@ A list with components:
 \item{content}: Character string with response body (or NULL)
 \item{status_code}: HTTP status code (or NA)
 \item{error}: Error message if failed (or NULL)
-\item{method}: Character indicating which method succeeded ("httr" or "curl")
+\item{method}: Character \code{"httr"}
 \item{headers}: Response headers list (when available)
 }
 }
 \description{
-Performs HTTP GET request using httr with system curl fallback.
+Performs HTTP GET request using httr.
 This is the single point for all HTTP operations.
 }
 \keyword{internal}

@@ -15,7 +15,7 @@ check_endpoint_status(url, timeout = 10)
 A list with accessible (logical), status_code, response_time, error
 }
 \description{
-Lightweight connectivity check using curl R package.
+Lightweight connectivity check using httr.
 Fetches only response headers (status code) without downloading body.
 }
 \keyword{internal}

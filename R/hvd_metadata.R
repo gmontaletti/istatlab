@@ -70,7 +70,11 @@ hvd_get_structure <- function(
     )
   )
 
-  accept_header <- get_hvd_accept_header(api_version, "json")
+  accept_header <- get_hvd_accept_header(
+    api_version,
+    "json",
+    type = "structure"
+  )
 
   istat_log(
     paste0(
@@ -197,7 +201,11 @@ hvd_get_available_values <- function(
     )
   )
 
-  accept_header <- get_hvd_accept_header(api_version, "json")
+  accept_header <- get_hvd_accept_header(
+    api_version,
+    "json",
+    type = "structure"
+  )
 
   istat_log(
     paste0(
@@ -305,7 +313,11 @@ list_hvd_dataflows <- function(
     "hvd_v2" = paste0(base_url, "/rest/v2/structure/dataflow/*/*/~")
   )
 
-  accept_header <- get_hvd_accept_header(api_version, "json")
+  accept_header <- get_hvd_accept_header(
+    api_version,
+    "json",
+    type = "structure"
+  )
 
   istat_log(
     paste0("Listing HVD dataflows via ", api_version),

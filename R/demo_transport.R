@@ -76,11 +76,11 @@ reset_demo_rate_limiter <- function() {
 #' Download Binary File to Disk
 #'
 #' Core transport function for downloading binary files (ZIP archives) from
-#' demo.istat.it. Uses httr as the primary method with curl as fallback.
+#' demo.istat.it. Uses httr with \code{httr::write_disk()} to write binary
+#' data directly to disk.
 #'
 #' Unlike \code{http_get()} which returns text content for SDMX responses,
-#' this function writes binary data directly to disk using
-#' \code{httr::write_disk()}.
+#' this function writes binary data directly to disk.
 #'
 #' @param url Character string with the full URL to download.
 #' @param dest_path Character string with the local file path to write to.
@@ -93,7 +93,7 @@ reset_demo_rate_limiter <- function() {
 #'     \item{dest_path}{Character path where file was written}
 #'     \item{status_code}{HTTP status code (integer), or NA on connection error}
 #'     \item{error}{Error message string, or NULL on success}
-#'     \item{method}{Character indicating which method succeeded ("httr" or "curl")}
+#'     \item{method}{Character `"httr"`}
 #'     \item{file_size}{Numeric file size in bytes (only present on success)}
 #'   }
 #' @keywords internal
@@ -105,37 +105,10 @@ http_download_binary <- function(
 ) {
   config <- get_istat_config()
 
-  # Try httr first
-  httr_result <- .download_binary_httr(url, dest_path, timeout, config, verbose)
+  result <- .download_binary_httr(url, dest_path, timeout, config, verbose)
+  result$method <- "httr"
 
-  if (httr_result$success) {
-    httr_result$method <- "httr"
-    return(httr_result)
-  }
-
-  # Fallback to curl if httr failed with a connection/timeout error
-  # Do not retry on HTTP-level errors (4xx, 5xx) as curl would get the same
-  is_transport_error <- is.na(httr_result$status_code) ||
-    is_timeout_error(httr_result$error %||% "") ||
-    is_connectivity_error(httr_result$error %||% "")
-
-  if (!is_transport_error) {
-    httr_result$method <- "httr"
-    return(httr_result)
-  }
-
-  if (verbose) {
-    istat_log(
-      "Primary download method failed, using curl fallback",
-      "WARNING",
-      verbose
-    )
-  }
-
-  curl_result <- .download_binary_curl(url, dest_path, timeout, config)
-  curl_result$method <- "curl"
-
-  return(curl_result)
+  result
 }
 
 # 4. httr binary download implementation -----
@@ -215,70 +188,7 @@ http_download_binary <- function(
   )
 }
 
-# 5. curl binary download fallback -----
-
-#' Download Binary File Using curl
-#'
-#' Fallback function using \code{curl::curl_download()} for binary downloads
-#' when httr encounters transport-level errors.
-#'
-#' @param url Character URL to download.
-#' @param dest_path Character local file path.
-#' @param timeout Numeric timeout in seconds.
-#' @param config Configuration list from get_istat_config().
-#'
-#' @return A list with success, dest_path, status_code, error, and file_size.
-#' @keywords internal
-.download_binary_curl <- function(url, dest_path, timeout, config) {
-  tryCatch(
-    {
-      h <- curl::new_handle()
-      curl::handle_setopt(
-        h,
-        timeout = timeout,
-        connecttimeout = min(timeout, 30),
-        followlocation = TRUE,
-        useragent = config$http$user_agent
-      )
-
-      curl::curl_download(url, dest_path, handle = h)
-
-      # Verify the file was written
-      if (!file.exists(dest_path) || file.size(dest_path) == 0) {
-        return(list(
-          success = FALSE,
-          dest_path = dest_path,
-          status_code = NA_integer_,
-          error = "curl download produced empty file",
-          file_size = NULL
-        ))
-      }
-
-      list(
-        success = TRUE,
-        dest_path = dest_path,
-        status_code = 200L,
-        error = NULL,
-        file_size = file.size(dest_path)
-      )
-    },
-    error = function(e) {
-      # Remove partial file on error
-      if (file.exists(dest_path)) {
-        unlink(dest_path)
-      }
-      list(
-        success = FALSE,
-        dest_path = dest_path,
-        status_code = NA_integer_,
-        error = e$message,
-        file_size = NULL
-      )
-    }
-  )
-}
-
-# 6. HEAD request for update detection -----
+# 5. HEAD request for update detection -----
 
 #' HTTP HEAD Request for Demo Endpoint
 #'
@@ -287,8 +197,7 @@ http_download_binary <- function(
 #' \code{Last-Modified} header and file size estimation via
 #' \code{Content-Length}.
 #'
-#' Uses \code{curl::curl_fetch_memory()} with \code{nobody = TRUE}
-#' (same pattern as \code{check_endpoint_status()} in endpoints.R).
+#' Uses \code{httr::HEAD()} for the HTTP request.
 #'
 #' @param url Character string with the URL to check.
 #' @param timeout Numeric timeout in seconds. Default 10.
@@ -307,19 +216,13 @@ http_head_demo <- function(url, timeout = 10) {
     {
       config <- get_istat_config()
 
-      h <- curl::new_handle()
-      curl::handle_setopt(
-        h,
-        timeout = timeout,
-        connecttimeout = timeout,
-        nobody = TRUE,
-        followlocation = TRUE,
-        useragent = config$http$user_agent
+      response <- httr::HEAD(
+        url,
+        httr::add_headers(`User-Agent` = config$http$user_agent),
+        httr::timeout(timeout)
       )
 
-      response <- curl::curl_fetch_memory(url, handle = h)
-
-      status <- as.integer(response$status_code)
+      status <- as.integer(httr::status_code(response))
 
       if (status < 200L || status >= 400L) {
         return(list(
@@ -331,8 +234,8 @@ http_head_demo <- function(url, timeout = 10) {
         ))
       }
 
-      # Parse response headers
-      headers <- .parse_response_headers(rawToChar(response$headers))
+      # Parse response headers via httr
+      headers <- httr::headers(response)
 
       # Extract Last-Modified header as POSIXct
       last_modified <- NA
@@ -376,43 +279,7 @@ http_head_demo <- function(url, timeout = 10) {
   )
 }
 
-#' Parse Raw HTTP Response Headers
-#'
-#' Splits raw header text into a named list with lowercase keys.
-#' Handles multi-line values and CRLF line endings.
-#'
-#' @param raw_headers Character string of raw HTTP headers.
-#'
-#' @return Named list of header values (keys are lowercase).
-#' @keywords internal
-.parse_response_headers <- function(raw_headers) {
-  if (is.null(raw_headers) || nchar(raw_headers) == 0) {
-    return(list())
-  }
-
-  lines <- strsplit(raw_headers, "\r?\n")[[1]]
-
-  # Skip the status line (e.g., "HTTP/1.1 200 OK")
-  lines <- lines[!grepl("^HTTP/", lines)]
-
-  # Remove empty lines
-  lines <- lines[nchar(trimws(lines)) > 0]
-
-  headers <- list()
-  for (line in lines) {
-    # Split on first colon
-    colon_pos <- regexpr(":", line)
-    if (colon_pos > 0) {
-      key <- tolower(trimws(substr(line, 1, colon_pos - 1)))
-      value <- trimws(substr(line, colon_pos + 1, nchar(line)))
-      headers[[key]] <- value
-    }
-  }
-
-  headers
-}
-
-# 7. Binary download with retry -----
+# 6. Binary download with retry -----
 
 #' Download Binary File with Retry and Rate Limiting
 #'

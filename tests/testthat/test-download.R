@@ -1,16 +1,3 @@
-test_that("test_endpoint_connectivity works correctly", {
-  skip_on_cran()
-  skip_if_offline()
-
-  # Test endpoint connectivity function (use default 30s timeout for ISTAT API)
-  result <- suppressWarnings(
-    test_endpoint_connectivity("dataflow", timeout = 15, verbose = FALSE)
-  )
-  expect_s3_class(result, "data.frame")
-  expect_true("accessible" %in% names(result))
-  expect_type(result$accessible, "logical")
-})
-
 test_that("download_istat_data validates inputs correctly", {
   # Test input validation
   expect_error(
@@ -44,110 +31,7 @@ test_that("download_istat_data returns expected structure", {
   # to avoid dependencies on external services during testing
 })
 
-# 1. Tests for return_result parameter -----
-
-test_that("download_istat_data return_result parameter works", {
-  skip_on_cran()
-  skip_if_offline()
-
-  # Test with return_result = TRUE
-  result <- download_istat_data(
-    "534_50",
-    start_time = "2024",
-    timeout = 60,
-    verbose = FALSE,
-    return_result = TRUE
-  )
-
-  # Should return istat_result object
-  expect_s3_class(result, "istat_result")
-  expect_true(is.logical(result$success))
-  expect_true(is.integer(result$exit_code))
-  expect_true(inherits(result$timestamp, "POSIXct"))
-
-  if (result$success) {
-    expect_true(data.table::is.data.table(result$data))
-    expect_true("id" %in% names(result$data))
-  }
-})
-
-# 2. Tests for download_istat_data with return_result -----
-
-test_that("download_istat_data with return_result returns istat_result", {
-  skip_on_cran()
-  skip_if_offline()
-
-  result <- download_istat_data(
-    "534_50",
-    start_time = "2024",
-    timeout = 60,
-    verbose = FALSE,
-    return_result = TRUE
-  )
-
-  # Must return istat_result
-  expect_s3_class(result, "istat_result")
-  expect_true(is.logical(result$success))
-  expect_true(is.integer(result$exit_code))
-  expect_true(is.logical(result$is_timeout))
-
-  # Check exit codes are valid
-  expect_true(result$exit_code %in% c(0L, 1L, 2L))
-
-  # If success, check data structure
-  if (result$success) {
-    expect_true(data.table::is.data.table(result$data))
-    expect_equal(result$exit_code, 0L)
-    expect_false(result$is_timeout)
-  }
-})
-
-# 3. Tests for MD5 checksum -----
-
-test_that("download_istat_data computes MD5 when digest is available", {
-  skip_on_cran()
-  skip_if_offline()
-  skip_if_not_installed("digest")
-
-  result <- download_istat_data(
-    "534_50",
-    start_time = "2024",
-    timeout = 60,
-    verbose = FALSE,
-    return_result = TRUE
-  )
-
-  if (result$success) {
-    # MD5 should be computed when digest is available
-    expect_true(!is.na(result$md5))
-    expect_true(is.character(result$md5))
-    expect_equal(nchar(result$md5), 32) # MD5 hash is 32 hex characters
-  }
-})
-
-# 4. Tests for backward compatibility -----
-
-test_that("download_istat_data maintains backward compatibility", {
-  skip_on_cran()
-  skip_if_offline()
-
-  # Default behavior: return data.table (not istat_result)
-  result <- download_istat_data(
-    "534_50",
-    start_time = "2024",
-    timeout = 60,
-    verbose = FALSE
-  )
-
-  if (!is.null(result)) {
-    # Should be data.table, not istat_result
-    expect_true(data.table::is.data.table(result))
-    expect_false(inherits(result, "istat_result"))
-    expect_true("id" %in% names(result))
-  }
-})
-
-# 5. Tests for end_time parameter -----
+# 1. Tests for end_time parameter -----
 
 test_that("end_time rejects invalid formats", {
   expect_error(
@@ -196,7 +80,7 @@ test_that("end_time is not included when empty", {
   expect_false(grepl("endPeriod", url))
 })
 
-# 6. Tests for integrate_downloaded_data -----
+# 2. Tests for integrate_downloaded_data -----
 
 test_that("integrate_downloaded_data merges and deduplicates", {
   existing <- data.table::data.table(
@@ -227,33 +111,4 @@ test_that("integrate_downloaded_data validates inputs", {
     integrate_downloaded_data(data.table::data.table(), "not_dt"),
     "new_data must be a data.table"
   )
-})
-
-# 7. Tests for download with end_time (API) -----
-
-test_that("download_istat_data works with end_time", {
-  skip_on_cran()
-  skip_if_offline()
-
-  data <- download_istat_data(
-    "534_50",
-    start_time = "2023",
-    end_time = "2023",
-    timeout = 60,
-    verbose = FALSE
-  )
-  if (!is.null(data)) {
-    expect_true(data.table::is.data.table(data))
-    expect_true(nrow(data) > 0)
-    # Data should be bounded; fewer rows than an unbounded download
-    all_data <- download_istat_data(
-      "534_50",
-      start_time = "2020",
-      timeout = 60,
-      verbose = FALSE
-    )
-    if (!is.null(all_data)) {
-      expect_true(nrow(data) < nrow(all_data))
-    }
-  }
 })

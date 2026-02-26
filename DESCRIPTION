@@ -27,7 +27,6 @@ RoxygenNote: 7.3.3
 Depends: 
     R (>= 4.1.0)
 Imports:
-    curl (>= 4.0),
     data.table (>= 1.14.0),
     forecast (>= 8.0),
     httr (>= 1.4.0),

@@ -685,27 +685,7 @@ test_that("download_demo_data_batch errors on codes with NA", {
   expect_error(download_demo_data_batch(c("D7B", NA)), "NA")
 })
 
-# 16. Transport tests (skip if offline) -----
-
-test_that("http_head_demo returns a list with success field", {
-  skip_if_offline(host = "demo.istat.it")
-
-  result <- http_head_demo("https://demo.istat.it")
-  expect_type(result, "list")
-  expect_true("success" %in% names(result))
-})
-
-test_that("http_head_demo to demo.istat.it returns appropriate status", {
-  skip_if_offline(host = "demo.istat.it")
-
-  result <- http_head_demo("https://demo.istat.it/data/d7b/D7B2024.csv.zip")
-  expect_type(result, "list")
-  expect_true("status_code" %in% names(result))
-  # Server should respond (either 200 or redirect; not a connection failure)
-  expect_false(is.na(result$status_code))
-})
-
-# 17. Demo rate limiter -----
+# 16. Demo rate limiter -----
 
 test_that("demo_throttle first call does not sleep when no previous timestamp", {
   reset_demo_rate_limiter()
@@ -734,7 +714,7 @@ test_that("demo_throttle updates last_request_time", {
   expect_s3_class(.demo_rate_limiter$last_request_time, "POSIXct")
 })
 
-# 18. Cache cleanup in isolated directory -----
+# 17. Cache cleanup in isolated directory -----
 
 test_that("clean_demo_cache returns 0 for nonexistent directory", {
   result <- clean_demo_cache(

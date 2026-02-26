@@ -22,17 +22,17 @@ A list with components:
 \item{dest_path}{Character path where file was written}
 \item{status_code}{HTTP status code (integer), or NA on connection error}
 \item{error}{Error message string, or NULL on success}
-\item{method}{Character indicating which method succeeded ("httr" or "curl")}
+\item{method}{Character \code{"httr"}}
 \item{file_size}{Numeric file size in bytes (only present on success)}
 }
 }
 \description{
 Core transport function for downloading binary files (ZIP archives) from
-demo.istat.it. Uses httr as the primary method with curl as fallback.
+demo.istat.it. Uses httr with \code{httr::write_disk()} to write binary
+data directly to disk.
 }
 \details{
 Unlike \code{http_get()} which returns text content for SDMX responses,
-this function writes binary data directly to disk using
-\code{httr::write_disk()}.
+this function writes binary data directly to disk.
 }
 \keyword{internal}

@@ -35,12 +35,12 @@ A list with components:
 \item{content}: Character string with response body (or NULL)
 \item{status_code}: HTTP status code (or NA)
 \item{error}: Error message if failed (or NULL)
-\item{method}: Character \code{"httr"} (POST uses httr only)
+\item{method}: Character \code{"httr"}
 \item{headers}: Response headers list (when available)
 }
 }
 \description{
 Performs HTTP POST request using httr. Mirrors \code{\link[=http_get]{http_get()}} but for POST
-requests with a body payload. No curl fallback is provided for POST.
+requests with a body payload.
 }
 \keyword{internal}

@@ -212,7 +212,7 @@ get_categorized_datasets <- function(category = NULL) {
 
 #' Check Endpoint HTTP Status
 #'
-#' Lightweight connectivity check using curl R package.
+#' Lightweight connectivity check using httr.
 #' Fetches only response headers (status code) without downloading body.
 #'
 #' @param url Character URL to check
@@ -226,18 +226,7 @@ check_endpoint_status <- function(url, timeout = 10) {
 
   tryCatch(
     {
-      # Create curl handle with timeout and nobody option
-      h <- curl::new_handle()
-      curl::handle_setopt(
-        h,
-        timeout = timeout,
-        connecttimeout = timeout,
-        nobody = TRUE,
-        followlocation = TRUE
-      )
-
-      # Fetch headers only (nobody=TRUE skips body)
-      response <- curl::curl_fetch_memory(url, handle = h)
+      response <- httr::HEAD(url, httr::timeout(timeout))
 
       end_time <- Sys.time()
       response_time <- as.numeric(difftime(
@@ -246,9 +235,11 @@ check_endpoint_status <- function(url, timeout = 10) {
         units = "secs"
       ))
 
+      status <- as.integer(httr::status_code(response))
+
       list(
-        accessible = response$status_code %in% c(200L, 302L, 400L),
-        status_code = as.integer(response$status_code),
+        accessible = status %in% c(200L, 302L, 400L),
+        status_code = status,
         response_time = response_time,
         error = ""
       )

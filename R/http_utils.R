@@ -16,8 +16,11 @@
 #' @return httr response object or NULL on failure
 #' @keywords internal
 istat_http_get <- function(url, timeout = 120, accept = NULL, verbose = TRUE) {
-  .Deprecated("http_get", package = "istatlab",
-              msg = "istat_http_get is deprecated. Use http_get() instead.")
+  .Deprecated(
+    "http_get",
+    package = "istatlab",
+    msg = "istat_http_get is deprecated. Use http_get() instead."
+  )
 
   # Redirect to new function
   result <- http_get(url, timeout, accept, verbose)
@@ -47,8 +50,11 @@ istat_http_get <- function(url, timeout = 120, accept = NULL, verbose = TRUE) {
 #' @return data.table with normalized column names or NULL on failure
 #' @keywords internal
 istat_fetch_data_csv <- function(url, timeout = 120, verbose = TRUE) {
-  .Deprecated("process_api_response", package = "istatlab",
-              msg = "istat_fetch_data_csv is deprecated. Use http_get() + process_api_response() instead.")
+  .Deprecated(
+    "process_api_response",
+    package = "istatlab",
+    msg = "istat_fetch_data_csv is deprecated. Use http_get() + process_api_response() instead."
+  )
 
   # Redirect to new functions
   http_result <- http_get(url, timeout = timeout, verbose = verbose)
@@ -56,33 +62,6 @@ istat_fetch_data_csv <- function(url, timeout = 120, verbose = TRUE) {
 
   if (result$success) {
     result$data
-  } else {
-    NULL
-  }
-}
-
-#' Fetch data using system curl command
-#'
-#' @description
-#' **Deprecated**: This function is deprecated and will be removed in version 1.0.0.
-#' Use [http_get_curl()] from http_transport.R instead.
-#'
-#' @param url Character string with the full API URL
-#' @param timeout Numeric timeout in seconds
-#' @param accept Character string with Accept header value
-#' @param verbose Logical whether to print status messages
-#'
-#' @return Character string with CSV content or NULL on failure
-#' @keywords internal
-istat_fetch_with_curl <- function(url, timeout = 120, accept, verbose = TRUE) {
-  .Deprecated("http_get_curl", package = "istatlab",
-              msg = "istat_fetch_with_curl is deprecated. Use http_get_curl() instead.")
-
-  # Redirect to new function
-  result <- http_get_curl(url, timeout, accept, verbose)
-
-  if (result$success) {
-    result$content
   } else {
     NULL
   }

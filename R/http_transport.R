@@ -96,9 +96,9 @@ reset_rate_limiter <- function() {
 
 # 3. Main HTTP function -----
 
-#' HTTP GET Request with Fallback
+#' HTTP GET Request
 #'
-#' Performs HTTP GET request using httr with system curl fallback.
+#' Performs HTTP GET request using httr.
 #' This is the single point for all HTTP operations.
 #'
 #' @param url Character string with the full URL
@@ -112,7 +112,7 @@ reset_rate_limiter <- function() {
 #'     \item{content}: Character string with response body (or NULL)
 #'     \item{status_code}: HTTP status code (or NA)
 #'     \item{error}: Error message if failed (or NULL)
-#'     \item{method}: Character indicating which method succeeded ("httr" or "curl")
+#'     \item{method}: Character `"httr"`
 #'     \item{headers}: Response headers list (when available)
 #'   }
 #' @keywords internal
@@ -123,27 +123,10 @@ http_get <- function(url, timeout = 120, accept = NULL, verbose = TRUE) {
     accept <- config$http$accept_csv
   }
 
-  # Try httr first
-  httr_result <- http_get_httr(url, timeout, accept, verbose)
+  result <- http_get_httr(url, timeout, accept, verbose)
+  result$method <- "httr"
 
-  if (httr_result$success) {
-    httr_result$method <- "httr"
-    return(httr_result)
-  }
-
-  # Fallback to system curl
-  if (verbose) {
-    istat_log(
-      "Primary HTTP method failed, using curl fallback",
-      "WARNING",
-      verbose
-    )
-  }
-
-  curl_result <- http_get_curl(url, timeout, accept, verbose)
-  curl_result$method <- "curl"
-
-  return(curl_result)
+  result
 }
 
 #' HTTP GET with Retry and Rate Limiting
@@ -431,109 +414,7 @@ http_get_httr <- function(url, timeout, accept, verbose) {
   )
 }
 
-# 6. curl fallback implementation -----
-
-#' HTTP GET using System Curl
-#'
-#' Fallback function using system curl for downloads when httr has issues.
-#' Uses temp file to capture response and returns content as string.
-#'
-#' @param url Character string with the full URL
-#' @param timeout Numeric timeout in seconds
-#' @param accept Character string with Accept header value
-#' @param verbose Logical whether to log status messages
-#'
-#' @return A list with success, content, status_code, and error components
-#' @keywords internal
-http_get_curl <- function(url, timeout, accept, verbose) {
-  tmp <- tempfile(fileext = ".csv")
-  on.exit(unlink(tmp), add = TRUE)
-
-  # Build curl command with HTTP status code capture
-  cmd <- sprintf(
-    'curl -s -m %d -H "Accept: %s" -o "%s" -w "%%{http_code}" "%s"',
-    timeout,
-    accept,
-    tmp,
-    url
-  )
-
-  result <- tryCatch(
-    {
-      output <- system(cmd, intern = TRUE, ignore.stderr = TRUE)
-      # system() with intern=TRUE stores exit code in status attribute
-      curl_exit <- attr(output, "status")
-      if (is.null(curl_exit)) {
-        curl_exit <- 0L
-      }
-      status_code <- as.integer(output[length(output)])
-      list(exit_status = curl_exit, status_code = status_code)
-    },
-    error = function(e) {
-      list(exit_status = 1L, error = e$message)
-    }
-  )
-
-  # Check for curl error (exit status != 0)
-  # Common curl exit codes: 6=DNS error, 7=connection refused, 28=timeout
-  if (!is.null(result$exit_status) && result$exit_status != 0) {
-    error_msg <- switch(
-      as.character(result$exit_status),
-      "6" = "Could not resolve host",
-      "7" = "Connection refused",
-      "28" = "Connection timed out",
-      "35" = "SSL connection error",
-      "52" = "Empty server response",
-      "56" = "Network error during receive",
-      paste("curl error:", result$exit_status)
-    )
-    return(list(
-      success = FALSE,
-      content = NULL,
-      status_code = NA_integer_,
-      error = error_msg,
-      headers = NULL
-    ))
-  }
-
-  # Check HTTP status
-  if (!is.na(result$status_code) && result$status_code != 200) {
-    return(list(
-      success = FALSE,
-      content = NULL,
-      status_code = result$status_code,
-      error = paste("HTTP error:", result$status_code),
-      headers = NULL
-    ))
-  }
-
-  # Check if file was created and has content
-  if (!file.exists(tmp) || file.size(tmp) == 0) {
-    return(list(
-      success = FALSE,
-      content = NULL,
-      status_code = result$status_code,
-      error = "Empty response from curl",
-      headers = NULL
-    ))
-  }
-
-  # Read content from temp file
-  content <- paste(
-    readLines(tmp, warn = FALSE, encoding = "UTF-8"),
-    collapse = "\n"
-  )
-
-  list(
-    success = TRUE,
-    content = content,
-    status_code = result$status_code,
-    error = NULL,
-    headers = NULL
-  )
-}
-
-# 7. HTTP POST via httr -----
+# 6. HTTP POST via httr -----
 
 #' HTTP POST using httr Package
 #'
@@ -637,12 +518,12 @@ http_post_httr <- function(
   )
 }
 
-# 8. Main HTTP POST function -----
+# 7. Main HTTP POST function -----
 
 #' HTTP POST Request
 #'
 #' Performs HTTP POST request using httr. Mirrors [http_get()] but for POST
-#' requests with a body payload. No curl fallback is provided for POST.
+#' requests with a body payload.
 #'
 #' @param url Character string with the full URL
 #' @param body Character string with the POST request body (typically an SDMX
@@ -659,7 +540,7 @@ http_post_httr <- function(
 #'     \item{content}: Character string with response body (or NULL)
 #'     \item{status_code}: HTTP status code (or NA)
 #'     \item{error}: Error message if failed (or NULL)
-#'     \item{method}: Character `"httr"` (POST uses httr only)
+#'     \item{method}: Character `"httr"`
 #'     \item{headers}: Response headers list (when available)
 #'   }
 #' @keywords internal
@@ -683,7 +564,7 @@ http_post <- function(
   return(result)
 }
 
-# 9. HTTP POST with retry -----
+# 8. HTTP POST with retry -----
 
 #' HTTP POST with Retry and Rate Limiting
 #'
@@ -818,7 +699,7 @@ http_post_with_retry <- function(
   result
 }
 
-# 10. POST JSON helper -----
+# 9. POST JSON helper -----
 
 #' HTTP POST with JSON Parsing
 #'

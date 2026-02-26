@@ -4,37 +4,51 @@
 \alias{get_hvd_accept_header}
 \title{Get HVD Accept Header}
 \usage{
-get_hvd_accept_header(api_version, format = "csv")
+get_hvd_accept_header(api_version, format = "csv", type = "data")
 }
 \arguments{
 \item{api_version}{Character string, either \code{"hvd_v1"} or \code{"hvd_v2"}.}
 
 \item{format}{Character string specifying the desired response format. One
 of \code{"csv"} (default), \code{"json"}, or \code{"xml"}.}
+
+\item{type}{Character string specifying the content type category. One of
+\code{"data"} (default) for data retrieval endpoints, or \code{"structure"} for
+metadata and structure definition endpoints (dataflow listing, DSD
+retrieval, available values). Default \code{"data"} preserves backward
+compatibility.}
 }
 \value{
 Character string containing the Accept header value.
 }
 \description{
 Returns the appropriate HTTP \code{Accept} header value for the specified HVD API
-version and response format. The SDMX content negotiation headers differ
-between v1 (SDMX 2.1) and v2 (SDMX 3.0) for data responses.
+version, content type, and response format. The SDMX standard uses distinct
+media types for data and structure endpoints:
+\itemize{
+\item Data endpoints: \code{application/vnd.sdmx.data+{format}}
+\item Structure endpoints: \code{application/vnd.sdmx.structure+{format}}
+}
+}
+\details{
+The version suffix differs between SDMX 2.1 (\verb{1.0.0}) and SDMX 3.0
+(\verb{2.0.0}).
 }
 \examples{
 \dontrun{
-# CSV headers
+# Data headers (default)
 get_hvd_accept_header("hvd_v1", "csv")
 # "application/vnd.sdmx.data+csv;version=1.0.0"
 
-get_hvd_accept_header("hvd_v2", "csv")
-# "application/vnd.sdmx.data+csv;version=2.0.0"
-
-# JSON headers
-get_hvd_accept_header("hvd_v1", "json")
-# "application/vnd.sdmx.data+json;version=1.0.0"
-
 get_hvd_accept_header("hvd_v2", "json")
 # "application/vnd.sdmx.data+json;version=2.0.0"
+
+# Structure headers for metadata endpoints
+get_hvd_accept_header("hvd_v1", "json", type = "structure")
+# "application/vnd.sdmx.structure+json;version=1.0.0"
+
+get_hvd_accept_header("hvd_v2", "json", type = "structure")
+# "application/vnd.sdmx.structure+json;version=2.0.0"
 }
 
 }
