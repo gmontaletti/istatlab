@@ -1,5 +1,26 @@
 # Changelog
 
+## istatlab 0.7.1
+
+### Bug Fixes
+
+- Fixed HTTP 406 errors on HVD metadata endpoints
+  ([`list_hvd_dataflows()`](https://gmontaletti.github.io/istatlab/reference/list_hvd_dataflows.md),
+  [`hvd_get_structure()`](https://gmontaletti.github.io/istatlab/reference/hvd_get_structure.md),
+  [`hvd_get_available_values()`](https://gmontaletti.github.io/istatlab/reference/hvd_get_available_values.md)).
+  The Accept header now correctly sends
+  `application/vnd.sdmx.structure+json` for structure queries instead of
+  the data media type.
+
+### Improvements
+
+- Removed curl dependency entirely. All HTTP operations now use httr
+  exclusively, eliminating redundant curl fallback retries that
+  contributed to ISTAT rate-limit bans.
+- Removed deprecated `istat_fetch_with_curl()` function.
+- Removed live endpoint integration tests to prevent ban-triggering
+  traffic during automated testing.
+
 ## istatlab 0.7.0
 
 ### New Features
@@ -284,7 +305,8 @@
   [`http_get()`](https://gmontaletti.github.io/istatlab/reference/http_get.md) +
   [`process_api_response()`](https://gmontaletti.github.io/istatlab/reference/process_api_response.md)
   instead
-- `istat_fetch_with_curl()`: Use `http_get_curl()` instead
+- `istat_fetch_with_curl()`: Removed in 0.7.1 (curl dependency
+  eliminated)
 
 These deprecated functions remain functional but will be removed in
 version 1.0.0.

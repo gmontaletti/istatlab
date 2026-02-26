@@ -223,7 +223,7 @@ citation("istatlab")
 ```
 
 Montaletti, G. (2026). istatlab: Download and Process Italian
-Statistical Data from ISTAT. R package version 0.7.0.
+Statistical Data from ISTAT. R package version 0.7.1.
 <https://github.com/gmontaletti/istatlab>
 
 ## Author

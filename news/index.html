@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,19 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.1" id="istatlab-071">istatlab 0.7.1<a class="anchor" aria-label="anchor" href="#istatlab-071"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-1"></a></h3>
+<ul><li>Fixed HTTP 406 errors on HVD metadata endpoints (<code><a href="../reference/list_hvd_dataflows.html">list_hvd_dataflows()</a></code>, <code><a href="../reference/hvd_get_structure.html">hvd_get_structure()</a></code>, <code><a href="../reference/hvd_get_available_values.html">hvd_get_available_values()</a></code>). The Accept header now correctly sends <code>application/vnd.sdmx.structure+json</code> for structure queries instead of the data media type.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="improvements-0-7-1">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-7-1"></a></h3>
+<ul><li>Removed curl dependency entirely. All HTTP operations now use httr exclusively, eliminating redundant curl fallback retries that contributed to ISTAT rate-limit bans.</li>
+<li>Removed deprecated <code>istat_fetch_with_curl()</code> function.</li>
+<li>Removed live endpoint integration tests to prevent ban-triggering traffic during automated testing.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="istatlab-070">istatlab 0.7.0<a class="anchor" aria-label="anchor" href="#istatlab-070"></a></h2>
 <div class="section level3">
@@ -236,7 +249,7 @@
 <li>
 <code><a href="../reference/istat_fetch_data_csv.html">istat_fetch_data_csv()</a></code>: Use <code><a href="../reference/http_get.html">http_get()</a></code> + <code><a href="../reference/process_api_response.html">process_api_response()</a></code> instead</li>
 <li>
-<code>istat_fetch_with_curl()</code>: Use <code>http_get_curl()</code> instead</li>
+<code>istat_fetch_with_curl()</code>: Removed in 0.7.1 (curl dependency eliminated)</li>
 </ul><p>These deprecated functions remain functional but will be removed in version 1.0.0.</p>
 </div>
 <div class="section level3">
