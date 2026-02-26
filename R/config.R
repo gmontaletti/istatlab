@@ -119,6 +119,47 @@ get_istat_config <- function() {
       # This prevents all codelists from expiring simultaneously
       codelist_base_ttl_days = 14,
       codelist_jitter_days = 14
+    ),
+
+    # HVD (High Value Datasets) configuration
+    hvd = list(
+      base_url = "https://esploradati.istat.it/hvd",
+      v1 = list(
+        rest_base = "https://esploradati.istat.it/hvd/rest",
+        data = "https://esploradati.istat.it/hvd/rest/data",
+        dataflow = "https://esploradati.istat.it/hvd/rest/dataflow",
+        datastructure = "https://esploradati.istat.it/hvd/rest/datastructure",
+        availableconstraint = "https://esploradati.istat.it/hvd/rest/availableconstraint",
+        sdmx_version = "2.1",
+        status = "stable"
+      ),
+      v2 = list(
+        rest_base = "https://esploradati.istat.it/hvd/rest/v2",
+        data = "https://esploradati.istat.it/hvd/rest/v2/data",
+        structure = "https://esploradati.istat.it/hvd/rest/v2/structure",
+        availability = "https://esploradati.istat.it/hvd/rest/v2/availability",
+        sdmx_version = "3.0",
+        status = "experimental"
+      )
+    ),
+
+    # API surface registry (for validation and routing)
+    api_surfaces = list(
+      legacy = list(
+        name = "Legacy SDMX 2.1",
+        base = "https://esploradati.istat.it/SDMXWS/rest",
+        sdmx_version = "2.1"
+      ),
+      hvd_v1 = list(
+        name = "HVD v1 (SDMX 2.1)",
+        base = "https://esploradati.istat.it/hvd/rest",
+        sdmx_version = "2.1"
+      ),
+      hvd_v2 = list(
+        name = "HVD v2 (SDMX 3.0)",
+        base = "https://esploradati.istat.it/hvd/rest/v2",
+        sdmx_version = "3.0"
+      )
     )
   )
 }

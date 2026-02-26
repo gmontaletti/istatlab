@@ -49,6 +49,22 @@ including population, births, deaths, migrations, and projections.
 }
 }
 
+\section{HVD (High Value Datasets)}{
+
+\describe{
+\item{Data Download:}{
+\code{\link{download_hvd_data}()}, \code{\link{download_istat_data}(api = "hvd_v1")}
+}
+\item{Metadata:}{
+\code{\link{list_hvd_dataflows}()}, \code{\link{test_hvd_connectivity}()},
+\code{\link{get_hvd_info}()}
+}
+\item{Configuration:}{
+\code{\link{validate_api_surface}()}
+}
+}
+}
+
 \section{Package workflow}{
 
 A typical workflow with istatlab involves:

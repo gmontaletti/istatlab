@@ -62,6 +62,15 @@ reference:
       - update_data_download_log
       - istat_result
 
+  - title: HVD (High Value Datasets)
+    desc: Access ISTAT's High Value Datasets API (HVD v1/v2).
+    contents:
+      - download_hvd_data
+      - list_hvd_dataflows
+      - test_hvd_connectivity
+      - get_hvd_info
+      - validate_api_surface
+
   - title: Metadata
     desc: Manage dataset metadata, search, and explore structure.
     contents:

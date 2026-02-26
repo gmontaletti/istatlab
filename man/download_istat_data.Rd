@@ -16,7 +16,8 @@ download_istat_data(
   return_result = FALSE,
   check_update = FALSE,
   cache_dir = "meta",
-  existing_data = NULL
+  existing_data = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 )
 }
 \arguments{
@@ -56,6 +57,10 @@ Default is "meta"}
 \item{existing_data}{Optional data.table of previously downloaded data. When provided,
 the function determines the already-covered date range and downloads only
 non-overlapping periods, merging and deduplicating the result.}
+
+\item{api}{Character string specifying the API surface to use. One of
+\code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+session-wide via \code{options(istatlab.default_api = "hvd_v1")}.}
 }
 \value{
 A data.table containing the downloaded data with an additional 'id' column,

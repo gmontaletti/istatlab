@@ -1,3 +1,32 @@
+# istatlab 0.7.0
+
+## New Features
+
+* **HVD API integration**: Added support for ISTAT's High Value Datasets (HVD) endpoints at `esploradati.istat.it/hvd`, covering both HVD v1 (SDMX 2.1) and HVD v2 (SDMX 3.0) APIs.
+* New `download_hvd_data()` function for direct access to HVD endpoints with version selection (`"v1"` or `"v2"`).
+* New `api` parameter in `download_istat_data()`, `download_multiple_datasets()`, `download_istat_data_by_freq()`, and `download_istat_data_latest_edition()` to route requests through HVD instead of the legacy API. Defaults to `"legacy"` for backward compatibility. Session-wide override via `options(istatlab.default_api = "hvd_v1")`.
+* New `list_hvd_dataflows()` function to list available HVD dataflows.
+* New `test_hvd_connectivity()` function to check HVD endpoint accessibility.
+* New `get_hvd_info()` function returning HVD API capabilities and version information.
+* New `validate_api_surface()` function for validating API surface selection.
+
+## HTTP Transport
+
+* Added HTTP POST support to the transport layer: `http_post()`, `http_post_with_retry()`, and `http_post_json()`. POST support is required by HVD for large queries exceeding URL length limits.
+
+## SDMX 3.0 Support
+
+* New `build_sdmx3_filters()` function to translate time period filters from `startPeriod`/`endPeriod` to SDMX 3.0 `c[TIME_PERIOD]=ge:..+le:..` syntax.
+* HVD v2 URL builders handle the full SDMX 3.0 path structure with `context`, `agencyId`, `resourceId`, and `version` parameters.
+* HVD v2 is marked as experimental; v1 is recommended for production use.
+
+## Internal
+
+* New files: `R/hvd_config.R`, `R/hvd_download.R`, `R/hvd_metadata.R`.
+* HVD configuration added to `get_istat_config()` with base URLs and endpoint registry.
+* Extended `list_istat_endpoints()` and `test_endpoint_connectivity()` to include HVD endpoints.
+* Test suite expanded with 169 new tests across 3 test files (test-hvd-config.R, test-hvd-download.R, test-http-post.R).
+
 # istatlab 0.6.0
 
 ## Breaking Changes

@@ -113,7 +113,8 @@ fetch_registry_dimensions <- function(dataset_id) {
 list_istat_endpoints <- function() {
   config <- get_istat_config()
 
-  data.frame(
+  # Legacy SDMX endpoints
+  legacy_df <- data.frame(
     endpoint = names(config$endpoints),
     url = unlist(config$endpoints),
     description = c(
@@ -138,6 +139,46 @@ list_istat_endpoints <- function() {
     ),
     stringsAsFactors = FALSE
   )
+
+  # HVD (High Value Datasets) endpoints
+  hvd_df <- data.frame(
+    endpoint = c(
+      "hvd_v1_data",
+      "hvd_v1_dataflow",
+      "hvd_v1_structure",
+      "hvd_v2_data",
+      "hvd_v2_structure",
+      "hvd_v2_availability"
+    ),
+    url = c(
+      config$hvd$v1$data,
+      config$hvd$v1$dataflow,
+      config$hvd$v1$datastructure,
+      config$hvd$v2$data,
+      config$hvd$v2$structure,
+      config$hvd$v2$availability
+    ),
+    description = c(
+      "HVD v1 data retrieval (SDMX 2.1)",
+      "HVD v1 dataflow listing",
+      "HVD v1 data structure",
+      "HVD v2 data retrieval (SDMX 3.0)",
+      "HVD v2 structure queries",
+      "HVD v2 data availability"
+    ),
+    function_prefix = c(
+      "download_hvd_",
+      "list_hvd_",
+      "hvd_get_",
+      "download_hvd_",
+      "hvd_get_",
+      "hvd_get_"
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  # Combine legacy and HVD endpoints
+  rbind(legacy_df, hvd_df)
 }
 
 #' Get Dataset Information by Category
@@ -257,7 +298,20 @@ test_endpoint_connectivity <- function(
   verbose = TRUE
 ) {
   config <- get_istat_config()
-  available_endpoints <- names(config$endpoints)
+
+  # Build complete endpoint URL map (legacy + HVD)
+  all_endpoints <- c(
+    config$endpoints,
+    list(
+      hvd_v1_data = config$hvd$v1$data,
+      hvd_v1_dataflow = config$hvd$v1$dataflow,
+      hvd_v1_structure = config$hvd$v1$datastructure,
+      hvd_v2_data = config$hvd$v2$data,
+      hvd_v2_structure = config$hvd$v2$structure,
+      hvd_v2_availability = config$hvd$v2$availability
+    )
+  )
+  available_endpoints <- names(all_endpoints)
 
   # Validate endpoints
 
@@ -286,7 +340,7 @@ test_endpoint_connectivity <- function(
       message("Testing ", endpoint, " endpoint...")
     }
 
-    test_url <- config$endpoints[[endpoint]]
+    test_url <- all_endpoints[[endpoint]]
     status <- check_endpoint_status(test_url, timeout = timeout)
 
     results <- rbind(

@@ -12,7 +12,8 @@ download_istat_data_latest_edition(
   edition = NULL,
   incremental = FALSE,
   timeout = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  api = getOption("istatlab.default_api", "legacy")
 )
 }
 \arguments{
@@ -40,6 +41,10 @@ Takes precedence over start_time if both are provided.}
 \item{timeout}{Numeric timeout in seconds for the download operation. Default uses config value}
 
 \item{verbose}{Logical indicating whether to print status messages. Default is TRUE}
+
+\item{api}{Character string specifying the API surface to use. One of
+\code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+session-wide via \code{options(istatlab.default_api = "hvd_v1")}.}
 }
 \value{
 A data.table containing the downloaded data with an additional 'id'

@@ -28,6 +28,9 @@
 #' @param existing_data Optional data.table of previously downloaded data. When provided,
 #'   the function determines the already-covered date range and downloads only
 #'   non-overlapping periods, merging and deduplicating the result.
+#' @param api Character string specifying the API surface to use. One of
+#'   \code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+#'   session-wide via \code{options(istatlab.default_api = "hvd_v1")}.
 #'
 #' @return A data.table containing the downloaded data with an additional 'id' column,
 #'   or NULL if the download fails or data is unchanged. If return_result = TRUE, returns
@@ -74,7 +77,8 @@ download_istat_data <- function(
   return_result = FALSE,
   check_update = FALSE,
   cache_dir = "meta",
-  existing_data = NULL
+  existing_data = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 ) {
   # Get default values from centralized configuration
   config <- get_istat_config()
@@ -90,6 +94,32 @@ download_istat_data <- function(
   # Input validation
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
+  }
+
+  # HVD routing: delegate to HVD module when api != "legacy"
+  api <- validate_api_surface(api)
+  if (api != "legacy") {
+    istat_log(
+      paste("Using", api, "API for dataset", dataset_id),
+      "INFO",
+      verbose
+    )
+    result <- hvd_download_data(
+      dataset_id = dataset_id,
+      api_version = api,
+      filter = filter %||% "ALL",
+      start_time = start_time,
+      end_time = end_time,
+      timeout = timeout,
+      verbose = verbose
+    )
+    if (result$success && !is.null(result$data)) {
+      result$data[, id := dataset_id]
+    }
+    if (return_result) {
+      return(result)
+    }
+    return(result$data)
   }
 
   # Validate incremental parameter
@@ -240,6 +270,9 @@ download_istat_data <- function(
 #' @param verbose Logical indicating whether to print status messages. Default is TRUE
 #' @param updated_after POSIXct timestamp. If provided, only data updated since this time
 #'   will be retrieved for all datasets. Used for incremental update detection.
+#' @param api Character string specifying the API surface to use. One of
+#'   \code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+#'   session-wide via \code{options(istatlab.default_api = "hvd_v1")}.
 #'
 #' @return A named list of data.tables, one for each dataset
 #' @export
@@ -264,7 +297,8 @@ download_multiple_datasets <- function(
   incremental = FALSE,
   n_cores = parallel::detectCores() - 1,
   verbose = TRUE,
-  updated_after = NULL
+  updated_after = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 ) {
   # Get default values from centralized configuration
   config <- get_istat_config()
@@ -300,7 +334,8 @@ download_multiple_datasets <- function(
       start_time = start_time,
       incremental = incremental,
       verbose = verbose,
-      updated_after = updated_after
+      updated_after = updated_after,
+      api = api
     )
   }
 
@@ -528,7 +563,8 @@ download_istat_data_by_freq <- function(
   verbose = TRUE,
   freq = NULL,
   check_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = "meta",
+  api = getOption("istatlab.default_api", "legacy")
 ) {
   # Get default values from centralized configuration
   config <- get_istat_config()
@@ -540,6 +576,30 @@ download_istat_data_by_freq <- function(
   # Input validation
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
+  }
+
+  # HVD routing
+  api <- validate_api_surface(api)
+  if (api != "legacy") {
+    istat_log(
+      paste("Using", api, "API for dataset", dataset_id),
+      "INFO",
+      verbose
+    )
+    result <- hvd_download_data(
+      dataset_id = dataset_id,
+      api_version = api,
+      filter = filter %||% "ALL",
+      start_time = start_time,
+      end_time = end_time,
+      timeout = timeout,
+      verbose = verbose
+    )
+    if (!result$success || is.null(result$data)) {
+      return(NULL)
+    }
+    result$data[, id := dataset_id]
+    return(list(ALL = result$data))
   }
 
   # Smart update check: compare ISTAT's LAST_UPDATE with our download log
@@ -794,7 +854,8 @@ download_istat_data_latest_edition <- function(
   edition = NULL,
   incremental = FALSE,
   timeout = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  api = getOption("istatlab.default_api", "legacy")
 ) {
   # 1. Configuration and defaults -----
   config <- get_istat_config()
@@ -806,6 +867,30 @@ download_istat_data_latest_edition <- function(
   # 2. Input validation -----
   if (!is.character(dataset_id) || length(dataset_id) != 1) {
     stop("dataset_id must be a single character string")
+  }
+
+  # HVD routing
+  api <- validate_api_surface(api)
+  if (api != "legacy") {
+    istat_log(
+      paste("Using", api, "API for dataset", dataset_id),
+      "INFO",
+      verbose
+    )
+    result <- hvd_download_data(
+      dataset_id = dataset_id,
+      api_version = api,
+      filter = filter %||% "ALL",
+      start_time = start_time,
+      end_time = end_time,
+      timeout = timeout,
+      verbose = verbose
+    )
+    if (!result$success || is.null(result$data)) {
+      return(NULL)
+    }
+    result$data[, id := dataset_id]
+    return(result$data)
   }
 
   # 3. Edition == "all": fall back to regular download -----

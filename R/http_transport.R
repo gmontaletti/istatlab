@@ -532,3 +532,335 @@ http_get_curl <- function(url, timeout, accept, verbose) {
     headers = NULL
   )
 }
+
+# 7. HTTP POST via httr -----
+
+#' HTTP POST using httr Package
+#'
+#' Internal function that performs HTTP POST using the httr package.
+#' Mirrors [http_get_httr()] but sends a POST request with a body payload.
+#' Designed for SDMX filter key queries that exceed GET URL length limits.
+#'
+#' @param url Character string with the full URL
+#' @param body Character string with the POST request body
+#' @param timeout Numeric timeout in seconds
+#' @param accept Character string with Accept header value
+#' @param content_type Character string with Content-Type header value
+#' @param verbose Logical whether to log status messages
+#'
+#' @return A list with success, content, status_code, error, and headers components
+#' @keywords internal
+http_post_httr <- function(
+  url,
+  body,
+  timeout,
+  accept,
+  content_type,
+  verbose
+) {
+  config <- get_istat_config()
+
+  response <- tryCatch(
+    {
+      httr::POST(
+        url,
+        body = body,
+        httr::content_type(content_type),
+        httr::add_headers(
+          Accept = accept,
+          `User-Agent` = config$http$user_agent
+        ),
+        httr::timeout(timeout)
+      )
+    },
+    error = function(e) {
+      return(list(
+        success = FALSE,
+        content = NULL,
+        status_code = NA_integer_,
+        error = e$message,
+        headers = NULL
+      ))
+    }
+  )
+
+  # Check if tryCatch returned an error structure
+  if (is.list(response) && !inherits(response, "response")) {
+    return(response)
+  }
+
+  status <- httr::status_code(response)
+
+  if (status != 200) {
+    # Capture response headers for retry logic (e.g., Retry-After)
+    resp_headers <- tryCatch(
+      {
+        as.list(httr::headers(response))
+      },
+      error = function(e) NULL
+    )
+
+    return(list(
+      success = FALSE,
+      content = NULL,
+      status_code = status,
+      error = paste("HTTP error:", status),
+      headers = resp_headers
+    ))
+  }
+
+  # Extract content
+  content <- tryCatch(
+    {
+      httr::content(response, as = "text", encoding = "UTF-8")
+    },
+    error = function(e) NULL
+  )
+
+  # Validate content
+  if (is.null(content) || nchar(content) == 0) {
+    return(list(
+      success = FALSE,
+      content = NULL,
+      status_code = status,
+      error = "Empty response body",
+      headers = NULL
+    ))
+  }
+
+  list(
+    success = TRUE,
+    content = content,
+    status_code = status,
+    error = NULL,
+    headers = NULL
+  )
+}
+
+# 8. Main HTTP POST function -----
+
+#' HTTP POST Request
+#'
+#' Performs HTTP POST request using httr. Mirrors [http_get()] but for POST
+#' requests with a body payload. No curl fallback is provided for POST.
+#'
+#' @param url Character string with the full URL
+#' @param body Character string with the POST request body (typically an SDMX
+#'   filter key for large queries)
+#' @param timeout Numeric timeout in seconds
+#' @param accept Character string with Accept header value
+#' @param content_type Character string with Content-Type header value.
+#'   Defaults to `"application/x-www-form-urlencoded"`.
+#' @param verbose Logical whether to log status messages
+#'
+#' @return A list with components:
+#'   \itemize{
+#'     \item{success}: Logical indicating if request succeeded
+#'     \item{content}: Character string with response body (or NULL)
+#'     \item{status_code}: HTTP status code (or NA)
+#'     \item{error}: Error message if failed (or NULL)
+#'     \item{method}: Character `"httr"` (POST uses httr only)
+#'     \item{headers}: Response headers list (when available)
+#'   }
+#' @keywords internal
+http_post <- function(
+  url,
+  body,
+  timeout = 120,
+  accept = NULL,
+  content_type = "application/x-www-form-urlencoded",
+  verbose = TRUE
+) {
+  config <- get_istat_config()
+
+  if (is.null(accept)) {
+    accept <- config$http$accept_csv
+  }
+
+  result <- http_post_httr(url, body, timeout, accept, content_type, verbose)
+  result$method <- "httr"
+
+  return(result)
+}
+
+# 9. HTTP POST with retry -----
+
+#' HTTP POST with Retry and Rate Limiting
+#'
+#' Wraps [http_post()] with throttling, retry logic, and ban detection.
+#' Handles 429 (Too Many Requests) and 503 (Service Unavailable) with
+#' exponential backoff. Mirrors [http_get_with_retry()] for POST requests.
+#'
+#' @param url Character string with the full URL
+#' @param body Character string with the POST request body
+#' @param timeout Numeric timeout in seconds
+#' @param accept Character string with Accept header value
+#' @param content_type Character string with Content-Type header value.
+#'   Defaults to `"application/x-www-form-urlencoded"`.
+#' @param verbose Logical whether to log status messages
+#'
+#' @return A list with same structure as [http_post()]
+#' @keywords internal
+http_post_with_retry <- function(
+  url,
+  body,
+  timeout = 120,
+  accept = NULL,
+  content_type = "application/x-www-form-urlencoded",
+  verbose = TRUE
+) {
+  config <- get_istat_config()
+  rl <- config$rate_limit
+
+  for (attempt in seq_len(rl$max_retries + 1)) {
+    # Throttle before each request
+    throttle()
+
+    # Make the request
+    result <- http_post(
+      url,
+      body = body,
+      timeout = timeout,
+      accept = accept,
+      content_type = content_type,
+      verbose = verbose
+    )
+
+    # Success: reset counter and return
+    if (result$success) {
+      .istat_rate_limiter$consecutive_429s <- 0L
+      return(result)
+    }
+
+    # Check if retryable (429 or 503)
+    is_429 <- !is.na(result$status_code) && result$status_code == 429L
+    is_503 <- !is.na(result$status_code) && result$status_code == 503L
+
+    if (!is_429 && !is_503) {
+      # Non-retryable error
+      .istat_rate_limiter$consecutive_429s <- 0L
+      return(result)
+    }
+
+    # Track consecutive 429s
+    if (is_429) {
+      .istat_rate_limiter$consecutive_429s <- .istat_rate_limiter$consecutive_429s +
+        1L
+
+      if (
+        detect_ban(
+          .istat_rate_limiter$consecutive_429s,
+          rl$ban_detection_threshold
+        )
+      ) {
+        return(result)
+      }
+    }
+
+    # Check if we have retries left
+    if (attempt > rl$max_retries) {
+      if (verbose) {
+        istat_log(
+          paste("Max retries reached after", rl$max_retries, "attempts"),
+          "WARNING",
+          verbose
+        )
+      }
+      return(result)
+    }
+
+    # Compute backoff with jitter
+    retry_after <- NULL
+    if (!is.null(result$headers) && !is.null(result$headers[["retry-after"]])) {
+      retry_after <- suppressWarnings(as.numeric(result$headers[[
+        "retry-after"
+      ]]))
+    }
+
+    backoff <- if (!is.null(retry_after) && !is.na(retry_after)) {
+      retry_after
+    } else {
+      min(
+        rl$initial_backoff * (rl$backoff_multiplier^(attempt - 1)),
+        rl$max_backoff
+      )
+    }
+
+    # Add jitter to backoff
+    jitter_range <- backoff * rl$jitter_fraction
+    backoff <- backoff + stats::runif(1, -jitter_range, jitter_range)
+    backoff <- max(1, backoff)
+
+    status_type <- if (is_429) {
+      "429 (rate limited)"
+    } else {
+      "503 (service unavailable)"
+    }
+    if (verbose) {
+      istat_log(
+        paste0(
+          "HTTP ",
+          status_type,
+          " on attempt ",
+          attempt,
+          ". Retrying in ",
+          round(backoff),
+          "s..."
+        ),
+        "WARNING",
+        verbose
+      )
+    }
+
+    Sys.sleep(backoff)
+  }
+
+  result
+}
+
+# 10. POST JSON helper -----
+
+#' HTTP POST with JSON Parsing
+#'
+#' Sends a POST request through the throttled transport layer and parses the
+#' response as JSON. Mirrors [http_get_json()] for POST requests.
+#'
+#' @param url Character string with the full URL
+#' @param body Character string with the POST request body
+#' @param timeout Numeric timeout in seconds
+#' @param verbose Logical whether to log status messages
+#' @param simplifyVector Logical passed to [jsonlite::fromJSON()]. Default FALSE.
+#' @param flatten Logical passed to [jsonlite::fromJSON()]. Default FALSE.
+#' @param content_type Character string with Content-Type header value.
+#'   Defaults to `"application/x-www-form-urlencoded"`.
+#'
+#' @return Parsed JSON object (list), or signals an error on failure
+#' @keywords internal
+http_post_json <- function(
+  url,
+  body,
+  timeout = 120,
+  verbose = TRUE,
+  simplifyVector = FALSE,
+  flatten = FALSE,
+  content_type = "application/x-www-form-urlencoded"
+) {
+  result <- http_post_with_retry(
+    url,
+    body = body,
+    timeout = timeout,
+    accept = "application/json",
+    content_type = content_type,
+    verbose = verbose
+  )
+
+  if (!result$success) {
+    stop(result$error %||% paste("HTTP error:", result$status_code))
+  }
+
+  jsonlite::fromJSON(
+    result$content,
+    simplifyVector = simplifyVector,
+    flatten = flatten
+  )
+}

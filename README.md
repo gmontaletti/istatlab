@@ -10,6 +10,7 @@
 ## Features
 
 - **Data Download**: Streamlined access to ISTAT's SDMX API with automatic retry and error handling
+- **HVD API Support**: Access ISTAT's High Value Datasets through HVD v1 (SDMX 2.1) and v2 (SDMX 3.0) endpoints
 - **Metadata Management**: Comprehensive metadata handling including codelists and dimensions
 - **Data Processing**: Automatic labeling, time formatting, and data validation
 - **Time Series Analysis**: Trend analysis, growth rate calculations, and structural break detection
@@ -49,12 +50,37 @@ create_time_series_plot(processed_data,
                        subtitle = "Source: ISTAT")
 ```
 
+## HVD Quick Start
+
+```r
+library(istatlab)
+
+# Check HVD endpoint connectivity
+test_hvd_connectivity()
+
+# Download data directly from HVD v1
+data <- download_hvd_data("534_50", version = "v1", start_time = "2024")
+
+# Or use existing functions with the api parameter
+data <- download_istat_data("534_50", start_time = "2024", api = "hvd_v1")
+
+# Set HVD as default API for the session
+options(istatlab.default_api = "hvd_v1")
+data <- download_istat_data("534_50", start_time = "2024")
+```
+
 ## Main Functions
 
 ### Data Download
 - `download_istat_data()`: Download data for a single dataset
 - `download_multiple_datasets()`: Download multiple datasets in parallel
 - `test_endpoint_connectivity()`: Check API endpoint connectivity
+
+### HVD (High Value Datasets)
+- `download_hvd_data()`: Download data directly from HVD endpoints
+- `list_hvd_dataflows()`: List available HVD dataflows
+- `test_hvd_connectivity()`: Check HVD endpoint accessibility
+- `get_hvd_info()`: Get HVD API version information
 
 ### Metadata Management
 - `download_metadata()`: Download dataset metadata
@@ -170,7 +196,7 @@ To cite istatlab in publications:
 citation("istatlab")
 ```
 
-Montaletti, G. (2026). istatlab: Download and Process Italian Statistical Data from ISTAT. R package version 0.6.0. https://github.com/gmontaletti/istatlab
+Montaletti, G. (2026). istatlab: Download and Process Italian Statistical Data from ISTAT. R package version 0.7.0. https://github.com/gmontaletti/istatlab
 
 ## Author
 

@@ -11,7 +11,8 @@ download_multiple_datasets(
   incremental = FALSE,
   n_cores = parallel::detectCores() - 1,
   verbose = TRUE,
-  updated_after = NULL
+  updated_after = NULL,
+  api = getOption("istatlab.default_api", "legacy")
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ Default is parallel::detectCores() - 1}
 
 \item{updated_after}{POSIXct timestamp. If provided, only data updated since this time
 will be retrieved for all datasets. Used for incremental update detection.}
+
+\item{api}{Character string specifying the API surface to use. One of
+\code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+session-wide via \code{options(istatlab.default_api = "hvd_v1")}.}
 }
 \value{
 A named list of data.tables, one for each dataset
