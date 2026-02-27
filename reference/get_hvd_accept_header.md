@@ -1,12 +1,11 @@
 # Get HVD Accept Header
 
 Returns the appropriate HTTP `Accept` header value for the specified HVD
-API version, content type, and response format. The SDMX standard uses
-distinct media types for data and structure endpoints:
-
-- Data endpoints: `application/vnd.sdmx.data+{format}`
-
-- Structure endpoints: `application/vnd.sdmx.structure+{format}`
+API version, content type, and response format. Data endpoints use
+SDMX-specific media types (`application/vnd.sdmx.data+{format}`).
+Structure endpoints use generic media types (`application/json`,
+`application/xml`, `text/csv`) because the HVD server rejects
+SDMX-specific Accept headers on structure endpoints with HTTP 406.
 
 ## Usage
 
@@ -36,11 +35,6 @@ get_hvd_accept_header(api_version, format = "csv", type = "data")
 
 Character string containing the Accept header value.
 
-## Details
-
-The version suffix differs between SDMX 2.1 (`1.0.0`) and SDMX 3.0
-(`2.0.0`).
-
 ## Examples
 
 ``` r
@@ -52,11 +46,11 @@ get_hvd_accept_header("hvd_v1", "csv")
 get_hvd_accept_header("hvd_v2", "json")
 # "application/vnd.sdmx.data+json;version=2.0.0"
 
-# Structure headers for metadata endpoints
+# Structure headers for metadata endpoints (generic)
 get_hvd_accept_header("hvd_v1", "json", type = "structure")
-# "application/vnd.sdmx.structure+json;version=1.0.0"
+# "application/json"
 
 get_hvd_accept_header("hvd_v2", "json", type = "structure")
-# "application/vnd.sdmx.structure+json;version=2.0.0"
+# "application/json"
 } # }
 ```

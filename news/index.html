@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,19 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.2" id="istatlab-072">istatlab 0.7.2<a class="anchor" aria-label="anchor" href="#istatlab-072"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-2"></a></h3>
+<ul><li>Fixed HTTP 406 errors on HVD structure endpoints. The HVD server rejects all SDMX-specific Accept headers for structure queries; these now use generic <code>application/json</code>, <code>application/xml</code>, or <code>text/csv</code> headers. Data endpoints retain SDMX-specific headers.</li>
+<li>Fixed <code><a href="../reference/list_hvd_dataflows.html">list_hvd_dataflows()</a></code> response parser. The HVD server returns dataflows in a <code>references</code> map keyed by URN, not in the standard <code>Structure.Dataflows.Dataflow</code> path. The parser now handles both formats.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-7-2">Tests<a class="anchor" aria-label="anchor" href="#tests-0-7-2"></a></h3>
+<ul><li>Added 29 tests for <code><a href="../reference/dot-parse_hvd_dataflows.html">.parse_hvd_dataflows()</a></code> covering all response format variants.</li>
+<li>Updated Accept header tests to match generic structure headers.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.1" id="istatlab-071">istatlab 0.7.1<a class="anchor" aria-label="anchor" href="#istatlab-071"></a></h2>
 <div class="section level3">
