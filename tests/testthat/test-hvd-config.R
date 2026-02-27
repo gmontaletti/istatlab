@@ -338,64 +338,54 @@ test_that("default type='data' preserves backward compatibility", {
   expect_identical(header_default, header_explicit)
 })
 
-test_that("v1 structure json returns correct SDMX 2.1 structure header", {
+test_that("v1 structure json returns generic application/json", {
   header <- get_hvd_accept_header("hvd_v1", "json", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+json;version=1.0.0"
-  )
+  expect_equal(header, "application/json")
 })
 
-test_that("v2 structure json returns correct SDMX 3.0 structure header", {
+test_that("v2 structure json returns generic application/json", {
   header <- get_hvd_accept_header("hvd_v2", "json", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+json;version=2.0.0"
-  )
+  expect_equal(header, "application/json")
 })
 
-test_that("v1 structure csv returns correct structure CSV header", {
+test_that("v1 structure csv returns generic text/csv", {
   header <- get_hvd_accept_header("hvd_v1", "csv", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+csv;version=1.0.0"
-  )
+  expect_equal(header, "text/csv")
 })
 
-test_that("v2 structure csv returns correct structure CSV header", {
+test_that("v2 structure csv returns generic text/csv", {
   header <- get_hvd_accept_header("hvd_v2", "csv", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+csv;version=2.0.0"
-  )
+  expect_equal(header, "text/csv")
 })
 
-test_that("v1 structure xml returns correct structure XML header", {
+test_that("v1 structure xml returns generic application/xml", {
   header <- get_hvd_accept_header("hvd_v1", "xml", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+xml;version=1.0.0"
-  )
+  expect_equal(header, "application/xml")
 })
 
-test_that("v2 structure xml returns correct structure XML header", {
+test_that("v2 structure xml returns generic application/xml", {
   header <- get_hvd_accept_header("hvd_v2", "xml", type = "structure")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+xml;version=2.0.0"
-  )
+  expect_equal(header, "application/xml")
 })
 
-test_that("data type does not use structure media type", {
+test_that("structure headers are identical across api versions", {
+  for (fmt in c("json", "csv", "xml")) {
+    h_v1 <- get_hvd_accept_header("hvd_v1", fmt, type = "structure")
+    h_v2 <- get_hvd_accept_header("hvd_v2", fmt, type = "structure")
+    expect_identical(h_v1, h_v2)
+  }
+})
+
+test_that("data type does not use generic media type", {
   header <- get_hvd_accept_header("hvd_v1", "json", type = "data")
-  expect_false(grepl("structure\\+json", header))
+  expect_false(identical(header, "application/json"))
   expect_true(grepl("data\\+json", header))
 })
 
-test_that("structure type does not use data media type", {
+test_that("structure type does not use SDMX-specific media type", {
   header <- get_hvd_accept_header("hvd_v1", "json", type = "structure")
-  expect_false(grepl("data\\+json", header))
-  expect_true(grepl("structure\\+json", header))
+  expect_false(grepl("vnd\\.sdmx", header))
+  expect_equal(header, "application/json")
 })
 
 test_that("get_hvd_accept_header errors on invalid type", {
@@ -411,8 +401,5 @@ test_that("get_hvd_accept_header errors on invalid type", {
 
 test_that("get_hvd_accept_header is case-insensitive for type", {
   header <- get_hvd_accept_header("hvd_v1", "json", type = "STRUCTURE")
-  expect_equal(
-    header,
-    "application/vnd.sdmx.structure+json;version=1.0.0"
-  )
+  expect_equal(header, "application/json")
 })

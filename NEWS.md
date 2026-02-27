@@ -1,3 +1,15 @@
+# istatlab 0.7.2
+
+## Bug Fixes
+
+* Fixed HTTP 406 errors on HVD structure endpoints. The HVD server rejects all SDMX-specific Accept headers for structure queries; these now use generic `application/json`, `application/xml`, or `text/csv` headers. Data endpoints retain SDMX-specific headers.
+* Fixed `list_hvd_dataflows()` response parser. The HVD server returns dataflows in a `references` map keyed by URN, not in the standard `Structure.Dataflows.Dataflow` path. The parser now handles both formats.
+
+## Tests
+
+* Added 29 tests for `.parse_hvd_dataflows()` covering all response format variants.
+* Updated Accept header tests to match generic structure headers.
+
 # istatlab 0.7.1
 
 ## Bug Fixes

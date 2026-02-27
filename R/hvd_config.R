@@ -692,13 +692,11 @@ build_sdmx3_filters <- function(
 #' Get HVD Accept Header
 #'
 #' Returns the appropriate HTTP `Accept` header value for the specified HVD API
-#' version, content type, and response format. The SDMX standard uses distinct
-#' media types for data and structure endpoints:
-#' - Data endpoints: `application/vnd.sdmx.data+{format}`
-#' - Structure endpoints: `application/vnd.sdmx.structure+{format}`
-#'
-#' The version suffix differs between SDMX 2.1 (`1.0.0`) and SDMX 3.0
-#' (`2.0.0`).
+#' version, content type, and response format. Data endpoints use SDMX-specific
+#' media types (`application/vnd.sdmx.data+{format}`). Structure endpoints use
+#' generic media types (`application/json`, `application/xml`, `text/csv`)
+#' because the HVD server rejects SDMX-specific Accept headers on structure
+#' endpoints with HTTP 406.
 #'
 #' @param api_version Character string, either `"hvd_v1"` or `"hvd_v2"`.
 #' @param format Character string specifying the desired response format. One
@@ -720,12 +718,12 @@ build_sdmx3_filters <- function(
 #' get_hvd_accept_header("hvd_v2", "json")
 #' # "application/vnd.sdmx.data+json;version=2.0.0"
 #'
-#' # Structure headers for metadata endpoints
+#' # Structure headers for metadata endpoints (generic)
 #' get_hvd_accept_header("hvd_v1", "json", type = "structure")
-#' # "application/vnd.sdmx.structure+json;version=1.0.0"
+#' # "application/json"
 #'
 #' get_hvd_accept_header("hvd_v2", "json", type = "structure")
-#' # "application/vnd.sdmx.structure+json;version=2.0.0"
+#' # "application/json"
 #' }
 #'
 #' @keywords internal
@@ -784,30 +782,29 @@ get_hvd_accept_header <- function(api_version, format = "csv", type = "data") {
     )
   }
 
-  # 8b. Version string lookup -----
+  # 8b. Media type dispatch -----
+  if (type == "structure") {
+    return(switch(
+      EXPR = format,
+      "csv" = "text/csv",
+      "json" = "application/json",
+      "xml" = "application/xml"
+    ))
+  }
+
+  # 8c. SDMX-specific media type for data endpoints -----
   sdmx_version <- switch(
     EXPR = api_version,
     "hvd_v1" = "1.0.0",
     "hvd_v2" = "2.0.0"
   )
 
-  # 8c. Media type lookup -----
-  if (type == "data") {
-    media_type <- switch(
-      EXPR = format,
-      "csv" = "application/vnd.sdmx.data+csv",
-      "json" = "application/vnd.sdmx.data+json",
-      "xml" = "application/vnd.sdmx.structurespecificdata+xml"
-    )
-  } else {
-    # type == "structure"
-    media_type <- switch(
-      EXPR = format,
-      "csv" = "application/vnd.sdmx.structure+csv",
-      "json" = "application/vnd.sdmx.structure+json",
-      "xml" = "application/vnd.sdmx.structure+xml"
-    )
-  }
+  media_type <- switch(
+    EXPR = format,
+    "csv" = "application/vnd.sdmx.data+csv",
+    "json" = "application/vnd.sdmx.data+json",
+    "xml" = "application/vnd.sdmx.structurespecificdata+xml"
+  )
 
   paste0(media_type, ";version=", sdmx_version)
 }

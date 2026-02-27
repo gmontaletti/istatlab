@@ -403,17 +403,26 @@ list_hvd_dataflows <- function(
   flows <- NULL
 
   if (api_version == "hvd_v1") {
-    # v1 path: $Structure$Dataflows$Dataflow (SDMX 2.1 JSON)
     flows <- json_data[["Structure"]][["Dataflows"]][["Dataflow"]]
     if (is.null(flows)) {
-      # Alternative path for some SDMX implementations
       flows <- json_data[["Dataflows"]][["Dataflow"]]
     }
+    if (is.null(flows)) {
+      refs <- json_data[["references"]]
+      if (!is.null(refs) && length(refs) > 0) {
+        flows <- unname(refs)
+      }
+    }
   } else if (api_version == "hvd_v2") {
-    # v2 path: $data$dataflows (SDMX 3.0 JSON)
     flows <- json_data[["data"]][["dataflows"]]
     if (is.null(flows)) {
       flows <- json_data[["Dataflow"]]
+    }
+    if (is.null(flows)) {
+      refs <- json_data[["references"]]
+      if (!is.null(refs) && length(refs) > 0) {
+        flows <- unname(refs)
+      }
     }
   }
 
