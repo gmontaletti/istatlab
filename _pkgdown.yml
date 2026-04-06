@@ -57,6 +57,7 @@ reference:
       - download_istat_data
       - download_istat_data_by_freq
       - download_istat_data_latest_edition
+      - check_bulk_updates
       - download_multiple_datasets
       - build_sdmx_filter_key
       - update_data_download_log
