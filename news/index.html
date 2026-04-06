@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">istatlab</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,23 @@
       <small>Source: <a href="https://github.com/gmontaletti/istatlab/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.3" id="istatlab-073">istatlab 0.7.3<a class="anchor" aria-label="anchor" href="#istatlab-073"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-7-3">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-7-3"></a></h3>
+<ul><li>New <code><a href="../reference/check_bulk_updates.html">check_bulk_updates()</a></code> function for scanning multiple datasets to detect which ones require updating. The function performs metadata-only queries without downloading actual data, returning a vector of dataset IDs with newer updates available. This enables efficient update scheduling for bulk data pipelines.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-3">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-3"></a></h3>
+<ul><li>Fixed <code><a href="../reference/check_bulk_updates.html">check_bulk_updates()</a></code> to correctly handle <code>NA</code> POSIXct values returned from <code><a href="../reference/get_dataset_last_update.html">get_dataset_last_update()</a></code>, preventing type coercion errors when comparing update timestamps.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-7-3">Internal<a class="anchor" aria-label="anchor" href="#internal-0-7-3"></a></h3>
+<ul><li>Added <code>targets</code> pipeline at <code>pipelines/daily_employment/</code> for daily automated download of employment datasets to DuckDB.</li>
+<li>Added <code>dataset_id</code> and <code>status</code> to <code><a href="https://rdrr.io/r/utils/globalVariables.html" class="external-link">globalVariables()</a></code> in <code>R/istatlab-package.R</code> to suppress R CMD check NOTEs.</li>
+<li>Added 35 unit tests for <code><a href="../reference/check_bulk_updates.html">check_bulk_updates()</a></code> covering edge cases, API failures, and timestamp handling.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.2" id="istatlab-072">istatlab 0.7.2<a class="anchor" aria-label="anchor" href="#istatlab-072"></a></h2>
 <div class="section level3">

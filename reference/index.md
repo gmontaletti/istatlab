@@ -29,6 +29,8 @@ Download data from ISTAT SDMX API.
   : Download ISTAT Data Split by Frequency
 - [`download_istat_data_latest_edition()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data_latest_edition.md)
   : Download ISTAT Data for the Latest Edition
+- [`check_bulk_updates()`](https://gmontaletti.github.io/istatlab/reference/check_bulk_updates.md)
+  : Check Multiple Datasets for Updates
 - [`download_multiple_datasets()`](https://gmontaletti.github.io/istatlab/reference/download_multiple_datasets.md)
   : Download Multiple Datasets
 - [`build_sdmx_filter_key()`](https://gmontaletti.github.io/istatlab/reference/build_sdmx_filter_key.md)
