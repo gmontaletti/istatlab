@@ -1,3 +1,19 @@
+# istatlab 0.7.3
+
+## New Features
+
+* New `check_bulk_updates()` function for scanning multiple datasets to detect which ones require updating. The function performs metadata-only queries without downloading actual data, returning a vector of dataset IDs with newer updates available. This enables efficient update scheduling for bulk data pipelines.
+
+## Bug Fixes
+
+* Fixed `check_bulk_updates()` to correctly handle `NA` POSIXct values returned from `get_dataset_last_update()`, preventing type coercion errors when comparing update timestamps.
+
+## Internal
+
+* Added `targets` pipeline at `pipelines/daily_employment/` for daily automated download of employment datasets to DuckDB.
+* Added `dataset_id` and `status` to `globalVariables()` in `R/istatlab-package.R` to suppress R CMD check NOTEs.
+* Added 35 unit tests for `check_bulk_updates()` covering edge cases, API failures, and timestamp handling.
+
 # istatlab 0.7.2
 
 ## Bug Fixes

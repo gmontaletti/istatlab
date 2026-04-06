@@ -254,6 +254,179 @@ download_istat_data <- function(
   result$data
 }
 
+# 0. Bulk Update Check -----
+
+#' Check Multiple Datasets for Updates
+#'
+#' Scans a vector of dataset codes against the ISTAT metadata endpoint
+#' to determine which datasets have been updated since a given cutoff date.
+#' Uses only lightweight dataflow metadata queries (no data is downloaded).
+#' The result can be passed directly to \code{\link{download_multiple_datasets}}.
+#'
+#' @param dataset_ids Character vector of ISTAT dataset codes
+#'   (e.g., \code{c("534_50", "150_908")}).
+#' @param cutoff POSIXct timestamp. Datasets whose LAST_UPDATE is after this
+#'   time are flagged as needing update. Default is 24 hours before
+#'   \code{Sys.time()}.
+#' @param api Character string specifying the API surface. One of
+#'   \code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set
+#'   session-wide via \code{options(istatlab.default_api = "hvd_v1")}.
+#' @param timeout Numeric, seconds per metadata request. Default is 30.
+#' @param verbose Logical indicating whether to print progress messages.
+#'   Default is TRUE.
+#'
+#' @return A character vector of dataset codes that need updating. Datasets
+#'   where the metadata check failed are included (conservative approach).
+#'   The vector has an attribute \code{"update_details"}: a \code{data.table}
+#'   with columns \code{dataset_id}, \code{last_update} (POSIXct or NA),
+#'   and \code{status} (\code{"needs_update"}, \code{"up_to_date"}, or
+#'   \code{"check_failed"}).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Check which datasets were updated in the last 24 hours
+#' to_update <- check_bulk_updates(c("534_50", "150_908", "150_915"))
+#'
+#' # Then download only those
+#' if (length(to_update) > 0) {
+#'   results <- download_multiple_datasets(to_update)
+#' }
+#'
+#' # Check with a custom cutoff (last week)
+#' to_update <- check_bulk_updates(
+#'   c("534_50", "150_908"),
+#'   cutoff = Sys.time() - 7 * 86400
+#' )
+#'
+#' # Inspect details
+#' attr(to_update, "update_details")
+#' }
+check_bulk_updates <- function(
+  dataset_ids,
+  cutoff = Sys.time() - 86400,
+  api = getOption("istatlab.default_api", "legacy"),
+  timeout = 30,
+  verbose = TRUE
+) {
+  # Input validation
+  if (!is.character(dataset_ids) || length(dataset_ids) == 0) {
+    stop("dataset_ids must be a non-empty character vector")
+  }
+  if (anyNA(dataset_ids)) {
+    stop("dataset_ids must not contain NA values")
+  }
+  if (!inherits(cutoff, "POSIXct") || length(cutoff) != 1) {
+    stop("cutoff must be a single POSIXct timestamp")
+  }
+  valid_apis <- c("legacy", "hvd_v1", "hvd_v2")
+  if (!api %in% valid_apis) {
+    stop("api must be one of: ", paste(valid_apis, collapse = ", "))
+  }
+
+  # De-duplicate
+  dataset_ids <- unique(dataset_ids)
+  n <- length(dataset_ids)
+
+  # Initialize tracking table
+  details <- data.table::data.table(
+    dataset_id = dataset_ids,
+    last_update = as.POSIXct(NA_real_, tz = "UTC"),
+    status = rep("pending", n)
+  )
+
+  if (verbose) {
+    message(
+      "Checking ",
+      n,
+      " dataset",
+      if (n > 1) "s",
+      " for updates since ",
+      format(cutoff, "%Y-%m-%d %H:%M:%S %Z"),
+      " ..."
+    )
+  }
+
+  # Sequential loop with rate limiting
+  for (i in seq_len(n)) {
+    if (i > 1) {
+      throttle()
+    }
+
+    ts <- tryCatch(
+      get_dataset_last_update(dataset_ids[i], timeout = timeout),
+      error = function(e) {
+        warning(
+          "Could not check update for '",
+          dataset_ids[i],
+          "': ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+        NULL
+      }
+    )
+
+    if (is.null(ts) || anyNA(ts)) {
+      data.table::set(details, i, "status", "check_failed")
+    } else {
+      data.table::set(details, i, "last_update", ts)
+      if (ts > cutoff) {
+        data.table::set(details, i, "status", "needs_update")
+      } else {
+        data.table::set(details, i, "status", "up_to_date")
+      }
+    }
+
+    if (verbose) {
+      status_label <- details$status[i]
+      ts_label <- if (is.na(details$last_update[i])) {
+        "metadata unavailable"
+      } else {
+        format(details$last_update[i], "%Y-%m-%d %H:%M:%S UTC")
+      }
+      message(
+        "  [",
+        i,
+        "/",
+        n,
+        "] ",
+        dataset_ids[i],
+        ": ",
+        status_label,
+        " (",
+        ts_label,
+        ")"
+      )
+    }
+  }
+
+  # Build output: include needs_update + check_failed (conservative)
+  to_update <- details[
+    status %in% c("needs_update", "check_failed"),
+    dataset_id
+  ]
+  attr(to_update, "update_details") <- details
+
+  # Summary
+  if (verbose) {
+    counts <- table(details$status)
+    parts <- character(0)
+    if ("needs_update" %in% names(counts)) {
+      parts <- c(parts, paste0(counts[["needs_update"]], " need updating"))
+    }
+    if ("up_to_date" %in% names(counts)) {
+      parts <- c(parts, paste0(counts[["up_to_date"]], " up-to-date"))
+    }
+    if ("check_failed" %in% names(counts)) {
+      parts <- c(parts, paste0(counts[["check_failed"]], " check failed"))
+    }
+    message("Update check complete: ", paste(parts, collapse = ", "))
+  }
+
+  to_update
+}
+
 #' Download Multiple Datasets
 #'
 #' Downloads multiple datasets from ISTAT SDMX API in parallel.

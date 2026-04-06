@@ -59,7 +59,9 @@ utils::globalVariables(c(
   "STRUCTURE",
   "STRUCTURE_ID",
   "STRUCTURE_NAME",
-  "ACTION"
+  "ACTION",
+  "dataset_id",
+  "status"
 ))
 
 #' istatlab: Download and Process Italian Statistical Data from ISTAT
