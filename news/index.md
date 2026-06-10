@@ -1,5 +1,25 @@
 # Changelog
 
+## istatlab 0.8.0
+
+### Nuove funzionalità
+
+- La directory della cache dei metadati è ora configurabile tramite la
+  variabile d’ambiente `ISTATLAB_CACHE_DIR`. La risoluzione avviene con
+  `Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`: quando la
+  variabile non è impostata il comportamento resta invariato (directory
+  locale `meta/`). Impostando la variabile (ad esempio in `.Renviron`)
+  più progetti possono condividere una sola cache (es.
+  `shared_data/meta`), evitando la duplicazione di `codelists.rds` e
+  `flussi_istat.rds`.
+
+### Interno
+
+- Nuovo helper interno
+  [`.istatlab_cache_dir()`](https://gmontaletti.github.io/istatlab/reference/dot-istatlab_cache_dir.md)
+  usato come unica regola di risoluzione della directory di cache in
+  tutte le funzioni che leggono o scrivono i metadati.
+
 ## istatlab 0.7.3
 
 ### New Features

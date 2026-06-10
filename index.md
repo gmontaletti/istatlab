@@ -27,6 +27,7 @@ You can install the development version of istatlab from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("gmontaletti/istatlab")
 ```
@@ -34,6 +35,7 @@ devtools::install_github("gmontaletti/istatlab")
 ## Quick Start
 
 ``` r
+
 library(istatlab)
 
 # Check API connectivity
@@ -58,6 +60,7 @@ create_time_series_plot(processed_data,
 ## HVD Quick Start
 
 ``` r
+
 library(istatlab)
 
 # Check HVD endpoint connectivity
@@ -141,6 +144,7 @@ data <- download_istat_data("534_50", start_time = "2024")
 ## Workflow Example
 
 ``` r
+
 library(istatlab)
 
 # 1. Explore available datasets
@@ -197,6 +201,22 @@ The package automatically handles: - API timeouts and connection
 issues - Metadata caching (refreshes every 14 days) - Data validation
 and error handling - Memory-efficient data processing with data.table
 
+### Metadata cache directory
+
+By default the metadata cache (`codelists.rds`, `flussi_istat.rds`,
+`codelist_metadata.rds`, …) is stored in a local `meta/` directory. Set
+the `ISTATLAB_CACHE_DIR` environment variable to share a single cache
+across multiple projects:
+
+``` r
+# In .Renviron (per project or user-wide)
+ISTATLAB_CACHE_DIR=/path/to/shared_data/meta
+```
+
+The directory is resolved as
+`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`; when the variable is
+unset, behavior is unchanged (local `meta/` directory).
+
 ## Dependencies
 
 Core dependencies: - `data.table`: Fast data manipulation - `httr`: HTTP
@@ -219,11 +239,12 @@ MIT License. See
 To cite istatlab in publications:
 
 ``` r
+
 citation("istatlab")
 ```
 
 Montaletti, G. (2026). istatlab: Download and Process Italian
-Statistical Data from ISTAT. R package version 0.7.3.
+Statistical Data from ISTAT. R package version 0.8.0.
 <https://github.com/gmontaletti/istatlab>
 
 ## Author

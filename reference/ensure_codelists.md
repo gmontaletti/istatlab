@@ -7,7 +7,7 @@ apply_labels() from failing on new datasets.
 ## Usage
 
 ``` r
-ensure_codelists(dataset_id, cache_dir = "meta", verbose = TRUE)
+ensure_codelists(dataset_id, cache_dir = .istatlab_cache_dir(), verbose = TRUE)
 ```
 
 ## Arguments
@@ -18,7 +18,8 @@ ensure_codelists(dataset_id, cache_dir = "meta", verbose = TRUE)
 
 - cache_dir:
 
-  Character, cache directory path. Default "meta"
+  Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR`
+  environment variable, or `"meta"` if unset.
 
 - verbose:
 

@@ -18,7 +18,7 @@ download_istat_data_by_freq(
   verbose = TRUE,
   freq = NULL,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   api = getOption("istatlab.default_api", "legacy")
 )
 ```
@@ -78,8 +78,9 @@ download_istat_data_by_freq(
 
 - cache_dir:
 
-  Character string specifying directory for download log cache. Default
-  is "meta".
+  Character string specifying directory for download log cache. Defaults
+  to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if
+  unset.
 
 - api:
 

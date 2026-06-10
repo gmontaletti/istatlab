@@ -5,7 +5,7 @@ Saves per-codelist metadata (timestamps, TTL) to cache.
 ## Usage
 
 ``` r
-save_codelist_metadata(metadata, cache_dir = "meta")
+save_codelist_metadata(metadata, cache_dir = .istatlab_cache_dir())
 ```
 
 ## Arguments
@@ -16,7 +16,8 @@ save_codelist_metadata(metadata, cache_dir = "meta")
 
 - cache_dir:
 
-  Character, cache directory path. Default "meta"
+  Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR`
+  environment variable, or `"meta"` if unset.
 
 ## Value
 

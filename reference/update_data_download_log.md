@@ -5,7 +5,7 @@ Records the download timestamp and ISTAT's LAST_UPDATE for a dataset.
 ## Usage
 
 ``` r
-update_data_download_log(dataset_id, cache_dir = "meta")
+update_data_download_log(dataset_id, cache_dir = .istatlab_cache_dir())
 ```
 
 ## Arguments

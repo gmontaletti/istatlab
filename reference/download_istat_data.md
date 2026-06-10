@@ -18,7 +18,7 @@ download_istat_data(
   updated_after = NULL,
   return_result = FALSE,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   existing_data = NULL,
   api = getOption("istatlab.default_api", "legacy")
 )
@@ -81,8 +81,9 @@ download_istat_data(
 
 - cache_dir:
 
-  Character string specifying directory for download log cache. Default
-  is "meta"
+  Character string specifying directory for download log cache. Defaults
+  to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if
+  unset.
 
 - existing_data:
 
@@ -102,6 +103,14 @@ A data.table containing the downloaded data with an additional 'id'
 column, or NULL if the download fails or data is unchanged. If
 return_result = TRUE, returns an istat_result object with additional
 metadata (exit_code, md5, message, is_timeout).
+
+## Details
+
+The default `cache_dir` is resolved from the `ISTATLAB_CACHE_DIR`
+environment variable
+(`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`). Set this variable,
+for example in `.Renviron`, to share a single metadata cache across
+multiple projects; when unset, the local `"meta"` directory is used.
 
 ## Examples
 

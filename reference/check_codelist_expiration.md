@@ -8,7 +8,7 @@ codelists that need to be refreshed.
 ``` r
 check_codelist_expiration(
   codelist_ids = NULL,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_check = FALSE
 )
 ```
@@ -22,7 +22,8 @@ check_codelist_expiration(
 
 - cache_dir:
 
-  Character, cache directory path. Default "meta"
+  Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR`
+  environment variable, or `"meta"` if unset.
 
 - force_check:
 

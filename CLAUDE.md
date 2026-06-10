@@ -31,6 +31,7 @@ This is a standard R package with the following core structure:
 ### Building and Checking
 
 ``` r
+
 # Load package for development
 devtools::load_all()
 
@@ -47,6 +48,7 @@ devtools::install()
 ### Testing
 
 ``` r
+
 # Run all tests
 devtools::test()
 
@@ -68,6 +70,7 @@ outside the package structure.
 ### Documentation
 
 ``` r
+
 # Generate documentation from roxygen2 comments
 devtools::document()
 

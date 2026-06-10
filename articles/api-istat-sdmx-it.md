@@ -1,6 +1,7 @@
 # API ISTAT SDMX: guida completa
 
 ``` r
+
 library(istatlab)
 library(data.table)
 ```
@@ -18,6 +19,7 @@ ottenuta con
 [`get_istat_config()`](https://gmontaletti.github.io/istatlab/reference/get_istat_config.md):
 
 ``` r
+
 # 1. Ottenere la configurazione del servizio -----
 config <- get_istat_config()
 
@@ -37,6 +39,7 @@ La configurazione include:
 Gli endpoint principali sono:
 
 ``` r
+
 # 2. Visualizzare gli endpoint disponibili -----
 config$endpoints$rest_v1          # API RESTful v1 (legacy)
 config$endpoints$rest_v2          # API RESTful v2
@@ -51,6 +54,7 @@ config$endpoints$availableconstraint  # Valori disponibili per le dimensioni
 Le impostazioni predefinite includono:
 
 ``` r
+
 # 3. Impostazioni predefinite -----
 config$defaults$timeout           # Timeout richieste HTTP (240 secondi)
 config$defaults$cache_days        # Durata cache metadati (14 giorni)
@@ -71,6 +75,7 @@ L’endpoint data viene utilizzato per scaricare i dati da un dataset
 specifico:
 
 ``` r
+
 # 1. URL per il download dei dati -----
 url <- build_istat_url(
   endpoint = "data",
@@ -103,6 +108,7 @@ print(url)
 L’endpoint dataflow restituisce l’elenco di tutti i dataset disponibili:
 
 ``` r
+
 # 2. URL per l'elenco dei dataset -----
 url <- build_istat_url(endpoint = "dataflow")
 print(url)
@@ -114,6 +120,7 @@ L’endpoint datastructure fornisce la struttura di un dataset, incluse le
 dimensioni e le codelists:
 
 ``` r
+
 # 3. URL per la struttura di un dataset -----
 url <- build_istat_url(
   endpoint = "datastructure",
@@ -127,6 +134,7 @@ print(url)
 L’endpoint codelist restituisce le definizioni delle codelists:
 
 ``` r
+
 # 4. URL per le definizioni delle codelists -----
 url <- build_istat_url(endpoint = "codelist")
 print(url)
@@ -138,6 +146,7 @@ L’API SDMX supporta vari parametri di query per filtrare e limitare i
 dati:
 
 ``` r
+
 # 5. Parametri di query avanzati -----
 
 # Limitare il numero di osservazioni
@@ -164,6 +173,7 @@ La funzione
 restituisce informazioni su tutti gli endpoint disponibili:
 
 ``` r
+
 # 6. Visualizzare tutti gli endpoint -----
 endpoints <- list_istat_endpoints()
 print(endpoints)
@@ -179,6 +189,7 @@ esegue test di connessione agli endpoint.
 ### Test di un singolo endpoint
 
 ``` r
+
 # 1. Testare l'endpoint data -----
 result <- test_endpoint_connectivity(
   endpoints = "data",
@@ -199,6 +210,7 @@ Il risultato include:
 ### Test di tutti gli endpoint
 
 ``` r
+
 # 2. Testare tutti gli endpoint -----
 all_endpoints <- c(
   "data",
@@ -235,6 +247,7 @@ I codici di stato HTTP più comuni sono:
 In caso di problemi di connettività:
 
 ``` r
+
 # 3. Diagnostica della connettività -----
 
 # Verificare la connessione di rete
@@ -269,6 +282,7 @@ memorizzati nella cache locale e aggiornati automaticamente ogni 14
 giorni:
 
 ``` r
+
 # 1. Scaricare il catalogo dei dataset -----
 catalogo <- download_metadata()
 data.table::setDT(catalogo)
@@ -293,6 +307,7 @@ I metadati vengono salvati nella directory `meta/` della directory di
 lavoro:
 
 ``` r
+
 # 2. Verifica della cache -----
 config <- get_istat_config()
 
@@ -314,6 +329,7 @@ La funzione
 permette di cercare dataset per parole chiave in italiano e inglese:
 
 ``` r
+
 # 3. Ricerca di dataset -----
 
 # Ricerca in italiano
@@ -340,6 +356,7 @@ La funzione
 trova dataset correlati (base e sotto-dataset):
 
 ``` r
+
 # 4. Trovare dataset correlati -----
 correlati <- expand_dataset_ids("150_908")
 print(correlati)
@@ -353,6 +370,7 @@ print(correlati)
 Il pacchetto organizza i dataset più comuni in categorie:
 
 ``` r
+
 # 5. Dataset per categoria -----
 
 # Tutte le categorie disponibili
@@ -385,6 +403,7 @@ La funzione
 restituisce i nomi delle dimensioni:
 
 ``` r
+
 # 1. Ottenere le dimensioni -----
 dimensioni <- get_dataset_dimensions("150_908")
 print(dimensioni)
@@ -400,6 +419,7 @@ funzione
 scarica tutte le codelists per un dataset:
 
 ``` r
+
 # 2. Scaricare le codelists -----
 codelists <- download_codelists("150_908")
 
@@ -424,6 +444,7 @@ Ogni codelist è un data.table con colonne:
 ### Funzioni alternative per le codelists
 
 ``` r
+
 # 3. Funzioni alternative -----
 
 # get_dataset_codelists: alias di download_codelists
@@ -442,6 +463,7 @@ La funzione
 utilizza l’endpoint registry per ottenere informazioni sulle dimensioni:
 
 ``` r
+
 # 4. Dimensioni dal registry API -----
 dim_registry <- fetch_registry_dimensions("150_908")
 print(dim_registry)
@@ -456,6 +478,7 @@ Una volta scaricate le codelists, è possibile ispezionarle nel
 dettaglio:
 
 ``` r
+
 # 5. Ispezionare una codelist specifica -----
 codelists <- download_codelists("534_50")
 
@@ -485,6 +508,7 @@ La funzione
 scarica i dati da un dataset specificato:
 
 ``` r
+
 # 1. Download di base -----
 dati <- download_istat_data(
   dataset_id = "150_908",
@@ -516,6 +540,7 @@ La funzione supporta numerosi parametri:
 ### Download con intervallo temporale
 
 ``` r
+
 # 2. Download con intervallo temporale -----
 dati_range <- download_istat_data(
   dataset_id = "150_908",
@@ -533,6 +558,7 @@ Il parametro `incremental` permette di scaricare solo i dati a partire
 da una certa data:
 
 ``` r
+
 # 3. Download incrementale -----
 dati_incrementali <- download_istat_data(
   dataset_id = "150_908",
@@ -549,6 +575,7 @@ Il parametro `check_update` verifica se ci sono aggiornamenti
 disponibili prima di scaricare:
 
 ``` r
+
 # 4. Verifica aggiornamenti -----
 dati_update <- download_istat_data(
   dataset_id = "534_50",
@@ -565,6 +592,7 @@ Il parametro `existing_data` permette di unire i nuovi dati con quelli
 già scaricati:
 
 ``` r
+
 # 5. Merge con dati esistenti -----
 
 # Prima scarico i dati fino al 2023
@@ -590,6 +618,7 @@ Il parametro `return_result = TRUE` restituisce un oggetto
 `istat_result` con informazioni aggiuntive:
 
 ``` r
+
 # 6. Oggetto risultato completo -----
 risultato <- download_istat_data(
   dataset_id = "534_50",
@@ -615,6 +644,7 @@ La funzione
 separa i dati per frequenza temporale:
 
 ``` r
+
 # 7. Download per frequenza -----
 
 # Scaricare tutte le frequenze (separatamente)
@@ -649,6 +679,7 @@ La funzione
 permette di scaricare più dataset in parallelo:
 
 ``` r
+
 # 8. Download multiplo -----
 
 # Scaricare più dataset contemporaneamente
@@ -688,6 +719,7 @@ La funzione
 trasforma i codici dimensionali in etichette descrittive:
 
 ``` r
+
 # 1. Applicare le etichette -----
 
 # Scaricare dati grezzi
@@ -723,6 +755,7 @@ La funzione
 filtra i dati per intervallo temporale:
 
 ``` r
+
 # 2. Filtrare per periodo -----
 
 # Filtrare per anno
@@ -753,6 +786,7 @@ La funzione
 verifica la qualità e la struttura dei dati:
 
 ``` r
+
 # 3. Validare i dati -----
 validazione <- validate_istat_data(dati_labeled)
 
@@ -773,6 +807,7 @@ La funzione
 normalizza i nomi delle colonne:
 
 ``` r
+
 # 4. Normalizzare i nomi delle colonne -----
 dati_clean <- clean_variable_names(dati_labeled)
 
@@ -791,6 +826,7 @@ L’API SDMX di ISTAT supporta diversi formati di risposta. Il pacchetto
 Il formato CSV viene richiesto tramite l’header HTTP:
 
 ``` r
+
 # 1. Configurazione del formato -----
 config <- get_istat_config()
 
@@ -809,6 +845,7 @@ L’oggetto `istat_result` restituito da
 `download_istat_data(return_result = TRUE)` contiene:
 
 ``` r
+
 # 2. Componenti dell'oggetto istat_result -----
 risultato <- download_istat_data(
   dataset_id = "534_50",
@@ -841,6 +878,7 @@ risultato$is_timeout
 I codici HTTP più comuni e il loro significato:
 
 ``` r
+
 # 3. Interpretazione dei codici di stato -----
 
 # 200: richiesta riuscita
@@ -867,6 +905,7 @@ Esempio di gestione errori con
 [`tryCatch()`](https://rdrr.io/r/base/conditions.html):
 
 ``` r
+
 # 4. Gestione errori con tryCatch -----
 dati <- tryCatch(
   {
@@ -901,6 +940,7 @@ Utilizzare `return_result = TRUE` per gestione programmatica degli
 errori:
 
 ``` r
+
 # 5. Gestione programmatica -----
 risultato <- download_istat_data(
   dataset_id = "150_908",
@@ -950,6 +990,7 @@ Tabella dei dataset più utilizzati per i dati statistici italiani:
 ### Esempi di utilizzo
 
 ``` r
+
 # 1. Download dataset comuni -----
 
 # Occupazione mensile
@@ -992,6 +1033,7 @@ Per approfondire l’utilizzo del pacchetto, consultare le altre vignette:
 - `gestione-dati-it`: elaborazione e analisi dei dati scaricati
 
 ``` r
+
 # 2. Aprire le vignette -----
 vignette("getting-started-it", package = "istatlab")
 vignette("gestione-dati-it", package = "istatlab")

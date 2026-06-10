@@ -23,6 +23,14 @@ components:
 
 - dataset_categories: Organized dataset categories
 
+## Details
+
+The metadata cache directory (`defaults$cache_dir`) is resolved from the
+`ISTATLAB_CACHE_DIR` environment variable
+(`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`). Set this variable,
+for example in `.Renviron`, to share a single metadata cache across
+multiple projects; when unset, the local `"meta"` directory is used.
+
 ## Examples
 
 ``` r

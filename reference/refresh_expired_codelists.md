@@ -7,7 +7,7 @@ refreshes codelists that have exceeded their staggered TTL.
 
 ``` r
 refresh_expired_codelists(
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_refresh = FALSE,
   verbose = TRUE
 )
@@ -17,7 +17,8 @@ refresh_expired_codelists(
 
 - cache_dir:
 
-  Character, cache directory path. Default "meta"
+  Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR`
+  environment variable, or `"meta"` if unset.
 
 - force_refresh:
 

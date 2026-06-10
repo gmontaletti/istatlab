@@ -10,7 +10,7 @@ reassembled per-dataset for backward compatibility with apply_labels().
 load_metadata_cached(
   codelists = NULL,
   var_dimensions = NULL,
-  cache_dir = "meta"
+  cache_dir = .istatlab_cache_dir()
 )
 ```
 

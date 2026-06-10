@@ -6,14 +6,15 @@ list if cache doesn't exist or is corrupted.
 ## Usage
 
 ``` r
-load_codelist_metadata(cache_dir = "meta")
+load_codelist_metadata(cache_dir = .istatlab_cache_dir())
 ```
 
 ## Arguments
 
 - cache_dir:
 
-  Character, cache directory path. Default "meta"
+  Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR`
+  environment variable, or `"meta"` if unset.
 
 ## Value
 

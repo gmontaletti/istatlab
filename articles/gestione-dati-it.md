@@ -1,6 +1,7 @@
 # Gestione efficiente dei dati ISTAT
 
 ``` r
+
 library(istatlab)
 library(data.table)
 ```
@@ -58,6 +59,7 @@ richiesta. Ad ogni ritardo viene aggiunto un jitter casuale (+/- 10%)
 per evitare pattern di richieste sincronizzate.
 
 ``` r
+
 # 1. Visualizzare la configurazione del rate limiting -----
 config <- get_istat_config()
 print(config$rate_limit)
@@ -85,6 +87,7 @@ l’header `Retry-After`, il sistema lo rispetta. Ad ogni backoff viene
 aggiunto jitter casuale per evitare sincronizzazione.
 
 ``` r
+
 # 1. I retry sono gestiti automaticamente dal sistema -----
 # L'utente non deve implementare logica di retry manuale
 data <- download_istat_data("150_908", start_time = "2020")
@@ -112,6 +115,7 @@ del rate limiter con
 [`reset_rate_limiter()`](https://gmontaletti.github.io/istatlab/reference/reset_rate_limiter.md):
 
 ``` r
+
 # 1. Il rilevamento del ban è automatico -----
 # Il sistema emette un warning dopo 3 risposte 429 consecutive
 # Warning: "Your IP may be temporarily banned by ISTAT. Wait 24-48 hours."
@@ -134,6 +138,7 @@ limiting sia rispettato. Il parametro `n_cores` è mantenuto per
 compatibilità con versioni precedenti, ma viene ignorato.
 
 ``` r
+
 # 1. Download di dataset multipli con rate limiting -----
 dataset_ids <- c("150_908", "534_50", "534_51")
 data_list <- download_multiple_datasets(dataset_ids, start_time = "2020")
@@ -156,6 +161,7 @@ Questo fornisce resilienza contro problemi specifici delle librerie
 HTTP.
 
 ``` r
+
 # 1. Il fallback è completamente trasparente -----
 # L'utente non deve gestire manualmente il metodo HTTP
 data <- download_istat_data("150_908", start_time = "2023")
@@ -181,6 +187,7 @@ La funzione
 categorizza gli errori per una gestione coerente:
 
 ``` r
+
 # 1. Gli exit code sono gestiti internamente -----
 # L'utente riceve messaggi di errore descrittivi
 # Gli exit code sono disponibili negli oggetti istat_result
@@ -204,6 +211,7 @@ prima chiamata, i dati vengono scaricati dall’API. Le chiamate
 successive leggono dalla cache locale fino alla scadenza.
 
 ``` r
+
 # 1. Primo download: interroga l'API ISTAT -----
 metadata <- download_metadata()
 # Scarica il catalogo e lo salva in meta/flussi_istat.rds
@@ -225,6 +233,7 @@ Struttura della directory cache:
 Per visualizzare la configurazione della cache:
 
 ``` r
+
 # 1. Configurazione generale -----
 config <- get_istat_config()
 print(config$cache)
@@ -244,6 +253,7 @@ codelist ha una durata calcolata come
 `base_ttl + hash(codelist_id) % jitter_days`.
 
 ``` r
+
 # 1. Calcolare il TTL di una codelist specifica -----
 ttl_days <- compute_codelist_ttl("CL_ITTER107")
 print(paste("TTL per CL_ITTER107:", ttl_days, "giorni"))
@@ -259,6 +269,7 @@ refresh_expired_codelists("150_908")
 Configurazione del sistema TTL:
 
 ``` r
+
 # 1. Visualizzare i parametri TTL -----
 config <- get_istat_config()
 base_ttl <- config$cache$codelist_base_ttl_days  # 14 giorni
@@ -283,6 +294,7 @@ restituisce il timestamp `LAST_UPDATE` fornito dall’API. Il parametro
 download locali.
 
 ``` r
+
 # 1. Verificare manualmente il timestamp di aggiornamento -----
 last_update <- get_dataset_last_update("150_908")
 print(last_update)
@@ -295,6 +307,7 @@ data <- download_istat_data("150_908", start_time = "2023", check_update = TRUE)
 Workflow completo:
 
 ``` r
+
 # 1. Prima esecuzione: scarica e registra il timestamp -----
 data_iniziale <- download_istat_data("150_908",
                                       start_time = "2023",
@@ -322,6 +335,7 @@ formati “YYYY”, “YYYY-MM”, “YYYY-MM-DD”. Questo è utile per
 aggiornamenti periodici che necessitano solo dei dati più recenti.
 
 ``` r
+
 # 1. Download incrementale con anno -----
 data_2024 <- download_istat_data("150_908", incremental = "2024")
 # Scarica solo i dati dal 2024 in poi
@@ -342,6 +356,7 @@ data <- download_istat_data("150_908",
 Caso d’uso tipico per job di aggiornamento regolare:
 
 ``` r
+
 # 1. Script di aggiornamento mensile -----
 anno_corrente <- format(Sys.Date(), "%Y")
 data_nuovi <- download_istat_data("150_908", incremental = anno_corrente)
@@ -361,6 +376,7 @@ periodi sovrapposti. Questo è utile quando si costruiscono serie
 storiche incrementali.
 
 ``` r
+
 # 1. Download iniziale di dati storici -----
 data_2023 <- download_istat_data("150_908",
                                   start_time = "2023",
@@ -382,6 +398,7 @@ print(dim(data_completo))
 Workflow per aggiornamenti periodici:
 
 ``` r
+
 # 1. Caricamento dati esistenti -----
 # data_storico <- readRDS("data/serie_150_908.rds")
 
@@ -407,6 +424,7 @@ utilizza l’esecuzione parallela con
 core disponibili sono configurabili.
 
 ``` r
+
 # 1. Download batch di dataset correlati -----
 dataset_ids <- c("534_50", "534_51", "534_52")
 data_list <- download_multiple_datasets(dataset_ids,
@@ -427,6 +445,7 @@ updated_list <- download_multiple_datasets(dataset_ids,
 Gestione degli errori:
 
 ``` r
+
 # 1. Download batch con gestione errori -----
 dataset_ids <- c("150_908", "INVALID_ID", "534_50")
 data_list <- download_multiple_datasets(dataset_ids)
@@ -456,6 +475,7 @@ può scaricare automaticamente tutte le frequenze separatamente o
 filtrare per una frequenza specifica.
 
 ``` r
+
 # 1. Identificare le frequenze disponibili -----
 freq_disponibili <- get_available_frequencies("151_914")
 print(freq_disponibili)  # es. c("A", "Q", "M")
@@ -479,6 +499,7 @@ data_solo_Q <- download_istat_data_by_freq("151_914",
 Considerazioni sull’efficienza:
 
 ``` r
+
 # 1. Quando usare freq parameter -----
 # Se serve solo una frequenza, specificare freq riduce i dati scaricati
 data_mensile <- download_istat_data_by_freq("151_914", freq = "M")
@@ -500,6 +521,7 @@ corrente. È possibile specificare directory alternative con il parametro
 `cache_dir`.
 
 ``` r
+
 # 1. Directory cache predefinita -----
 config <- get_istat_config()
 default_cache <- config$cache$metadata_file
@@ -516,6 +538,7 @@ metadata <- download_metadata(cache_dir = "/percorso/alternativo/meta")
 Portabilità e versionamento:
 
 ``` r
+
 # 1. Portabilità tra macchine -----
 # La directory meta/ può essere copiata tra sistemi
 # system("cp -r meta/ /altro/progetto/meta/")
@@ -547,6 +570,7 @@ Best practice:
 Albero decisionale per la gestione dei download:
 
 ``` r
+
 # 1. Primo download di un dataset -----
 metadata <- download_metadata()
 data <- download_istat_data("150_908", start_time = "2020")
@@ -574,6 +598,7 @@ data_trimestrale <- download_istat_data_by_freq("151_914",
 Workflow consigliato per pipeline produttive:
 
 ``` r
+
 # 1. Setup iniziale del progetto -----
 dir.create("data", showWarnings = FALSE)
 dir.create("meta", showWarnings = FALSE)

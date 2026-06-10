@@ -6,7 +6,7 @@ cache.
 ## Usage
 
 ``` r
-get_dataset_codelists(dataset_id, cache_dir = "meta")
+get_dataset_codelists(dataset_id, cache_dir = .istatlab_cache_dir())
 ```
 
 ## Arguments

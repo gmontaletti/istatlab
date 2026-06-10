@@ -1,6 +1,7 @@
 # Getting Started with istatlab
 
 ``` r
+
 library(istatlab)
 library(data.table)
 ```
@@ -41,6 +42,7 @@ codelists to minimize API calls in subsequent sessions.
 Before starting, verify that the ISTAT API is accessible:
 
 ``` r
+
 status <- test_endpoint_connectivity("data", verbose = FALSE)
 if (status$accessible[1]) {
   message("ISTAT API is accessible")
@@ -58,6 +60,7 @@ before attempting data downloads.
 The metadata catalog contains information about all available datasets:
 
 ``` r
+
 metadata <- download_metadata()
 ```
 
@@ -68,6 +71,7 @@ The metadata includes:
 - `Name.en`: English name of the dataset
 
 ``` r
+
 head(metadata[, .(id, Name.it)])
 ```
 
@@ -80,12 +84,14 @@ You can search for datasets by filtering the metadata or using
 [`search_dataflows()`](https://gmontaletti.github.io/istatlab/reference/search_dataflows.md):
 
 ``` r
+
 # Method 1: Filter metadata directly
 employment_datasets <- metadata[grepl("occupati|employment", Name.it, ignore.case = TRUE)]
 employment_datasets[1:5, .(id, Name.it)]
 ```
 
 ``` r
+
 # Method 2: Use search_dataflows for keyword search
 search_results <- search_dataflows("occupati")
 head(search_results[, .(id, Name.it)])
@@ -100,6 +106,7 @@ Use
 to discover related datasets:
 
 ``` r
+
 related <- expand_dataset_ids("150_908")
 print(related)
 ```
@@ -112,6 +119,7 @@ Codelists map these codes to human-readable labels.
 First, examine the dataset dimensions:
 
 ``` r
+
 dimensions <- get_dataset_dimensions("150_908")
 print(dimensions)
 ```
@@ -119,6 +127,7 @@ print(dimensions)
 Then download the codelists for each dimension:
 
 ``` r
+
 codelists <- download_codelists("150_908")
 names(codelists)
 ```
@@ -127,6 +136,7 @@ Each codelist is a data.table with `id` (the code) and `name` (the
 label):
 
 ``` r
+
 # View a sample codelist (e.g., territory)
 if ("ITTER107" %in% names(codelists)) {
   head(codelists[["ITTER107"]])
@@ -137,6 +147,7 @@ You can verify all required codelists are available with
 [`ensure_codelists()`](https://gmontaletti.github.io/istatlab/reference/ensure_codelists.md):
 
 ``` r
+
 ensure_codelists("150_908")
 ```
 
@@ -149,12 +160,14 @@ Download the actual data using
 [`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md):
 
 ``` r
+
 raw_data <- download_istat_data("150_908", start_time = "2023")
 ```
 
 The raw data contains coded values, not labels:
 
 ``` r
+
 dim(raw_data)
 head(raw_data)
 ```
@@ -173,6 +186,7 @@ Transform coded values into readable labels with
 [`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md):
 
 ``` r
+
 labeled_data <- apply_labels(raw_data)
 ```
 
@@ -184,12 +198,14 @@ The labeled data includes:
 - `*_label` columns: Human-readable labels for each dimension
 
 ``` r
+
 head(labeled_data)
 ```
 
 Compare the original codes with applied labels:
 
 ``` r
+
 # Show transformation from codes to labels
 cols_to_show <- grep("label$|tempo|valore", names(labeled_data), value = TRUE)
 head(labeled_data[, ..cols_to_show])
@@ -200,11 +216,13 @@ head(labeled_data[, ..cols_to_show])
 The labeled data is a data.table ready for analysis:
 
 ``` r
+
 # Basic statistics
 summary(labeled_data$valore)
 ```
 
 ``` r
+
 # Time range
 range(labeled_data$tempo)
 ```
@@ -216,6 +234,7 @@ Use
 to extract specific periods:
 
 ``` r
+
 recent_data <- filter_by_time(labeled_data, start_date = "2024-01-01", time_col = "tempo")
 nrow(recent_data)
 ```
@@ -227,6 +246,7 @@ Use
 to check data structure and quality:
 
 ``` r
+
 validation <- validate_istat_data(labeled_data)
 print(validation)
 ```
@@ -236,6 +256,7 @@ print(validation)
 Here is the complete workflow in a single code block:
 
 ``` r
+
 library(istatlab)
 
 # 1. Check API connectivity

@@ -1,6 +1,7 @@
 # Introduzione a istatlab
 
 ``` r
+
 library(istatlab)
 library(data.table)
 ```
@@ -42,6 +43,7 @@ sessioni successive.
 Prima di iniziare, verificare che l’API ISTAT sia accessibile:
 
 ``` r
+
 status <- test_endpoint_connectivity("data", verbose = FALSE)
 if (status$accessible[1]) {
   message("API ISTAT accessibile")
@@ -60,6 +62,7 @@ Il catalogo dei metadati contiene informazioni su tutti i dataset
 disponibili:
 
 ``` r
+
 metadata <- download_metadata()
 ```
 
@@ -70,6 +73,7 @@ I metadati includono:
 - `Name.en`: Nome inglese del dataset
 
 ``` r
+
 head(metadata[, .(id, Name.it)])
 ```
 
@@ -83,12 +87,14 @@ Si possono cercare i dataset filtrando i metadati o usando
 [`search_dataflows()`](https://gmontaletti.github.io/istatlab/reference/search_dataflows.md):
 
 ``` r
+
 # Metodo 1: Filtrare i metadati direttamente
 dataset_occupazione <- metadata[grepl("occupati|employment", Name.it, ignore.case = TRUE)]
 dataset_occupazione[1:5, .(id, Name.it)]
 ```
 
 ``` r
+
 # Metodo 2: Usare search_dataflows per la ricerca per parole chiave
 risultati_ricerca <- search_dataflows("occupati")
 head(risultati_ricerca[, .(id, Name.it)])
@@ -103,6 +109,7 @@ Usare
 per scoprire i dataset correlati:
 
 ``` r
+
 correlati <- expand_dataset_ids("150_908")
 print(correlati)
 ```
@@ -115,6 +122,7 @@ maschio). Le codelist mappano questi codici a etichette leggibili.
 Prima, esaminare le dimensioni del dataset:
 
 ``` r
+
 dimensioni <- get_dataset_dimensions("150_908")
 print(dimensioni)
 ```
@@ -122,6 +130,7 @@ print(dimensioni)
 Poi scaricare le codelist per ogni dimensione:
 
 ``` r
+
 codelists <- download_codelists("150_908")
 names(codelists)
 ```
@@ -130,6 +139,7 @@ Ogni codelist è una data.table con `id` (il codice) e `name`
 (l’etichetta):
 
 ``` r
+
 # Visualizzare una codelist di esempio (es. territorio)
 if ("ITTER107" %in% names(codelists)) {
   head(codelists[["ITTER107"]])
@@ -140,6 +150,7 @@ Si può verificare che tutte le codelist richieste siano disponibili con
 [`ensure_codelists()`](https://gmontaletti.github.io/istatlab/reference/ensure_codelists.md):
 
 ``` r
+
 ensure_codelists("150_908")
 ```
 
@@ -153,12 +164,14 @@ Scaricare i dati effettivi usando
 [`download_istat_data()`](https://gmontaletti.github.io/istatlab/reference/download_istat_data.md):
 
 ``` r
+
 dati_grezzi <- download_istat_data("150_908", start_time = "2023")
 ```
 
 I dati grezzi contengono valori codificati, non etichette:
 
 ``` r
+
 dim(dati_grezzi)
 head(dati_grezzi)
 ```
@@ -178,6 +191,7 @@ Trasformare i valori codificati in etichette leggibili con
 [`apply_labels()`](https://gmontaletti.github.io/istatlab/reference/apply_labels.md):
 
 ``` r
+
 dati_etichettati <- apply_labels(dati_grezzi)
 ```
 
@@ -189,12 +203,14 @@ I dati etichettati includono:
 - Colonne `*_label`: Etichette leggibili per ogni dimensione
 
 ``` r
+
 head(dati_etichettati)
 ```
 
 Confrontare i codici originali con le etichette applicate:
 
 ``` r
+
 # Mostrare la trasformazione da codici a etichette
 colonne_da_mostrare <- grep("label$|tempo|valore", names(dati_etichettati), value = TRUE)
 head(dati_etichettati[, ..colonne_da_mostrare])
@@ -205,11 +221,13 @@ head(dati_etichettati[, ..colonne_da_mostrare])
 I dati etichettati sono una data.table pronta per l’analisi:
 
 ``` r
+
 # Statistiche di base
 summary(dati_etichettati$valore)
 ```
 
 ``` r
+
 # Intervallo temporale
 range(dati_etichettati$tempo)
 ```
@@ -221,6 +239,7 @@ Usare
 per estrarre periodi specifici:
 
 ``` r
+
 dati_recenti <- filter_by_time(dati_etichettati, start_date = "2024-01-01", time_col = "tempo")
 nrow(dati_recenti)
 ```
@@ -232,6 +251,7 @@ Usare
 per verificare la struttura e la qualità dei dati:
 
 ``` r
+
 validazione <- validate_istat_data(dati_etichettati)
 print(validazione)
 ```
@@ -241,6 +261,7 @@ print(validazione)
 Ecco il flusso di lavoro completo in un singolo blocco di codice:
 
 ``` r
+
 library(istatlab)
 
 # 1. Verificare la connettività API

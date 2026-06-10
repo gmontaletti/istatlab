@@ -11,7 +11,7 @@ across datasets.
 download_codelists(
   dataset_ids = NULL,
   force_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = .istatlab_cache_dir()
 )
 ```
 
@@ -34,6 +34,14 @@ download_codelists(
 
 A named list of codelists keyed by dataset ID (e.g., "X534_50"), where
 each element is a data.table with codelist information
+
+## Details
+
+The default cache directory is resolved from the `ISTATLAB_CACHE_DIR`
+environment variable
+(`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`). Set this variable,
+for example in `.Renviron`, to share a single metadata cache across
+multiple projects; when unset, the local `"meta"` directory is used.
 
 ## Examples
 

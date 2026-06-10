@@ -6,7 +6,7 @@ and dimensions.
 ## Usage
 
 ``` r
-download_metadata(force_update = FALSE, cache_dir = "meta")
+download_metadata(force_update = FALSE, cache_dir = .istatlab_cache_dir())
 ```
 
 ## Arguments
@@ -20,11 +20,20 @@ download_metadata(force_update = FALSE, cache_dir = "meta")
 - cache_dir:
 
   Character string specifying the directory for caching metadata.
-  Default is "meta"
+  Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"`
+  if unset.
 
 ## Value
 
 A list containing dataflows metadata
+
+## Details
+
+The default cache directory is resolved from the `ISTATLAB_CACHE_DIR`
+environment variable
+(`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`). Set this variable,
+for example in `.Renviron`, to share a single metadata cache across
+multiple projects; when unset, the local `"meta"` directory is used.
 
 ## Examples
 

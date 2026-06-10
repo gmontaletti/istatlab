@@ -6,7 +6,11 @@ determine if data needs to be re-downloaded.
 ## Usage
 
 ``` r
-check_data_update_needed(dataset_id, cache_dir = "meta", verbose = TRUE)
+check_data_update_needed(
+  dataset_id,
+  cache_dir = .istatlab_cache_dir(),
+  verbose = TRUE
+)
 ```
 
 ## Arguments
