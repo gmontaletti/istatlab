@@ -5,9 +5,16 @@
 #' @param force_update Logical indicating whether to force update of cached metadata.
 #'   Default is FALSE, which uses cached data if available and less than 14 days old
 #' @param cache_dir Character string specifying the directory for caching metadata.
-#'   Default is "meta"
+#'   Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #'
 #' @return A list containing dataflows metadata
+#'
+#' @details
+#' The default cache directory is resolved from the `ISTATLAB_CACHE_DIR`
+#' environment variable (`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`).
+#' Set this variable, for example in `.Renviron`, to share a single metadata
+#' cache across multiple projects; when unset, the local `"meta"` directory
+#' is used.
 #' @export
 #'
 #' @examples
@@ -18,7 +25,7 @@
 #' # Force update of metadata
 #' metadata <- download_metadata(force_update = TRUE)
 #' }
-download_metadata <- function(force_update = FALSE, cache_dir = "meta") {
+download_metadata <- function(force_update = FALSE, cache_dir = .istatlab_cache_dir()) {
   # Create cache directory if it doesn't exist
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)
@@ -316,6 +323,13 @@ get_dataset_dimension_positions <- function(dataset_id) {
 #'
 #' @return A named list of codelists keyed by dataset ID (e.g., "X534_50"),
 #'   where each element is a data.table with codelist information
+#'
+#' @details
+#' The default cache directory is resolved from the `ISTATLAB_CACHE_DIR`
+#' environment variable (`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`).
+#' Set this variable, for example in `.Renviron`, to share a single metadata
+#' cache across multiple projects; when unset, the local `"meta"` directory
+#' is used.
 #' @export
 #'
 #' @examples
@@ -329,7 +343,7 @@ get_dataset_dimension_positions <- function(dataset_id) {
 download_codelists <- function(
   dataset_ids = NULL,
   force_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = .istatlab_cache_dir()
 ) {
   # Create cache directory if it doesn't exist
   if (!dir.exists(cache_dir)) {
@@ -904,7 +918,7 @@ extract_dimension_mapping <- function(raw_codelist, json_data = NULL) {
 #' codelists <- get_dataset_codelists("534_50")
 #' # Returns: c("CL_FREQ", "CL_ITTER107", "CL_ATECO_2007", ...)
 #' }
-get_dataset_codelists <- function(dataset_id, cache_dir = "meta") {
+get_dataset_codelists <- function(dataset_id, cache_dir = .istatlab_cache_dir()) {
   config <- get_istat_config()
   map_file <- file.path(cache_dir, config$cache$dataset_map_file)
 
@@ -1226,7 +1240,7 @@ compute_codelist_ttl <- function(
 #' Loads per-codelist metadata (timestamps, TTL) from cache.
 #' Returns empty list if cache doesn't exist or is corrupted.
 #'
-#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param cache_dir Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #'
 #' @return Named list of codelist metadata, where each element contains:
 #'   \itemize{
@@ -1243,7 +1257,7 @@ compute_codelist_ttl <- function(
 #' # Access metadata for specific codelist
 #' cl_meta[["CL_FREQ"]]$ttl_days
 #' }
-load_codelist_metadata <- function(cache_dir = "meta") {
+load_codelist_metadata <- function(cache_dir = .istatlab_cache_dir()) {
   config <- get_istat_config()
   metadata_file <- file.path(cache_dir, config$cache$codelist_metadata_file)
 
@@ -1265,7 +1279,7 @@ load_codelist_metadata <- function(cache_dir = "meta") {
 #' Saves per-codelist metadata (timestamps, TTL) to cache.
 #'
 #' @param metadata Named list of codelist metadata to save
-#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param cache_dir Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #'
 #' @return Invisible NULL
 #' @export
@@ -1281,7 +1295,7 @@ load_codelist_metadata <- function(cache_dir = "meta") {
 #' )
 #' save_codelist_metadata(cl_meta)
 #' }
-save_codelist_metadata <- function(metadata, cache_dir = "meta") {
+save_codelist_metadata <- function(metadata, cache_dir = .istatlab_cache_dir()) {
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)
   }
@@ -1308,7 +1322,7 @@ save_codelist_metadata <- function(metadata, cache_dir = "meta") {
 #'
 #' @param codelist_ids Character vector of codelist IDs to check.
 #'   If NULL, checks all cached codelists.
-#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param cache_dir Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #' @param force_check Logical, if TRUE returns all codelists as expired.
 #'   Default FALSE
 #'
@@ -1329,7 +1343,7 @@ save_codelist_metadata <- function(metadata, cache_dir = "meta") {
 #' }
 check_codelist_expiration <- function(
   codelist_ids = NULL,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_check = FALSE
 ) {
   config <- get_istat_config()
@@ -1411,7 +1425,7 @@ check_codelist_expiration <- function(
 #' This prevents apply_labels() from failing on new datasets.
 #'
 #' @param dataset_id Character, dataset ID to check
-#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param cache_dir Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #' @param verbose Logical, print status messages. Default TRUE
 #'
 #' @return Logical, TRUE if all codelists are available (cached or downloaded)
@@ -1427,7 +1441,7 @@ check_codelist_expiration <- function(
 #' # Check new dataset
 #' ensure_codelists("150_908", verbose = TRUE)
 #' }
-ensure_codelists <- function(dataset_id, cache_dir = "meta", verbose = TRUE) {
+ensure_codelists <- function(dataset_id, cache_dir = .istatlab_cache_dir(), verbose = TRUE) {
   config <- get_istat_config()
 
   # Check if dataset is already in map
@@ -1576,7 +1590,7 @@ extract_root_id <- function(dataset_id) {
 #' Downloads fresh versions of expired codelists and updates cache.
 #' Only refreshes codelists that have exceeded their staggered TTL.
 #'
-#' @param cache_dir Character, cache directory path. Default "meta"
+#' @param cache_dir Character, cache directory path. Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #' @param force_refresh Logical, refresh all codelists regardless of TTL.
 #'   Default FALSE
 #' @param verbose Logical, print status messages. Default TRUE
@@ -1599,7 +1613,7 @@ extract_root_id <- function(dataset_id) {
 #' refresh_expired_codelists(force_refresh = TRUE)
 #' }
 refresh_expired_codelists <- function(
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_refresh = FALSE,
   verbose = TRUE
 ) {

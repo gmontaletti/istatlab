@@ -15,7 +15,7 @@ download_istat_data(
   updated_after = NULL,
   return_result = FALSE,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   existing_data = NULL,
   api = getOption("istatlab.default_api", "legacy")
 )
@@ -52,7 +52,7 @@ before downloading. If TRUE and data hasn't changed since last download, returns
 with a message. Default is FALSE for backward compatibility.}
 
 \item{cache_dir}{Character string specifying directory for download log cache.
-Default is "meta"}
+Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 
 \item{existing_data}{Optional data.table of previously downloaded data. When provided,
 the function determines the already-covered date range and downloads only
@@ -70,6 +70,13 @@ an istat_result object with additional metadata (exit_code, md5, message, is_tim
 \description{
 Downloads statistical data from the ISTAT (Istituto Nazionale di Statistica)
 SDMX API for a specified dataset. Uses centralized configuration for default values.
+}
+\details{
+The default \code{cache_dir} is resolved from the \code{ISTATLAB_CACHE_DIR}
+environment variable (\code{Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")}).
+Set this variable, for example in \code{.Renviron}, to share a single metadata
+cache across multiple projects; when unset, the local \code{"meta"} directory
+is used.
 }
 \examples{
 \dontrun{

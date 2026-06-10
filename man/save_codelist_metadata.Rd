@@ -4,12 +4,12 @@
 \alias{save_codelist_metadata}
 \title{Save Codelist Metadata Cache}
 \usage{
-save_codelist_metadata(metadata, cache_dir = "meta")
+save_codelist_metadata(metadata, cache_dir = .istatlab_cache_dir())
 }
 \arguments{
 \item{metadata}{Named list of codelist metadata to save}
 
-\item{cache_dir}{Character, cache directory path. Default "meta"}
+\item{cache_dir}{Character, cache directory path. Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 }
 \value{
 Invisible NULL

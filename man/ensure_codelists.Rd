@@ -4,12 +4,12 @@
 \alias{ensure_codelists}
 \title{Ensure Codelists Are Available for Dataset}
 \usage{
-ensure_codelists(dataset_id, cache_dir = "meta", verbose = TRUE)
+ensure_codelists(dataset_id, cache_dir = .istatlab_cache_dir(), verbose = TRUE)
 }
 \arguments{
 \item{dataset_id}{Character, dataset ID to check}
 
-\item{cache_dir}{Character, cache directory path. Default "meta"}
+\item{cache_dir}{Character, cache directory path. Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 
 \item{verbose}{Logical, print status messages. Default TRUE}
 }

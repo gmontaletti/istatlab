@@ -4,7 +4,11 @@
 \alias{check_data_update_needed}
 \title{Check if Data Update is Needed}
 \usage{
-check_data_update_needed(dataset_id, cache_dir = "meta", verbose = TRUE)
+check_data_update_needed(
+  dataset_id,
+  cache_dir = .istatlab_cache_dir(),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{dataset_id}{Character string specifying the dataset ID}

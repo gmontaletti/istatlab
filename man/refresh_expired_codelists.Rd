@@ -5,13 +5,13 @@
 \title{Refresh Expired Codelists}
 \usage{
 refresh_expired_codelists(
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_refresh = FALSE,
   verbose = TRUE
 )
 }
 \arguments{
-\item{cache_dir}{Character, cache directory path. Default "meta"}
+\item{cache_dir}{Character, cache directory path. Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 
 \item{force_refresh}{Logical, refresh all codelists regardless of TTL.
 Default FALSE}

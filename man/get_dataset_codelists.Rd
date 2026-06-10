@@ -4,7 +4,7 @@
 \alias{get_dataset_codelists}
 \title{Get Codelists Used by Dataset}
 \usage{
-get_dataset_codelists(dataset_id, cache_dir = "meta")
+get_dataset_codelists(dataset_id, cache_dir = .istatlab_cache_dir())
 }
 \arguments{
 \item{dataset_id}{Character string specifying the dataset ID}

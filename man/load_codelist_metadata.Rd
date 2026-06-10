@@ -4,10 +4,10 @@
 \alias{load_codelist_metadata}
 \title{Load Codelist Metadata Cache}
 \usage{
-load_codelist_metadata(cache_dir = "meta")
+load_codelist_metadata(cache_dir = .istatlab_cache_dir())
 }
 \arguments{
-\item{cache_dir}{Character, cache directory path. Default "meta"}
+\item{cache_dir}{Character, cache directory path. Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 }
 \value{
 Named list of codelist metadata, where each element contains:

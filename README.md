@@ -171,6 +171,21 @@ The package automatically handles:
 - Data validation and error handling
 - Memory-efficient data processing with data.table
 
+### Metadata cache directory
+
+By default the metadata cache (`codelists.rds`, `flussi_istat.rds`,
+`codelist_metadata.rds`, ...) is stored in a local `meta/` directory. Set the
+`ISTATLAB_CACHE_DIR` environment variable to share a single cache across
+multiple projects:
+
+```r
+# In .Renviron (per project or user-wide)
+ISTATLAB_CACHE_DIR=/path/to/shared_data/meta
+```
+
+The directory is resolved as `Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`;
+when the variable is unset, behavior is unchanged (local `meta/` directory).
+
 ## Dependencies
 
 Core dependencies:

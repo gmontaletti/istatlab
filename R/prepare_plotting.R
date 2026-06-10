@@ -141,7 +141,7 @@ prepare_for_plotting <- function(data,
   dataset_name_it <- NA_character_
   dataset_name_en <- NA_character_
   config <- get_istat_config()
-  metadata_file <- file.path("meta", config$cache$metadata_file)
+  metadata_file <- file.path(.istatlab_cache_dir(), config$cache$metadata_file)
   if (file.exists(metadata_file)) {
     flussi <- tryCatch(readRDS(metadata_file), error = function(e) NULL)
     if (!is.null(flussi) && dataset_id %in% flussi$id) {

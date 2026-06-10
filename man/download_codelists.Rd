@@ -7,7 +7,7 @@
 download_codelists(
   dataset_ids = NULL,
   force_update = FALSE,
-  cache_dir = "meta"
+  cache_dir = .istatlab_cache_dir()
 )
 }
 \arguments{
@@ -25,6 +25,13 @@ where each element is a data.table with codelist information
 Downloads codelists for ISTAT datasets using a deduplicated cache structure.
 Codelists are stored by their ID (e.g., CL_FREQ) rather than by dataset,
 reducing redundant storage since many codelists are shared across datasets.
+}
+\details{
+The default cache directory is resolved from the \code{ISTATLAB_CACHE_DIR}
+environment variable (\code{Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")}).
+Set this variable, for example in \code{.Renviron}, to share a single metadata
+cache across multiple projects; when unset, the local \code{"meta"} directory
+is used.
 }
 \examples{
 \dontrun{

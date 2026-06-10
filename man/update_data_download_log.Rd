@@ -4,7 +4,7 @@
 \alias{update_data_download_log}
 \title{Update Data Download Log}
 \usage{
-update_data_download_log(dataset_id, cache_dir = "meta")
+update_data_download_log(dataset_id, cache_dir = .istatlab_cache_dir())
 }
 \arguments{
 \item{dataset_id}{Character string specifying the dataset ID}

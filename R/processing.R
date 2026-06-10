@@ -267,7 +267,7 @@ apply_labels <- function(
 load_metadata_cached <- function(
   codelists = NULL,
   var_dimensions = NULL,
-  cache_dir = "meta"
+  cache_dir = .istatlab_cache_dir()
 ) {
   # Return pre-loaded data if provided
   if (!is.null(codelists) && !is.null(var_dimensions)) {

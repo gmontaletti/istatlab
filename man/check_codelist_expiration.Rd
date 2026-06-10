@@ -6,7 +6,7 @@
 \usage{
 check_codelist_expiration(
   codelist_ids = NULL,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   force_check = FALSE
 )
 }
@@ -14,7 +14,7 @@ check_codelist_expiration(
 \item{codelist_ids}{Character vector of codelist IDs to check.
 If NULL, checks all cached codelists.}
 
-\item{cache_dir}{Character, cache directory path. Default "meta"}
+\item{cache_dir}{Character, cache directory path. Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 
 \item{force_check}{Logical, if TRUE returns all codelists as expired.
 Default FALSE}

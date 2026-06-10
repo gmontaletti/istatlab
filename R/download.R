@@ -24,7 +24,7 @@
 #'   before downloading. If TRUE and data hasn't changed since last download, returns NULL
 #'   with a message. Default is FALSE for backward compatibility.
 #' @param cache_dir Character string specifying directory for download log cache.
-#'   Default is "meta"
+#'   Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #' @param existing_data Optional data.table of previously downloaded data. When provided,
 #'   the function determines the already-covered date range and downloads only
 #'   non-overlapping periods, merging and deduplicating the result.
@@ -35,6 +35,13 @@
 #' @return A data.table containing the downloaded data with an additional 'id' column,
 #'   or NULL if the download fails or data is unchanged. If return_result = TRUE, returns
 #'   an istat_result object with additional metadata (exit_code, md5, message, is_timeout).
+#'
+#' @details
+#' The default `cache_dir` is resolved from the `ISTATLAB_CACHE_DIR`
+#' environment variable (`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`).
+#' Set this variable, for example in `.Renviron`, to share a single metadata
+#' cache across multiple projects; when unset, the local `"meta"` directory
+#' is used.
 #' @export
 #'
 #' @examples
@@ -76,7 +83,7 @@ download_istat_data <- function(
   updated_after = NULL,
   return_result = FALSE,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   existing_data = NULL,
   api = getOption("istatlab.default_api", "legacy")
 ) {
@@ -543,7 +550,7 @@ download_multiple_datasets <- function(
 #' @keywords internal
 check_data_update_needed <- function(
   dataset_id,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   verbose = TRUE
 ) {
   # Get current LAST_UPDATE from ISTAT API
@@ -614,7 +621,7 @@ check_data_update_needed <- function(
 #'
 #' @return Invisible NULL
 #' @export
-update_data_download_log <- function(dataset_id, cache_dir = "meta") {
+update_data_download_log <- function(dataset_id, cache_dir = .istatlab_cache_dir()) {
   # Get current LAST_UPDATE from ISTAT
   istat_last_update <- get_dataset_last_update(dataset_id)
 
@@ -691,7 +698,7 @@ integrate_downloaded_data <- function(existing_data, new_data) {
 #'   with a message. The check is performed once at the top level; internal calls to
 #'   \code{download_istat_data} always use \code{check_update = FALSE}. Default is FALSE.
 #' @param cache_dir Character string specifying directory for download log cache.
-#'   Default is "meta".
+#'   Defaults to the `ISTATLAB_CACHE_DIR` environment variable, or `"meta"` if unset.
 #'
 #' @return Named list of data.tables by frequency (e.g., list(A = dt, Q = dt)).
 #'   Each element contains data for a single frequency. If the dataset has only
@@ -736,7 +743,7 @@ download_istat_data_by_freq <- function(
   verbose = TRUE,
   freq = NULL,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   api = getOption("istatlab.default_api", "legacy")
 ) {
   # Get default values from centralized configuration

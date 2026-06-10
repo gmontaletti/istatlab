@@ -19,6 +19,13 @@ A list containing ISTAT SDMX service configuration with the following components
 Returns the configuration for ISTAT SDMX web service including all available
 endpoints and cache settings based on the official service at https://esploradati.istat.it/SDMXWS.
 }
+\details{
+The metadata cache directory (\code{defaults$cache_dir}) is resolved from the
+\code{ISTATLAB_CACHE_DIR} environment variable
+(\code{Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")}). Set this variable,
+for example in \code{.Renviron}, to share a single metadata cache across
+multiple projects; when unset, the local \code{"meta"} directory is used.
+}
 \examples{
 \dontrun{
 # Get service configuration

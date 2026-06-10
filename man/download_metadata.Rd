@@ -4,20 +4,27 @@
 \alias{download_metadata}
 \title{Download Dataset Metadata}
 \usage{
-download_metadata(force_update = FALSE, cache_dir = "meta")
+download_metadata(force_update = FALSE, cache_dir = .istatlab_cache_dir())
 }
 \arguments{
 \item{force_update}{Logical indicating whether to force update of cached metadata.
 Default is FALSE, which uses cached data if available and less than 14 days old}
 
 \item{cache_dir}{Character string specifying the directory for caching metadata.
-Default is "meta"}
+Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 }
 \value{
 A list containing dataflows metadata
 }
 \description{
 Downloads metadata for ISTAT datasets including dataflows, codelists, and dimensions.
+}
+\details{
+The default cache directory is resolved from the \code{ISTATLAB_CACHE_DIR}
+environment variable (\code{Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")}).
+Set this variable, for example in \code{.Renviron}, to share a single metadata
+cache across multiple projects; when unset, the local \code{"meta"} directory
+is used.
 }
 \examples{
 \dontrun{

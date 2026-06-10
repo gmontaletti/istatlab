@@ -14,7 +14,7 @@ download_istat_data_by_freq(
   verbose = TRUE,
   freq = NULL,
   check_update = FALSE,
-  cache_dir = "meta",
+  cache_dir = .istatlab_cache_dir(),
   api = getOption("istatlab.default_api", "legacy")
 )
 }
@@ -49,7 +49,7 @@ with a message. The check is performed once at the top level; internal calls to
 \code{download_istat_data} always use \code{check_update = FALSE}. Default is FALSE.}
 
 \item{cache_dir}{Character string specifying directory for download log cache.
-Default is "meta".}
+Defaults to the \code{ISTATLAB_CACHE_DIR} environment variable, or \code{"meta"} if unset.}
 
 \item{api}{Character string specifying the API surface to use. One of
 \code{"legacy"} (default), \code{"hvd_v1"}, or \code{"hvd_v2"}. Can be set

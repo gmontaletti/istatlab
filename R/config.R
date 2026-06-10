@@ -6,6 +6,27 @@
 #' @name istat_config
 NULL
 
+#' Resolve the Metadata Cache Directory
+#'
+#' Internal helper returning the root directory for the ISTAT metadata cache
+#' (`codelists.rds`, `flussi_istat.rds`, `codelist_metadata.rds`,
+#' `dataset_codelist_map.rds`, `data_download_log.rds`). The directory is
+#' resolved from the `ISTATLAB_CACHE_DIR` environment variable via
+#' `Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`, so multiple projects
+#' can share a single cache. When the variable is unset (or empty), the
+#' historical default `"meta"` (relative to the working directory) is used,
+#' preserving backward compatibility.
+#'
+#' @return Character scalar with the cache directory path.
+#' @keywords internal
+.istatlab_cache_dir <- function() {
+  cache_dir <- Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")
+  if (!nzchar(cache_dir)) {
+    cache_dir <- "meta"
+  }
+  cache_dir
+}
+
 #' Get ISTAT SDMX Service Configuration
 #'
 #' Returns the configuration for ISTAT SDMX web service including all available
@@ -18,6 +39,14 @@ NULL
 #'     \item{defaults}: Default settings for API calls
 #'     \item{dataset_categories}: Organized dataset categories
 #'   }
+#'
+#' @details
+#' The metadata cache directory (`defaults$cache_dir`) is resolved from the
+#' `ISTATLAB_CACHE_DIR` environment variable
+#' (`Sys.getenv("ISTATLAB_CACHE_DIR", unset = "meta")`). Set this variable,
+#' for example in `.Renviron`, to share a single metadata cache across
+#' multiple projects; when unset, the local `"meta"` directory is used.
+#'
 #' @export
 #'
 #' @examples
@@ -58,7 +87,7 @@ get_istat_config <- function() {
       timeout = 240,
       filter = "ALL",
       cache_days = 14,
-      cache_dir = "meta",
+      cache_dir = .istatlab_cache_dir(),
       test_dataset = "534_50" # Lightweight dataset for connectivity testing
     ),
 
